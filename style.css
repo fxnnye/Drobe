@@ -222,11 +222,18 @@ dialog { max-height: 92vh; overflow: auto; }
   .upload-actions .field-inline { flex: 1; }
   .chips { margin-bottom: 12px; }
 
-  /* Outfit bauen: Bild zuerst, darunter Auswahl, ganz unten Name und Speichern */
-  .builder { gap: 14px; }
-  .stage-wrap { order: 0; }
-  .picker { order: 1; }
-  .panel { order: 2; padding: 16px; border-radius: 18px; }
+  /* Outfit bauen: Name und Speichern oben, darunter das Bild, dann Hintergrund und Auswahl.
+     Das Panel löst sich auf (display: contents), seine Teile werden einzeln angeordnet. */
+  .builder { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .panel { display: contents; }
+  .panel > .field:first-child { order: 0; margin: 0; }
+  .panel > .row { order: 1; margin: 0; }
+  .stage-wrap { order: 2; }
+  .panel > .field:nth-child(2) { order: 3; margin: 0; }
+  .picker { order: 4; }
+  .panel .hint { display: none; }
+  .builder .panel .btn:not(.primary) { background: var(--gray); }
+  .builder .panel .btn:not(.primary):hover:not(:disabled) { background: var(--gray-hover); }
   .stage { max-width: min(100%, calc(60vh * 9 / 16)); border-radius: 18px; }
   .picker-grid { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 6px; overflow-y: hidden; scroll-snap-type: x proximity; }
   .pick { flex: none; width: 84px; height: 84px; aspect-ratio: auto; scroll-snap-align: start; overflow: hidden; }
@@ -260,3 +267,8 @@ button, .tab, .chip, .pick, .card, label.btn { touch-action: manipulation; -webk
 @media (min-width: 901px) and (max-height: 900px) {
   .stage { max-width: min(100%, calc((100vh - 160px) * 9 / 16)); }
 }
+
+/* Notiz (z. B. Preis) unter der Kategorie; Platzhalter ist grau und verschwindet beim Tippen */
+input::placeholder { color: #a8a8a8; opacity: 1; }
+.card .meta .note { display: block; font-style: normal; font-size: 12px; color: var(--text); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .meta .note:empty { display: none; }

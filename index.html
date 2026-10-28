@@ -95,20 +95,27 @@
 <dialog id="itemDialog">
   <form method="dialog" id="itemForm">
     <img id="itemPreview" alt="">
-    <div class="rotate">
-      <button class="icon" type="button" id="itRotL" title="90° nach links" aria-label="90° nach links">⟲</button>
-      <input type="range" id="itAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
-      <button class="icon" type="button" id="itRotR" title="90° nach rechts" aria-label="90° nach rechts">⟳</button>
-    </div>
     <label class="field">Name
       <input type="text" id="itemName" maxlength="60">
-    </label>
-    <label class="field">Größe im Outfit: <span id="itScaleVal">100 %</span>
-      <input type="range" id="itScale" min="50" max="150" step="5" value="100">
     </label>
     <label class="field">Kategorie
       <select id="itemCategory"></select>
     </label>
+    <label class="field">Notizen
+      <input type="text" id="itemNote" maxlength="120" placeholder="z. B. Preis, Größe, Marke">
+    </label>
+    <button class="btn full" type="button" id="itEditToggle" aria-expanded="false" aria-controls="itEdit">Bearbeiten</button>
+    <div id="itEdit" hidden>
+      <p class="muted small">Drehen, wenn das Foto schief ist</p>
+      <div class="rotate">
+        <button class="icon" type="button" id="itRotL" title="90° nach links" aria-label="90° nach links">⟲</button>
+        <input type="range" id="itAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
+        <button class="icon" type="button" id="itRotR" title="90° nach rechts" aria-label="90° nach rechts">⟳</button>
+      </div>
+      <label class="field">Größe im Outfit: <span id="itScaleVal">100 %</span>
+        <input type="range" id="itScale" min="50" max="150" step="5" value="100">
+      </label>
+    </div>
     <div class="row">
       <button class="btn danger" type="button" id="itemDelete">Löschen</button>
       <span class="spacer"></span>

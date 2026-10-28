@@ -236,10 +236,11 @@ function renderCloset() {
   list.forEach((it) => {
     const card = document.createElement('button');
     card.className = 'card';
-    card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>`;
+    card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span><i class="note"></i></div>`;
     card.querySelector('img').src = urlFor(it);
     card.querySelector('b').textContent = it.name;
     card.querySelector('span').textContent = it.category;
+    card.querySelector('.note').textContent = it.note || '';
     card.onclick = () => openItemDialog(it);
     grid.appendChild(card);
   });
@@ -490,15 +491,24 @@ $('itRotR').onclick = () => setItemAngle(wrapAngle(itAngle + 90));
 $('itAngle').oninput = (e) => setItemAngle(+e.target.value);
 $('itScale').oninput = (e) => { $('itScaleVal').textContent = e.target.value + ' %'; };
 
+function setItemEditOpen(open) {
+  $('itEdit').hidden = !open;
+  $('itEditToggle').setAttribute('aria-expanded', open);
+  $('itEditToggle').textContent = open ? 'Bearbeiten schließen' : 'Bearbeiten';
+}
+$('itEditToggle').onclick = () => setItemEditOpen($('itEdit').hidden);
+
 function openItemDialog(it) {
   state.editingItem = it;
   itAngle = 0;
   $('itAngle').value = 0;
   $('itScale').value = Math.round((it.scale || 1) * 100);
   $('itScaleVal').textContent = $('itScale').value + ' %';
+  setItemEditOpen(false); // Drehen und Größe sind erst nach „Bearbeiten“ sichtbar
   $('itemPreview').src = urlFor(it);
   $('itemName').value = it.name;
   $('itemCategory').value = it.category;
+  $('itemNote').value = it.note || '';
   dlg.showModal();
 }
 $('itemForm').addEventListener('submit', async (e) => {
@@ -506,6 +516,8 @@ $('itemForm').addEventListener('submit', async (e) => {
     const it = state.editingItem;
     it.name = $('itemName').value.trim() || it.name;
     it.category = $('itemCategory').value;
+    const note = $('itemNote').value.trim();
+    if (note) it.note = note; else delete it.note;
     const scale = +$('itScale').value / 100;
     if (scale === 1) delete it.scale; else it.scale = scale;
     if (itAngle) { // gedrehtes Bild dauerhaft übernehmen
@@ -915,7 +927,7 @@ $('backupExport').onclick = async () => {
     const data = {
       app: 'kleiderschrank', version: 1, exported: new Date().toISOString(),
       items: await Promise.all(items.map(async (i) => ({
-        id: i.id, name: i.name, category: i.category, created: i.created, scale: i.scale, image: await blobToDataUrl(i.blob),
+        id: i.id, name: i.name, category: i.category, created: i.created, scale: i.scale, note: i.note, image: await blobToDataUrl(i.blob),
       }))),
       outfits: await Promise.all(outfits.map(async (o) => ({
         id: o.id, name: o.name, layers: o.layers, bg: o.bg || '#ffffff', created: o.created, thumb: await blobToDataUrl(o.thumb),
@@ -956,6 +968,7 @@ async function importBackup(file) {
       blob: await dataUrlToBlob(i.image), created: num(i.created) ? i.created : Date.now(),
     };
     if (num(i.scale) && i.scale >= 0.3 && i.scale <= 3 && i.scale !== 1) rec.scale = i.scale;
+    if (typeof i.note === 'string' && i.note.trim()) rec.note = i.note.trim().slice(0, 120);
     await dbPut('items', rec);
     items.push(rec);
     addedItems++;
