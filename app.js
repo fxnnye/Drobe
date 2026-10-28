@@ -1,18 +1,17 @@
-const CATEGORIES = ['Outerwear', 'Sweater', 'Shirts', 'Hosen', 'Kleider', 'Schuhe', 'Taschen', 'Schmuck', 'Caps/Beanies', 'Belts'];
+const CATEGORIES = ['Outerwear', 'Sweater', 'Shirts', 'Hosen', 'Schuhe', 'Taschen', 'Schmuck', 'Caps/Beanies', 'Belts'];
 // Hauptkategorien mit Unterkategorien (Teile selbst tragen immer eine Unterkategorie)
 const GROUPS = {
   Oberteile: ['Outerwear', 'Sweater', 'Shirts'],
   Accessoires: ['Taschen', 'Schmuck', 'Caps/Beanies', 'Belts'],
 };
 const DEFAULT_SUB = { Oberteile: 'Shirts', Accessoires: 'Taschen' }; // Vorauswahl beim Hochladen
-const TOP = ['Oberteile', 'Hosen', 'Kleider', 'Schuhe', 'Accessoires'];
+const TOP = ['Oberteile', 'Hosen', 'Schuhe', 'Accessoires'];
 // Alte Kategorien aus früheren Versionen
-const LEGACY = { Jacken: 'Outerwear', Oberteile: 'Shirts', Accessoires: 'Taschen' };
+const LEGACY = { Jacken: 'Outerwear', Oberteile: 'Shirts', Accessoires: 'Taschen', Kleider: 'Shirts' };
 // Maximalgröße je Kategorie (w: Anteil der Bühnenbreite, h: Anteil der Bühnenhöhe). Ein Teil wird mit seinem
 // Seitenverhältnis so eingepasst, dass es hineinpasst: so wirken Hose, Jacke und Schuhe im gleichen Maßstab.
 const PLACEMENT = {
   Outerwear: { w: 0.55, h: 0.32 },
-  Kleider: { w: 0.55, h: 0.52 },
   Shirts: { w: 0.52, h: 0.30 },
   Sweater: { w: 0.58, h: 0.32 },
   Hosen: { w: 0.50, h: 0.50 },
@@ -26,7 +25,7 @@ const STAGE_RATIO = 16 / 9; // Höhe : Breite der Bühne
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
 const EXCLUSIVE = { Shirts: ['Shirts', 'Sweater'], Sweater: ['Shirts', 'Sweater'] }; // ersetzen sich gegenseitig
 // Standard-Stapelreihenfolge (hinten → vorne)
-const STACK = ['Outerwear', 'Kleider', 'Shirts', 'Sweater', 'Hosen', 'Belts', 'Taschen', 'Schmuck', 'Caps/Beanies', 'Schuhe'];
+const STACK = ['Outerwear', 'Shirts', 'Sweater', 'Hosen', 'Belts', 'Taschen', 'Schmuck', 'Caps/Beanies', 'Schuhe'];
 const EXPORT_W = 900, EXPORT_H = 1600;
 
 const $ = (id) => document.getElementById(id);
@@ -667,7 +666,7 @@ async function relayout() {
 
   // Linke Spalte von oben nach unten
   let y = 0.03, pants = null;
-  for (const cat of ['Caps/Beanies', 'Kleider', 'Shirts', 'Sweater', 'Hosen']) {
+  for (const cat of ['Caps/Beanies', 'Shirts', 'Sweater', 'Hosen']) {
     for (const l of of(cat)) {
       if (cat === 'Hosen') pants = l;
       y = place(l, COL_LEFT, y);
@@ -1204,6 +1203,9 @@ drop.addEventListener('drop', (e) => { if (e.dataTransfer.files[0]) importBackup
   // Alte Kategorien umsortieren (Jacken → Outerwear, Oberteile → Shirts, Accessoires → Taschen)
   for (const it of items) {
     if (!CATEGORIES.includes(it.category)) { it.category = LEGACY[it.category] || 'Shirts'; await dbPut('items', it); }
+  }
+  for (const w of wishlist) {
+    if (!CATEGORIES.includes(w.category)) { w.category = LEGACY[w.category] || 'Shirts'; await dbPut('wishlist', w); }
   }
   items.sort((a, b) => a.created - b.created);
   renderCloset();
