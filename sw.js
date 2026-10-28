@@ -1,6 +1,6 @@
 // Service Worker: legt die App-Dateien im Cache ab, damit Drobe auch offline startet.
 // Bei jeder Änderung an den App-Dateien die Versionsnummer erhöhen.
-const CACHE = 'drobe-v3';
+const CACHE = 'drobe-v4';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'colors.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then((res) => {
         if (res.ok) {
           const copy = res.clone();
