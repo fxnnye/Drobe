@@ -202,10 +202,10 @@ dialog { max-height: 92vh; overflow: auto; }
   .tabs {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; gap: 0;
     background: #fff; border-top: 1px solid var(--gray-hover);
-    padding: 6px 8px calc(32px + env(safe-area-inset-bottom));
+    padding: 6px 8px calc(20px + env(safe-area-inset-bottom));
   }
   .tab { flex: 1; padding: 12px 4px; font-size: 14px; text-align: center; }
-  main { padding: 4px 12px calc(120px + env(safe-area-inset-bottom)); }
+  main { padding: 4px 12px calc(104px + env(safe-area-inset-bottom)); }
 
   /* Raster: zwei Spalten */
   .grid, .outfits { columns: 2; column-gap: 10px; }
