@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mein Kleiderschrank</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Mein Kleiderschrank</h1>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="closet" role="tab">Schrank</button>
+    <button class="tab" data-view="builder" role="tab">Outfit bauen</button>
+    <button class="tab" data-view="outfits" role="tab">Outfits <span id="outfitCount" class="badge">0</span></button>  </nav>
+  <button class="btn backup" id="backupBtn">Sicherung</button>
+</header>
+
+<main>
+  <!-- SCHRANK -->
+  <section id="view-closet" class="view active">
+    <div class="upload" id="dropzone">
+      <div>
+        <strong>Klamotten hochladen</strong>
+        <p class="muted">Fotos hierher ziehen oder auswählen. Am besten vor hellem, ruhigem Hintergrund fotografiert.</p>
+      </div>
+      <div class="upload-actions">
+        <label class="field-inline">Kategorie
+          <select id="uploadCategory"></select>
+        </label>
+        <label class="btn primary">
+          Fotos auswählen
+          <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        </label>
+      </div>
+    </div>
+    <div class="chips" id="closetFilter"></div>
+    <div class="grid" id="closetGrid"></div>
+    <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Lade oben das erste Teil hoch.</p>
+  </section>
+
+  <!-- BUILDER -->
+  <section id="view-builder" class="view">
+    <div class="builder">
+      <aside class="picker">
+        <div class="chips" id="pickerFilter"></div>
+        <div class="picker-grid" id="pickerGrid"></div>
+        <p class="empty" id="pickerEmpty">Keine Teile in dieser Kategorie.</p>
+      </aside>
+
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <p class="stage-hint" id="stageHint">Wähle ein Teil aus der Liste, um es hinzuzufügen.</p>
+        </div>
+        <div class="layer-tools" id="layerTools" hidden>
+          <button class="icon" id="rememberSize" title="Größe für dieses Teil merken" aria-label="Größe für dieses Teil merken">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/></svg>
+          </button>
+          <button class="icon" id="sendBack" title="Nach hinten" aria-label="Nach hinten">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          </button>
+          <button class="icon" id="bringFront" title="Nach vorne" aria-label="Nach vorne">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+          </button>
+          <button class="icon" id="removeLayer" title="Entfernen" aria-label="Entfernen">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <label class="field">Name des Outfits
+          <input type="text" id="outfitName" placeholder="z. B. Büro Freitag" maxlength="60">
+        </label>
+        <div class="field">Hintergrund
+          <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="saveOutfit">Speichern</button>
+          <button class="btn" id="newOutfit">Neu</button>
+          <button class="btn" id="colorsBtn" type="button">Farben</button>
+        </div>
+        <p class="muted small hint">Teile ziehen zum Verschieben, Ecke unten rechts zum Skalieren.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- OUTFITS -->
+  <section id="view-outfits" class="view">
+    <div class="grid outfits" id="outfitGrid"></div>
+    <p class="empty" id="outfitsEmpty">Noch keine Outfits gespeichert.</p>
+  </section>
+</main>
+
+<dialog id="itemDialog">
+  <form method="dialog" id="itemForm">
+    <img id="itemPreview" alt="">
+    <div class="rotate">
+      <button class="icon" type="button" id="itRotL" title="90° nach links" aria-label="90° nach links">⟲</button>
+      <input type="range" id="itAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
+      <button class="icon" type="button" id="itRotR" title="90° nach rechts" aria-label="90° nach rechts">⟳</button>
+    </div>
+    <label class="field">Name
+      <input type="text" id="itemName" maxlength="60">
+    </label>
+    <label class="field">Größe im Outfit: <span id="itScaleVal">100 %</span>
+      <input type="range" id="itScale" min="50" max="150" step="5" value="100">
+    </label>
+    <label class="field">Kategorie
+      <select id="itemCategory"></select>
+    </label>
+    <div class="row">
+      <button class="btn danger" type="button" id="itemDelete">Löschen</button>
+      <span class="spacer"></span>
+      <button class="btn" value="cancel">Abbrechen</button>
+      <button class="btn primary" value="save" id="itemSave">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="uploadDialog">
+  <form method="dialog" onsubmit="return false">
+    <p class="muted small" id="upProgress"></p>
+    <div class="up-preview"><img id="upPreview" alt=""></div>
+    <div class="rotate">
+      <button class="icon" type="button" id="upRotL" title="90° nach links" aria-label="90° nach links">⟲</button>
+      <input type="range" id="upAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
+      <button class="icon" type="button" id="upRotR" title="90° nach rechts" aria-label="90° nach rechts">⟳</button>
+    </div>
+    <button class="btn full" type="button" id="upRemove">Hintergrund entfernen</button>
+    <label class="field">Name
+      <input type="text" id="upName" maxlength="60">
+    </label>
+    <label class="field">Kategorie
+      <select id="upCategory"></select>
+    </label>
+    <div class="batch" id="upBatch" hidden>
+      <label class="check"><input type="checkbox" id="upAllBg"> Bei allen den Hintergrund entfernen</label>
+      <button class="btn full" type="button" id="upAll">Alle hinzufügen</button>
+    </div>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="upSkip">Überspringen</button>
+      <button class="btn primary" type="button" id="upAdd">Hinzufügen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="colorsDialog" class="wide">
+  <form method="dialog" onsubmit="return false">
+    <div class="row">
+      <h2>Farben, die zusammenpassen</h2>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="colorsClose">Schließen</button>
+    </div>
+    <p class="muted intro">Faustregel: Neutrale Farben wie Schwarz, Weiß, Grau, Beige und Navy passen zu fast allem. Eine Akzentfarbe pro Outfit reicht.</p>
+    <div class="chips" id="colorFilter"></div>
+    <div class="grid combos" id="colorGrid"></div>
+  </form>
+</dialog>
+
+<dialog id="backupDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2>Sicherung</h2>
+    <p class="muted small">Dein Schrank liegt nur in diesem Browser. Speichere ab und zu eine Sicherung, dann ist im Notfall alles schnell wieder da, auch auf einem anderen Gerät.</p>
+    <button class="btn primary full" type="button" id="backupExport">Sicherung speichern</button>
+    <p class="muted small" id="backupInfo"></p>
+    <label class="dropbox" id="backupDrop">
+      Sicherungsdatei hierher ziehen<br><span class="muted small">oder klicken zum Auswählen</span>
+      <input type="file" id="backupFile" accept=".json,application/json" hidden>
+    </label>
+    <p class="muted small">Beim Laden wird alles hinzugefügt. Vorhandene Teile und Outfits werden nicht überschrieben oder gelöscht.</p>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="backupClose">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirmDialog">
+  <form method="dialog" onsubmit="return false">
+    <p id="confirmText"></p>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="confirmNo">Abbrechen</button>
+      <button class="btn primary" type="button" id="confirmYes">Löschen</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status"></div>
+<script src="colors.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
