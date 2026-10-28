@@ -144,10 +144,11 @@ input[type=text]:focus, select:focus { outline: 0; border-color: #0074e8; }
 .panel .hint { margin: 16px 0 0; }
 .stage {
   position: relative; width: 100%; max-width: 420px; aspect-ratio: 9/16; background: #fff;
-  border: 1px solid var(--gray-hover); border-radius: 24px; overflow: hidden; touch-action: none; user-select: none;
+  border: 1px solid var(--gray-hover); border-radius: 24px; overflow: hidden; touch-action: pan-y; user-select: none;
 }
 .stage-hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #aaa; padding: 24px; margin: 0; pointer-events: none; }
-.layer { position: absolute; cursor: grab; }
+.layer { position: absolute; cursor: grab; touch-action: pan-y; }
+.layer.selected { touch-action: none; } /* erst nach dem ersten Antippen ziehbar, sonst scrollt die Seite */
 .layer img { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
 .layer.selected { outline: 2px solid #0074e8; outline-offset: 2px; }
 .layer .handle {
