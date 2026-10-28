@@ -91,7 +91,6 @@ input[type=text]:focus, select:focus { outline: 0; border-color: #0074e8; }
 .upload p { margin: 2px 0 0; }
 .upload.over { border-color: var(--text); }
 .upload-actions { display: flex; gap: 12px; align-items: flex-end; }
-.upload select { background: #fff; }
 
 /* Filter */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -272,3 +271,16 @@ button, .tab, .chip, .pick, .card, label.btn { touch-action: manipulation; -webk
 input::placeholder { color: #a8a8a8; opacity: 1; }
 .card .meta .note { display: block; font-style: normal; font-size: 12px; color: var(--text); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card .meta .note:empty { display: none; }
+
+/* Kategorie-Auswahl: schlichtes Feld ohne System-Optik, eigener Pfeil */
+select {
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  background-color: var(--gray);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 14px;
+  border: 0; border-radius: 12px; padding: 13px 44px 13px 16px; font-weight: 600; min-width: 190px;
+}
+select:hover { background-color: var(--gray-hover); }
+select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
+.upload select { background-color: #fff; }
+.upload select:hover { background-color: #fafafa; }
