@@ -8,20 +8,19 @@ const DEFAULT_SUB = { Oberteile: 'Shirts', Accessoires: 'Taschen' }; // Vorauswa
 const TOP = ['Oberteile', 'Hosen', 'Kleider', 'Schuhe', 'Accessoires'];
 // Alte Kategorien aus früheren Versionen
 const LEGACY = { Jacken: 'Outerwear', Oberteile: 'Shirts', Accessoires: 'Taschen' };
-// Jede Kategorie hat eine Fläche auf der Bühne (x, w als Anteil der Breite; y, h als Anteil der Höhe).
-// Ein Teil wird mit seinem Seitenverhältnis so eingepasst, dass es in diese Fläche passt: so wirken Hose, Jacke
-// und Schuhe im gleichen Maßstab. Collage-Anordnung: Jacke hinten rechts, Oberteil links davor, Hose links unten.
+// Maximalgröße je Kategorie (w: Anteil der Bühnenbreite, h: Anteil der Bühnenhöhe). Ein Teil wird mit seinem
+// Seitenverhältnis so eingepasst, dass es hineinpasst: so wirken Hose, Jacke und Schuhe im gleichen Maßstab.
 const PLACEMENT = {
-  Outerwear: { x: 0.40, y: 0.03, w: 0.55, h: 0.32 },
-  Kleider: { x: 0.12, y: 0.08, w: 0.55, h: 0.52 },
-  Shirts: { x: 0.03, y: 0.10, w: 0.52, h: 0.30, valign: 'bottom' }, // Unterkante an der gemeinsamen Linie
-  Sweater: { x: 0.00, y: 0.08, w: 0.58, h: 0.32, valign: 'bottom' },
-  Hosen: { x: 0.04, y: 0.39, w: 0.50, h: 0.50, valign: 'top' }, // beginnt direkt unter dem Oberteil
-  Belts: { x: 0.15, y: 0.395, w: 0.28, h: 0.05, valign: 'top' }, // auf dem Hosenbund
-  Taschen: { x: 0.52, y: 0.46, w: 0.40, h: 0.22 },
-  Schmuck: { x: 0.70, y: 0.36, w: 0.14, h: 0.08 },
-  'Caps/Beanies': { x: 0.03, y: 0.02, w: 0.30, h: 0.12 },
-  Schuhe: { x: 0.52, y: 0.76, w: 0.44, h: 0.15 },
+  Outerwear: { w: 0.55, h: 0.32 },
+  Kleider: { w: 0.55, h: 0.52 },
+  Shirts: { w: 0.52, h: 0.30 },
+  Sweater: { w: 0.58, h: 0.32 },
+  Hosen: { w: 0.50, h: 0.50 },
+  Belts: { w: 0.28, h: 0.05 },
+  Taschen: { w: 0.40, h: 0.22 },
+  Schmuck: { w: 0.14, h: 0.08 },
+  'Caps/Beanies': { w: 0.30, h: 0.12 },
+  Schuhe: { w: 0.44, h: 0.15 },
 };
 const STAGE_RATIO = 16 / 9; // Höhe : Breite der Bühne
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
@@ -617,7 +616,8 @@ function toggleItem(it) {
   if (existing) {
     state.outfit.layers = state.outfit.layers.filter((l) => l !== existing);
     if (state.selected === existing.uid) state.selected = null;
-    return renderStage();
+    relayout().then(renderStage);
+    return;
   }
   addLayer(it);
 }
@@ -638,27 +638,52 @@ const fitWidth = (it, aspect) => {
 };
 
 async function addLayer(it) {
-  const box = PLACEMENT[it.category];
   const aspect = await aspectOf(it);
   const w = fitWidth(it, aspect) * (it.scale || 1); // it.scale: vom Nutzer gemerkte Anpassung
-  const hf = w * aspect / STAGE_RATIO; // Höhe als Anteil der Bühnenhöhe
-  let x = box.x + (box.w - w) / 2;
-  let y = box.valign === 'bottom' ? box.y + box.h - hf : box.valign === 'top' ? box.y : box.y + (box.h - hf) / 2;
   // Regeln: pro Kategorie nur ein Teil (Schmuck: beliebig viele), Shirt und Sweater schließen sich aus
   const replaced = MULTI.includes(it.category) ? [] : EXCLUSIVE[it.category] || [it.category];
   state.outfit.layers = state.outfit.layers.filter((l) => !replaced.includes(itemById(l.itemId)?.category));
-  if (MULTI.includes(it.category)) { // weitere Schmuckteile nebeneinander statt exakt übereinander
-    const n = state.outfit.layers.filter((l) => itemById(l.itemId)?.category === it.category).length;
-    x += (n % 3) * 0.14 - 0.12;
-    y += Math.floor(n / 3) * 0.1;
-  }
-  const layer = { uid: uid(), itemId: it.id, x, y, w };
+  const layer = { uid: uid(), itemId: it.id, x: 0.3, y: 0.3, w };
   // Standard-Stapelreihenfolge einhalten (Jacke hinter Oberteil usw.)
   const rank = STACK.indexOf(it.category);
   const at = state.outfit.layers.findIndex((l) => STACK.indexOf(itemById(l.itemId).category) > rank);
   state.outfit.layers.splice(at < 0 ? state.outfit.layers.length : at, 0, layer);
   state.selected = layer.uid;
+  await relayout();
   renderStage();
+}
+
+// Ordnet die Teile in zwei Spalten mit gleichmäßigem Abstand an: links Cap, Oberteil, Hose; rechts Jacke, Tasche,
+// Schuhe (Gürtel auf dem Hosenbund, Schmuck in einer Reihe darunter). Von Hand verschobene Teile bleiben liegen.
+const GAP = -0.006; // gleicher Abstand zwischen allen Teilen (leicht negativ = sie berühren sich knapp)
+const COL_LEFT = 0.29, COL_RIGHT = 0.71; // Mittellinien der beiden Spalten
+async function relayout() {
+  const auto = state.outfit.layers.filter((l) => !l.manual && itemById(l.itemId));
+  await Promise.all(auto.map((l) => aspectOf(itemById(l.itemId))));
+  const of = (cat) => auto.filter((l) => itemById(l.itemId).category === cat);
+  const hf = (l) => l.w * aspects.get(l.itemId) / STAGE_RATIO; // Höhe als Anteil der Bühnenhöhe
+  const clampX = (x, l) => Math.max(0, Math.min(1 - l.w, x));
+  const place = (l, cx, y) => { l.x = clampX(cx - l.w / 2, l); l.y = y; return y + hf(l) + GAP; };
+
+  // Linke Spalte von oben nach unten
+  let y = 0.03, pants = null;
+  for (const cat of ['Caps/Beanies', 'Kleider', 'Shirts', 'Sweater', 'Hosen']) {
+    for (const l of of(cat)) {
+      if (cat === 'Hosen') pants = l;
+      y = place(l, COL_LEFT, y);
+    }
+  }
+  for (const l of of('Belts')) place(l, COL_LEFT, pants ? pants.y + 0.005 : y); // Gürtel auf dem Hosenbund
+
+  // Rechte Spalte: ohne Jacke beginnt sie auf Höhe der Hose
+  let yr = of('Outerwear').length ? 0.03 : (pants ? pants.y : 0.3);
+  for (const cat of ['Outerwear', 'Taschen', 'Schuhe']) for (const l of of(cat)) yr = place(l, COL_RIGHT, yr);
+
+  // Schmuck: kleine Reihe unter der rechten Spalte
+  of('Schmuck').forEach((l, k) => {
+    l.x = clampX(0.52 + (k % 3) * 0.15, l);
+    l.y = yr + 0.01 + Math.floor(k / 3) * 0.1;
+  });
 }
 
 function renderStage() {
@@ -706,6 +731,7 @@ function attachDrag(el, l) {
     const move = (ev) => {
       const dx = (ev.clientX - start.cx) / rect.width;
       const dy = (ev.clientY - start.cy) / rect.height;
+      l.manual = true; // ab jetzt ordnet die automatische Anordnung dieses Teil nicht mehr um
       if (rotating) {
         let deg = Math.atan2(ev.clientX - center.x, center.y - ev.clientY) * 180 / Math.PI;
         for (const snap of [0, 90, -90, 180, -180]) if (Math.abs(deg - snap) < 4) deg = snap; // rastet an geraden Winkeln ein
@@ -788,7 +814,7 @@ $('removeLayer').onclick = removeSelected;
 function removeSelected() {
   state.outfit.layers = state.outfit.layers.filter((l) => l.uid !== state.selected);
   state.selected = null;
-  renderStage();
+  relayout().then(renderStage);
 }
 document.addEventListener('keydown', (e) => {
   const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
@@ -885,7 +911,7 @@ function renderOutfits() {
 function editOutfit(o) {
   state.outfit = {
     id: o.id, name: o.name, bg: o.bg || '#ffffff',
-    layers: o.layers.filter((l) => itemById(l.itemId)).map((l) => ({ ...l, uid: uid() })),
+    layers: o.layers.filter((l) => itemById(l.itemId)).map((l) => ({ ...l, uid: uid(), manual: true })),
   };
   state.selected = null;
   showView('builder');
