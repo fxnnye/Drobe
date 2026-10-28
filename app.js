@@ -498,16 +498,26 @@ function setItemEditOpen(open) {
 }
 $('itEditToggle').onclick = () => setItemEditOpen($('itEdit').hidden);
 
+// Größenregler im Teil-Dialog: Schuhe dürfen größer eingestellt werden als alles andere
+const scaleMax = (category) => (category === 'Schuhe' ? 200 : 150);
+$('itemCategory').addEventListener('change', () => {
+  const max = scaleMax($('itemCategory').value);
+  $('itScale').max = max;
+  if (+$('itScale').value > max) $('itScale').value = max;
+  $('itScaleVal').textContent = $('itScale').value + ' %';
+});
+
 function openItemDialog(it) {
   state.editingItem = it;
   itAngle = 0;
   $('itAngle').value = 0;
+  $('itemCategory').value = it.category;
+  $('itScale').max = scaleMax(it.category);
   $('itScale').value = Math.round((it.scale || 1) * 100);
   $('itScaleVal').textContent = $('itScale').value + ' %';
   setItemEditOpen(false); // Drehen und Größe sind erst nach „Bearbeiten“ sichtbar
   $('itemPreview').src = urlFor(it);
   $('itemName').value = it.name;
-  $('itemCategory').value = it.category;
   $('itemNote').value = it.note || '';
   dlg.showModal();
 }
