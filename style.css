@@ -284,3 +284,6 @@ select:hover { background-color: var(--gray-hover); }
 select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 .upload select { background-color: #fff; }
 .upload select:hover { background-color: #fafafa; }
+
+/* Beschriftung „Kategorie“ im Upload-Bereich kräftiger */
+.upload .field-inline { font-size: 14px; font-weight: 700; }
