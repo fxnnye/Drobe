@@ -37,10 +37,11 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 let db;
 function openDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('kleiderschrank', 1);
+    const req = indexedDB.open('kleiderschrank', 2);
     req.onupgradeneeded = () => {
-      req.result.createObjectStore('items', { keyPath: 'id' });
-      req.result.createObjectStore('outfits', { keyPath: 'id' });
+      for (const name of ['items', 'outfits', 'wishlist']) {
+        if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, { keyPath: 'id' });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -61,9 +62,11 @@ const dbDel = (s, id) => tx(s, 'readwrite', (o) => o.delete(id));
 /* ---------- Zustand ---------- */
 let items = [];
 let outfits = [];
+let wishlist = [];
 const urls = new Map(); // id -> Object-URL
 const state = {
   closetFilter: 'Alle',
+  wishFilter: 'Alle',
   pickerFilter: 'Alle',
   outfit: { id: null, name: '', layers: [] }, // layers: {uid,itemId,x,y,w}
   selected: null,
@@ -299,9 +302,14 @@ async function removeBackground(blob, onProgress = () => {}) {
   }
 }
 
-async function addFiles(files) {
+let upTarget = 'closet'; // 'closet' oder 'wish': wohin die aktuell hochgeladenen Fotos kommen
+const upColl = () => (upTarget === 'wish' ? { store: 'wishlist', list: wishlist } : { store: 'items', list: items });
+const renderLists = () => { renderCloset(); renderWishlist(); };
+
+async function addFiles(files, target = 'closet') {
   const imgs = [...files].filter((f) => f.type.startsWith('image/'));
   if (!imgs.length) return;
+  if (!upCur) upTarget = target;
   upQueue.push(...imgs);
   upTotal += imgs.length;
   if (!upCur) nextUpload();
@@ -314,7 +322,7 @@ async function nextUpload() {
   if (!f) {
     upCur = null; upTotal = upDone = 0;
     if (upDlg.open) upDlg.close();
-    renderCloset();
+    renderLists();
     if (upAdded) toast(upAdded === 1 ? 'Teil hinzugefügt' : upAdded + ' Teile hinzugefügt');
     upAdded = 0;
     return;
@@ -324,7 +332,10 @@ async function nextUpload() {
     upCur = { file: f, orig, cut: null, useCut: false, busy: false, url: null, angle: 0 };
     $('upAngle').value = 0;
     $('upName').value = nameFromFile(f);
-    $('upCategory').value = $('uploadCategory').value;
+    $('upCategory').value = (upTarget === 'wish' ? $('wishUploadCategory') : $('uploadCategory')).value;
+    $('upWish').hidden = upTarget !== 'wish';
+    $('upNote').value = '';
+    $('upLink').value = '';
     upDone++;
     refreshUpload();
     if (!upDlg.open) upDlg.showModal();
@@ -382,7 +393,7 @@ function refreshUpload() {
   $('upAdd').disabled = u.busy;
   $('upSkip').disabled = u.busy;
   $('upAll').disabled = u.busy;
-  $('upBatch').hidden = upQueue.length === 0;
+  $('upBatch').hidden = upQueue.length === 0 || upTarget === 'wish'; // Links sind pro Teil, deshalb kein Sammel-Upload
   if (!u.busy) $('upAll').textContent = `Alle ${upQueue.length + 1} Fotos hinzufügen`;
   $('upRemove').textContent = u.busy ? (u.status || 'Hintergrund wird entfernt …') : u.useCut ? 'Original anzeigen' : 'Hintergrund entfernen';
   $('upPreview').parentElement.classList.toggle('busy', u.busy);
@@ -410,12 +421,19 @@ $('upRemove').addEventListener('click', async () => {
 });
 $('upAdd').addEventListener('click', async () => {
   const u = upCur;
+  const coll = upColl();
+  const rawLink = $('upLink').value.trim();
+  const link = upTarget === 'wish' ? cleanLink(rawLink) : '';
+  if (rawLink && upTarget === 'wish' && !link) return toast('Der Link sieht nicht richtig aus');
   const rec = {
     id: uid(), name: $('upName').value.trim() || 'Neues Teil', category: $('upCategory').value,
     blob: await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0), created: Date.now(),
   };
-  await dbPut('items', rec);
-  items.push(rec);
+  const note = $('upNote').value.trim().slice(0, 120);
+  if (upTarget === 'wish' && note) rec.note = note;
+  if (link) rec.link = link;
+  await dbPut(coll.store, rec);
+  coll.list.push(rec);
   upAdded++;
   nextUpload();
 });
@@ -443,8 +461,9 @@ $('upAll').addEventListener('click', async () => {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
       const rec = { id: uid(), name: j.name, category, blob, created: Date.now() };
-      await dbPut('items', rec);
-      items.push(rec);
+      const coll = upColl();
+      await dbPut(coll.store, rec);
+      coll.list.push(rec);
       upAdded++;
     } catch (e) {
       console.error(e);
@@ -460,7 +479,7 @@ upDlg.addEventListener('close', () => { // Esc: Rest der Warteschlange verwerfen
   if (!upCur) return;
   URL.revokeObjectURL(upCur.url);
   upCur = null; upQueue = []; upTotal = upDone = 0;
-  renderCloset();
+  renderLists();
   if (upAdded) toast(upAdded === 1 ? 'Teil hinzugefügt' : upAdded + ' Teile hinzugefügt');
   upAdded = 0;
 });
@@ -469,6 +488,11 @@ const dz = $('dropzone');
 ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
 dz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+$('wishFileInput').addEventListener('change', (e) => { addFiles(e.target.files, 'wish'); e.target.value = ''; });
+const wdz = $('wishDrop');
+['dragenter', 'dragover'].forEach((ev) => wdz.addEventListener(ev, (e) => { e.preventDefault(); wdz.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => wdz.addEventListener(ev, (e) => { e.preventDefault(); wdz.classList.remove('over'); }));
+wdz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files, 'wish'));
 
 /* Teil bearbeiten */
 const dlg = $('itemDialog');
@@ -874,6 +898,112 @@ async function downloadOutfit(o) {
   a.click();
 }
 
+/* ---------- Wunschliste ---------- */
+// Nur echte Web-Links zulassen (http/https); „zalando.de/…“ wird zu „https://zalando.de/…“ ergänzt
+function cleanLink(v) {
+  v = (v || '').trim();
+  if (!v) return '';
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+  try {
+    const u = new URL(v);
+    return /^https?:$/.test(u.protocol) ? u.href : '';
+  } catch (e) {
+    return '';
+  }
+}
+const hostOf = (href) => { try { return new URL(href).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+
+function renderWishlist() {
+  renderChips($('wishFilter'), 'wishFilter', renderWishlist);
+  const f = state.wishFilter;
+  if (f !== 'Alle' && !(GROUPS[f] && GROUPS[f].includes($('wishUploadCategory').value))) {
+    $('wishUploadCategory').value = uploadCategoryFor(f);
+  }
+  const grid = $('wishGrid');
+  grid.innerHTML = '';
+  const list = wishlist.filter((w) => matchesFilter(w, f));
+  list.forEach((w) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="img" tabindex="0" role="button"><img alt=""></div><div class="meta"><b></b><span></span><i class="note"></i></div>';
+    card.querySelector('img').src = urlFor(w);
+    card.querySelector('b').textContent = w.name;
+    card.querySelector('span').textContent = w.category;
+    card.querySelector('.note').textContent = w.note || '';
+    if (w.link && cleanLink(w.link)) {
+      const a = document.createElement('a');
+      a.className = 'shop';
+      a.href = w.link;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = 'Zum Shop · ' + hostOf(w.link) + ' ↗';
+      card.querySelector('.meta').appendChild(a);
+    }
+    card.onclick = (e) => { if (!e.target.closest('a')) openWishDialog(w); };
+    card.querySelector('.img').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openWishDialog(w); } };
+    grid.appendChild(card);
+  });
+  $('wishEmpty').classList.toggle('show', list.length === 0);
+  $('wishEmpty').textContent = wishlist.length === 0
+    ? 'Deine Wunschliste ist noch leer. Lade oben ein Teil hoch, das du kaufen willst.'
+    : 'Keine Teile in dieser Kategorie.';
+}
+
+const wishDlg = $('wishDialog');
+let wishEditing = null;
+function openWishDialog(w) {
+  wishEditing = w;
+  $('wishPreview').src = urlFor(w);
+  $('wishName').value = w.name;
+  $('wishCategory').value = w.category;
+  $('wishNote').value = w.note || '';
+  $('wishLink').value = w.link || '';
+  wishDlg.showModal();
+}
+$('wishCancel').onclick = () => wishDlg.close();
+// Übernimmt die Eingaben aus dem Dialog; false, wenn der Link nicht stimmt
+function applyWishFields(w) {
+  const raw = $('wishLink').value.trim();
+  const link = cleanLink(raw);
+  if (raw && !link) { toast('Der Link sieht nicht richtig aus'); return false; }
+  w.name = $('wishName').value.trim() || w.name;
+  w.category = $('wishCategory').value;
+  const note = $('wishNote').value.trim().slice(0, 120);
+  if (note) w.note = note; else delete w.note;
+  if (link) w.link = link; else delete w.link;
+  return true;
+}
+$('wishSave').onclick = async () => {
+  const w = wishEditing;
+  if (!applyWishFields(w)) return;
+  await dbPut('wishlist', w);
+  wishDlg.close();
+  renderWishlist();
+};
+$('wishDelete').onclick = async () => {
+  const w = wishEditing;
+  if (!(await askConfirm(`„${w.name}“ von der Wunschliste löschen?`))) return;
+  await dbDel('wishlist', w.id);
+  wishlist = wishlist.filter((x) => x.id !== w.id);
+  if (urls.has(w.id)) { URL.revokeObjectURL(urls.get(w.id)); urls.delete(w.id); }
+  wishDlg.close();
+  renderWishlist();
+};
+// Gekauft: das Teil wandert von der Wunschliste in den Schrank (Preis-Notiz bleibt, der Link entfällt)
+$('wishBought').onclick = async () => {
+  const w = wishEditing;
+  if (!applyWishFields(w)) return;
+  const rec = { id: w.id, name: w.name, category: w.category, blob: w.blob, created: Date.now() };
+  if (w.note) rec.note = w.note;
+  await dbPut('items', rec);
+  await dbDel('wishlist', w.id);
+  items.push(rec);
+  wishlist = wishlist.filter((x) => x.id !== w.id);
+  wishDlg.close();
+  renderWishlist(); renderCloset(); renderPicker();
+  toast('In den Schrank gelegt');
+};
+
 /* ---------- Farblexikon ---------- */
 state.colorCount = 2;
 function renderColors() {
@@ -924,13 +1054,13 @@ const dataUrlToBlob = async (url) => (await fetch(url)).blob();
 
 const backupDlg = $('backupDialog');
 $('backupBtn').onclick = () => {
-  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits.`;
+  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits, ${wishlist.length} Wünsche.`;
   backupDlg.showModal();
 };
 $('backupClose').onclick = () => backupDlg.close();
 
 $('backupExport').onclick = async () => {
-  if (!items.length && !outfits.length) return toast('Es gibt noch nichts zu sichern');
+  if (!items.length && !outfits.length && !wishlist.length) return toast('Es gibt noch nichts zu sichern');
   const btn = $('backupExport');
   btn.disabled = true;
   try {
@@ -938,6 +1068,9 @@ $('backupExport').onclick = async () => {
       app: 'kleiderschrank', version: 1, exported: new Date().toISOString(),
       items: await Promise.all(items.map(async (i) => ({
         id: i.id, name: i.name, category: i.category, created: i.created, scale: i.scale, note: i.note, image: await blobToDataUrl(i.blob),
+      }))),
+      wishlist: await Promise.all(wishlist.map(async (w) => ({
+        id: w.id, name: w.name, category: w.category, created: w.created, note: w.note, link: w.link, image: await blobToDataUrl(w.blob),
       }))),
       outfits: await Promise.all(outfits.map(async (o) => ({
         id: o.id, name: o.name, layers: o.layers, bg: o.bg || '#ffffff', created: o.created, thumb: await blobToDataUrl(o.thumb),
@@ -969,7 +1102,8 @@ async function importBackup(file) {
   }
   const haveItems = new Set(items.map((i) => i.id));
   const haveOutfits = new Set(outfits.map((o) => o.id));
-  let addedItems = 0, addedOutfits = 0;
+  const haveWish = new Set(wishlist.map((w) => w.id));
+  let addedItems = 0, addedOutfits = 0, addedWish = 0;
   for (const i of data.items) {
     if (typeof i.id !== 'string' || haveItems.has(i.id) || typeof i.image !== 'string' || !i.image.startsWith('data:image/')) continue;
     const category = CATEGORIES.includes(i.category) ? i.category : (LEGACY[i.category] || 'Shirts');
@@ -997,11 +1131,25 @@ async function importBackup(file) {
     outfits.push(rec);
     addedOutfits++;
   }
+  for (const w of Array.isArray(data.wishlist) ? data.wishlist : []) {
+    if (typeof w.id !== 'string' || haveWish.has(w.id) || typeof w.image !== 'string' || !w.image.startsWith('data:image/')) continue;
+    const rec = {
+      id: w.id, name: String(w.name || 'Neues Teil').slice(0, 60),
+      category: CATEGORIES.includes(w.category) ? w.category : (LEGACY[w.category] || 'Shirts'),
+      blob: await dataUrlToBlob(w.image), created: num(w.created) ? w.created : Date.now(),
+    };
+    if (typeof w.note === 'string' && w.note.trim()) rec.note = w.note.trim().slice(0, 120);
+    const link = typeof w.link === 'string' ? cleanLink(w.link) : '';
+    if (link) rec.link = link;
+    await dbPut('wishlist', rec);
+    wishlist.push(rec);
+    addedWish++;
+  }
   items.sort((a, b) => a.created - b.created);
-  renderCloset(); renderOutfits(); renderPicker();
-  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits.`;
-  toast(addedItems || addedOutfits
-    ? `${addedItems} Teile und ${addedOutfits} Outfits hinzugefügt`
+  renderCloset(); renderOutfits(); renderPicker(); renderWishlist();
+  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits, ${wishlist.length} Wünsche.`;
+  toast(addedItems || addedOutfits || addedWish
+    ? `${addedItems} Teile, ${addedOutfits} Outfits und ${addedWish} Wünsche hinzugefügt`
     : 'Alles aus der Sicherung war schon vorhanden');
 }
 $('backupFile').addEventListener('change', (e) => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });
@@ -1015,11 +1163,14 @@ drop.addEventListener('drop', (e) => { if (e.dataTransfer.files[0]) importBackup
   fillSelect($('uploadCategory'));
   fillSelect($('itemCategory'));
   fillSelect($('upCategory'));
+  fillSelect($('wishCategory'));
+  fillSelect($('wishUploadCategory'));
   // Browser bitten, die Daten dauerhaft zu behalten (nicht bei Speicherknappheit aufzuräumen)
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   try {
     db = await openDb();
-    [items, outfits] = await Promise.all([dbAll('items'), dbAll('outfits')]);
+    [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
+    wishlist.sort((a, b) => a.created - b.created);
   } catch (e) {
     console.error(e);
     toast('Speicher im Browser nicht verfügbar');
@@ -1030,5 +1181,6 @@ drop.addEventListener('drop', (e) => { if (e.dataTransfer.files[0]) importBackup
   }
   items.sort((a, b) => a.created - b.created);
   renderCloset();
+  renderWishlist();
   renderOutfits();
 })();

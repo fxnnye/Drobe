@@ -287,3 +287,12 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 
 /* Beschriftung „Kategorie“ im Upload-Bereich kräftiger */
 .upload .field-inline { font-size: 14px; font-weight: 700; }
+
+/* Wunschliste: Link zum Shop unter dem Teil */
+.card .meta .shop {
+  display: inline-block; max-width: 100%; margin-top: 6px; padding: 5px 10px; border-radius: 10px;
+  background: var(--gray); color: var(--text); font-size: 12px; font-weight: 600; text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top;
+}
+.card .meta .shop:hover { background: var(--gray-hover); }
+@media (max-width: 700px) { .tab { font-size: 13px; padding: 12px 2px; } }

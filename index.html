@@ -12,7 +12,9 @@
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="closet" role="tab">Schrank</button>
     <button class="tab" data-view="builder" role="tab">Outfit bauen</button>
-    <button class="tab" data-view="outfits" role="tab">Outfits <span id="outfitCount" class="badge">0</span></button>  </nav>
+    <button class="tab" data-view="outfits" role="tab">Outfits <span id="outfitCount" class="badge">0</span></button>
+    <button class="tab" data-view="wishlist" role="tab">Wunschliste</button>
+  </nav>
   <button class="btn backup" id="backupBtn">Sicherung</button>
 </header>
 
@@ -37,6 +39,28 @@
     <div class="chips" id="closetFilter"></div>
     <div class="grid" id="closetGrid"></div>
     <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Lade oben das erste Teil hoch.</p>
+  </section>
+
+  <!-- WUNSCHLISTE -->
+  <section id="view-wishlist" class="view">
+    <div class="upload" id="wishDrop">
+      <div>
+        <strong>Wunschliste</strong>
+        <p class="muted">Fotos von Teilen, die du kaufen willst. Du kannst Preis und einen Link zum Shop dazuschreiben.</p>
+      </div>
+      <div class="upload-actions">
+        <label class="field-inline">Kategorie
+          <select id="wishUploadCategory"></select>
+        </label>
+        <label class="btn primary">
+          Fotos auswählen
+          <input type="file" id="wishFileInput" accept="image/*" multiple hidden>
+        </label>
+      </div>
+    </div>
+    <div class="chips" id="wishFilter"></div>
+    <div class="grid" id="wishGrid"></div>
+    <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
   </section>
 
   <!-- BUILDER -->
@@ -125,6 +149,31 @@
   </form>
 </dialog>
 
+<dialog id="wishDialog">
+  <form method="dialog" onsubmit="return false">
+    <img id="wishPreview" alt="">
+    <label class="field">Name
+      <input type="text" id="wishName" maxlength="60">
+    </label>
+    <label class="field">Kategorie
+      <select id="wishCategory"></select>
+    </label>
+    <label class="field">Preis / Notiz
+      <input type="text" id="wishNote" maxlength="120" placeholder="z. B. 89 €">
+    </label>
+    <label class="field">Link zum Shop
+      <input type="text" id="wishLink" inputmode="url" autocapitalize="off" placeholder="https://…">
+    </label>
+    <button class="btn full" type="button" id="wishBought">Gekauft: in den Schrank legen</button>
+    <div class="row">
+      <button class="btn danger" type="button" id="wishDelete">Löschen</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="wishCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="wishSave">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="uploadDialog">
   <form method="dialog" onsubmit="return false">
     <p class="muted small" id="upProgress"></p>
@@ -141,6 +190,14 @@
     <label class="field">Kategorie
       <select id="upCategory"></select>
     </label>
+    <div id="upWish" hidden>
+      <label class="field">Preis / Notiz
+        <input type="text" id="upNote" maxlength="120" placeholder="z. B. 89 €">
+      </label>
+      <label class="field">Link zum Shop
+        <input type="text" id="upLink" inputmode="url" autocapitalize="off" placeholder="https://…">
+      </label>
+    </div>
     <div class="batch" id="upBatch" hidden>
       <label class="check"><input type="checkbox" id="upAllBg"> Bei allen den Hintergrund entfernen</label>
       <button class="btn full" type="button" id="upAll">Alle hinzufügen</button>
