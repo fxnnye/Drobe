@@ -201,12 +201,6 @@ const Cloud = (() => {
       if (!navigator.onLine) return toast('Keine Verbindung');
       await sync();
     };
-    $('pwToggle').onclick = () => {
-      const box = $('pwBox');
-      box.hidden = !box.hidden;
-      $('pwToggle').setAttribute('aria-expanded', String(!box.hidden));
-      $('pwMsg').textContent = '';
-    };
     $('pwSave').onclick = async () => {
       const msg = $('pwMsg');
       const a = $('pwNew').value, b = $('pwNew2').value;

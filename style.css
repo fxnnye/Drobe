@@ -85,7 +85,17 @@ dialog.wide h2 { margin: 0; }
 .pw-box { margin-bottom: 14px; }
 .pw-msg { font-size: 14px; min-height: 20px; margin: 0 0 8px; }
 .pw-msg.err { color: #c4202e; }
-h3.set-title { margin: 18px 0 10px; font-size: 13px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.set-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.set-head h2 { margin: 0; }
+.set-head .icon { flex: none; }
+.set-row {
+  display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left;
+  background: var(--gray); border: 0; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px;
+  font-weight: 600; cursor: pointer;
+}
+.set-row::after { content: "›"; font-size: 22px; line-height: 1; color: var(--muted); }
+.set-row:hover { background: var(--gray-hover); }
+.set-panel[hidden] { display: none; }
 dialog h2 { margin: 0 0 8px; font-size: 22px; }
 .dropbox { display: block; text-align: center; background: var(--gray); border: 2px dashed transparent; border-radius: 16px; padding: 28px 16px; margin: 8px 0 12px; cursor: pointer; font-weight: 600; }
 .dropbox:hover { background: var(--gray-hover); }
@@ -329,3 +339,4 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 .auth-card input { font-size: 16px; }
 .auth-error { color: #c4202e; font-size: 14px; min-height: 20px; margin: 0 0 8px; }
 .account { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--gray); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; }
+.icon[hidden], .btn[hidden], .pw-box[hidden] { display: none; }

@@ -1091,7 +1091,16 @@ const dataUrlToBlob = async (url) => (await fetch(url)).blob();
 
 const backupDlg = $('backupDialog');
 const settingsDlg = $('settingsDialog');
-$('menuBtn').onclick = () => settingsDlg.showModal();
+// Einstellungen: erst eine grobe Liste, ein Klick öffnet den jeweiligen Bereich im selben Fenster
+function showSetPanel(name) {
+  document.querySelectorAll('.set-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
+  const panel = document.querySelector(`.set-panel[data-panel="${name}"]`);
+  $('setTitle').textContent = name === 'main' ? 'Einstellungen' : panel.dataset.title;
+  $('setBack').hidden = name === 'main';
+}
+document.querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => showSetPanel(b.dataset.open); });
+$('setBack').onclick = () => showSetPanel('main');
+$('menuBtn').onclick = () => { showSetPanel('main'); settingsDlg.showModal(); };
 $('settingsClose').onclick = () => settingsDlg.close();
 $('backupOpen').onclick = () => {
   settingsDlg.close();

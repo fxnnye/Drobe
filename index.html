@@ -256,15 +256,29 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
 <dialog id="settingsDialog">
   <form method="dialog" onsubmit="return false">
-    <h2>Einstellungen</h2>
-
-    <h3 class="set-title">Konto</h3>
-    <div class="account">
-      <div><span class="muted small">Angemeldet als</span><br><strong id="accName"></strong><br><span class="muted small" id="syncStatus"></span></div>
+    <div class="set-head">
+      <button class="icon" type="button" id="setBack" aria-label="Zurück" hidden>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h2 id="setTitle">Einstellungen</h2>
     </div>
-    <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
-    <button class="btn full" type="button" id="pwToggle" aria-expanded="false" aria-controls="pwBox">Passwort ändern</button>
-    <div class="pw-box" id="pwBox" hidden>
+
+    <div class="set-panel" data-panel="main">
+      <button class="set-row" type="button" data-open="account">Konto</button>
+      <button class="set-row" type="button" data-open="password">Passwort ändern</button>
+      <button class="set-row" type="button" data-open="theme">Darstellung</button>
+      <button class="set-row" type="button" id="backupOpen">Sicherung</button>
+    </div>
+
+    <div class="set-panel" data-panel="account" data-title="Konto" hidden>
+      <div class="account">
+        <div><span class="muted small">Angemeldet als</span><br><strong id="accName"></strong><br><span class="muted small" id="syncStatus"></span></div>
+      </div>
+      <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
+      <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
+    </div>
+
+    <div class="set-panel" data-panel="password" data-title="Passwort ändern" hidden>
       <label class="field">Neues Passwort
         <input type="password" id="pwNew" autocomplete="new-password">
       </label>
@@ -274,17 +288,15 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <p class="pw-msg" id="pwMsg" role="status"></p>
       <button class="btn primary full" type="button" id="pwSave">Passwort speichern</button>
     </div>
-    <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
 
-    <h3 class="set-title">Darstellung</h3>
-    <div class="chips" id="themeChips">
-      <button class="chip" type="button" data-theme="light">Hell</button>
-      <button class="chip" type="button" data-theme="dark">Dunkel</button>
-      <button class="chip" type="button" data-theme="system">Automatisch</button>
+    <div class="set-panel" data-panel="theme" data-title="Darstellung" hidden>
+      <div class="chips" id="themeChips">
+        <button class="chip" type="button" data-theme="light">Hell</button>
+        <button class="chip" type="button" data-theme="dark">Dunkel</button>
+        <button class="chip" type="button" data-theme="system">Automatisch</button>
+      </div>
+      <p class="muted small">Automatisch richtet sich nach der Einstellung deines Geräts.</p>
     </div>
-
-    <h3 class="set-title">Daten</h3>
-    <button class="btn full" type="button" id="backupOpen">Sicherung speichern oder laden</button>
 
     <div class="row">
       <span class="spacer"></span>
