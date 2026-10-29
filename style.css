@@ -357,3 +357,10 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 
 /* Beim Bearbeiten bleibt das Foto oben stehen, während man die Werkzeuge darunter benutzt */
 #itemDialog.editing .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0 6px 0 var(--bg); }
+
+/* Ausrufezeichen am Outfit, wenn ein Teil daraus gelöscht wurde */
+.outfits .card .img { position: relative; }
+.card .warn {
+  position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; padding: 0;
+  border: 0; background: #ffb020; color: #111; font-weight: 800; font-size: 15px; line-height: 24px; text-align: center; cursor: pointer;
+}

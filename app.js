@@ -1139,7 +1139,20 @@ function renderOutfits() {
     if (!urls.has(key)) urls.set(key, URL.createObjectURL(o.thumb));
     card.querySelector('img').src = urls.get(key);
     card.querySelector('b').textContent = o.name;
-    card.querySelector('span').textContent = o.layers.length + ' Teile';
+    // Teile, die inzwischen aus dem Schrank gelöscht wurden, fehlen im Outfit: kleines Ausrufezeichen
+    const missing = o.layers.filter((l) => !itemById(l.itemId)).length;
+    card.querySelector('span').textContent = o.layers.length + ' Teile' + (missing ? ` · ${missing} fehlt` : '');
+    if (missing) {
+      const w = document.createElement('button');
+      w.type = 'button';
+      w.className = 'warn';
+      w.textContent = '!';
+      const msg = missing === 1 ? 'Ein Teil aus diesem Outfit wurde aus dem Schrank gelöscht.' : `${missing} Teile aus diesem Outfit wurden aus dem Schrank gelöscht.`;
+      w.title = msg;
+      w.setAttribute('aria-label', msg);
+      w.onclick = () => toast(msg);
+      card.querySelector('.img').appendChild(w);
+    }
     card.querySelector('[data-a=edit]').onclick = () => editOutfit(o);
     card.querySelector('[data-a=dl]').onclick = () => downloadOutfit(o);
     card.querySelector('[data-a=del]').onclick = async () => {
@@ -1161,6 +1174,8 @@ function editOutfit(o) {
   };
   state.selected = null;
   showView('builder');
+  const gone = o.layers.length - state.outfit.layers.length;
+  if (gone) toast(gone === 1 ? 'Ein Teil fehlt, es wurde aus dem Schrank gelöscht' : `${gone} Teile fehlen, sie wurden aus dem Schrank gelöscht`);
 }
 async function downloadOutfit(o) {
   const c = await renderOutfitCanvas(o.layers, EXPORT_W, EXPORT_H, o.bg);
