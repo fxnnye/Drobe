@@ -105,7 +105,7 @@ const SmartCut = (() => {
 
   function fit(px, w, h, pick) {
     const idx = [];
-    for (let i = 0; i < w * h; i++) if (pick(i)) idx.push(i);
+    for (let i = 0; i < w * h; i++) if (px[i * 4 + 3] >= 128 && pick(i)) idx.push(i); // schon transparente Stellen zählen nicht
     if (idx.length < K * 2) return null;
     const step = Math.max(1, Math.floor(idx.length / SAMPLES));
     const n = Math.floor(idx.length / step);
@@ -197,7 +197,7 @@ const SmartCut = (() => {
     // Wie weit liegen typische Hintergrundpixel von ihrem Modell entfernt? Alles darüber ist „anders als der Hintergrund“.
     const bgDist = [];
     for (let i = 0, n = 0; i < w * h && bgDist.length < 4000; i++) {
-      if (mask[i] === 0 && dOut[i] > m && (n++ % 7) === 0) bgDist.push(modelDist(bg, px[i * 4], px[i * 4 + 1], px[i * 4 + 2]));
+      if (mask[i] === 0 && dOut[i] > m && px[i * 4 + 3] >= 128 && (n++ % 7) === 0) bgDist.push(modelDist(bg, px[i * 4], px[i * 4 + 1], px[i * 4 + 2]));
     }
     bgDist.sort((a, b) => a - b);
     const bgLimit = Math.max(30, (bgDist[Math.floor(bgDist.length * 0.98)] || 0) * 1.3);
@@ -214,7 +214,7 @@ const SmartCut = (() => {
       for (let i = 0; i < w * h; i++) {
         const p = i * 4, r = px[p], g = px[p + 1], b = px[p + 2];
         const sd = mask[i] ? dIn[i] : -dOut[i];
-        score[i] = modelDist(bg, r, g, b) - modelDist(fg, r, g, b) + PRIOR * prior(sd);
+        score[i] = px[p + 3] < 128 ? -60 : modelDist(bg, r, g, b) - modelDist(fg, r, g, b) + PRIOR * prior(sd);
       }
       boxBlur(score, w, h, 2);
       for (let i = 0; i < w * h; i++) {
@@ -249,7 +249,7 @@ const SmartCut = (() => {
       const i = y * W + x, p = i * 4;
       const sd = sdAt(x, y);
       sdFull[i] = sd;
-      fs[i] = modelDist(bg, fd[p], fd[p + 1], fd[p + 2]) - modelDist(fg, fd[p], fd[p + 1], fd[p + 2]) + PRIOR * prior(sd);
+      fs[i] = fd[p + 3] < 128 ? -60 : modelDist(bg, fd[p], fd[p + 1], fd[p + 2]) - modelDist(fg, fd[p], fd[p + 1], fd[p + 2]) + PRIOR * prior(sd);
     }
     boxBlur(fs, W, H, Math.max(1, Math.round(1 / sc)));
     const bin = new Uint8Array(W * H);
@@ -280,7 +280,7 @@ const SmartCut = (() => {
       const p = i * 4;
       if (!keep[i]) { fd[p + 3] = 0; continue; }
       const a = clamp((fs[i] - 3) / (2 * E) + 0.5, 0, 1);
-      fd[p + 3] = Math.round(a * 255);
+      fd[p + 3] = Math.round(a * fd[p + 3]); // vorhandene Transparenz bleibt erhalten
     }
     const out = document.createElement('canvas');
     out.width = W; out.height = H;
