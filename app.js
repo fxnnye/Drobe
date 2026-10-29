@@ -423,15 +423,22 @@ async function cropToPath(blob, pts, area) {
     const c = document.createElement('canvas');
     c.width = img.naturalWidth; c.height = img.naturalHeight;
     const ctx = c.getContext('2d');
-    ctx.beginPath();
-    pts.forEach((p, i) => {
-      const x = (p.x - area.x) / area.s, y = (p.y - area.y) / area.s;
-      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-    });
-    ctx.closePath();
-    ctx.clip();
     ctx.drawImage(img, 0, 0);
-    return await canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+    const poly = pts.map((p) => ({ x: (p.x - area.x) / area.s, y: (p.y - area.y) / area.s }));
+    // Der Umriss ist nur ein Hinweis: die genaue Kante kommt aus den Farben (cutout.js)
+    let cut = null;
+    try { cut = SmartCut.run(c, poly); } catch (e) { console.error(e); }
+    if (cut) return await canvasBlob(trimAlpha(cut), 'image/webp', 0.9);
+    // Notlösung, falls die Farbanalyse nicht möglich ist: genau entlang der Linie ausschneiden
+    const hard = document.createElement('canvas');
+    hard.width = c.width; hard.height = c.height;
+    const hx = hard.getContext('2d');
+    hx.beginPath();
+    poly.forEach((p, i) => (i ? hx.lineTo(p.x, p.y) : hx.moveTo(p.x, p.y)));
+    hx.closePath();
+    hx.clip();
+    hx.drawImage(img, 0, 0);
+    return await canvasBlob(trimAlpha(hard), 'image/webp', 0.9);
   } finally {
     URL.revokeObjectURL(src);
   }
@@ -476,6 +483,8 @@ $('upDraw').addEventListener('click', () => {
     if (pts.length < 8) { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); return toast('Zeichne einmal rund um das Teil'); }
     const drawn = pts; pts = [];
     u.busy = true; refreshUpload();
+    $('upDraw').textContent = 'Wird ausgeschnitten …';
+    await new Promise((r) => setTimeout(r, 30)); // Anzeige aktualisieren, bevor die Rechenarbeit beginnt
     try {
       const area = containedRect($('upPreview'), cv.getBoundingClientRect());
       const out = await cropToPath(u.shown || u.orig, drawn, area);
