@@ -386,12 +386,12 @@ const wrapAngle = (a) => ((a + 180) % 360 + 360) % 360 - 180;
 // Es ist immer nur ein Dialog offen; `activeCtx` sagt, welcher: seine Elemente und sein Bildzustand werden benutzt.
 const ctxUp = {
   cur: () => upCur, refresh: () => refreshUpload(),
-  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle') },
+  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle'), zoomRow: $('upZoomRow'), zoom: $('upZoom'), zoomVal: $('upZoomVal'), pan: $('upPan') },
 };
 let itCur = null;
 const ctxIt = {
   cur: () => itCur, refresh: () => renderTools(itCur),
-  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle') },
+  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle'), zoomRow: $('itZoomRow'), zoom: $('itZoom'), zoomVal: $('itZoomVal'), pan: $('itPan') },
 };
 let activeCtx = ctxUp;
 const cur = () => activeCtx.cur();
@@ -423,6 +423,32 @@ function setAngle(a) {
   c.el.angle.oninput = (e) => setAngle(+e.target.value);
 });
 
+// Zoom: das Foto lässt sich vergrößern, damit Lasso und Radierer genauer werden. „Verschieben“ schiebt den Ausschnitt mit dem Finger.
+function setZoom(z) {
+  const wrap = el().preview.parentElement; // .up-zoom
+  const box = wrap.parentElement;          // .up-preview (scrollt)
+  const fx = box.scrollWidth ? (box.scrollLeft + box.clientWidth / 2) / box.scrollWidth : 0.5;
+  const fy = box.scrollHeight ? (box.scrollTop + box.clientHeight / 2) / box.scrollHeight : 0.5;
+  wrap.style.setProperty('--z', z);
+  el().zoom.value = Math.round(z * 100);
+  el().zoomVal.textContent = Math.round(z * 100) + ' %';
+  box.scrollLeft = fx * box.scrollWidth - box.clientWidth / 2; // Mitte bleibt in der Mitte
+  box.scrollTop = fy * box.scrollHeight - box.clientHeight / 2;
+  if (drawCanvas) { // Zeichenfläche folgt der neuen Größe
+    const r = wrap.getBoundingClientRect();
+    drawCanvas.width = r.width; drawCanvas.height = r.height;
+  }
+}
+function setPan(on) {
+  el().pan.classList.toggle('on', on);
+  el().pan.setAttribute('aria-pressed', String(on));
+  if (drawCanvas) drawCanvas.style.pointerEvents = on ? 'none' : ''; // dann scrollt der Finger das Foto statt zu zeichnen
+}
+[ctxUp, ctxIt].forEach((c) => {
+  c.el.zoom.addEventListener('input', () => { if (activeCtx === c) setZoom(+c.el.zoom.value / 100); });
+  c.el.pan.addEventListener('click', () => { if (activeCtx === c) setPan(!c.el.pan.classList.contains('on')); });
+});
+
 /* Bereich einzeichnen: grob um das Teil malen, alles außerhalb wird transparent und abgeschnitten */
 let drawCanvas = null;
 function stopDraw() {
@@ -434,6 +460,10 @@ function stopDraw() {
   el().brushRow.hidden = true;
   el().hint.textContent = 'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.';
   el().hint.hidden = true;
+  el().zoomRow.hidden = true;
+  setZoom(1);
+  setPan(false);
+  el().preview.closest('dialog').classList.remove('tooling');
 }
 // Abgebildeter Bereich des Fotos innerhalb des Elements (object-fit: contain)
 function containedRect(img, box) {
@@ -476,6 +506,8 @@ bindTool('draw', () => {
   el().draw.classList.add('on');
   el().draw.textContent = 'Einzeichnen abbrechen';
   el().hint.hidden = false;
+  el().zoomRow.hidden = false;
+  el().preview.closest('dialog').classList.add('tooling'); // Foto bleibt oben stehen, während man die Werkzeuge darunter benutzt
   const ctx = cv.getContext('2d');
   let pts = [];
   const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -603,6 +635,8 @@ bindTool('erase', () => {
   el().brushRow.hidden = false;
   el().hint.textContent = 'Male über Stellen, die weg sollen. Mit „Zurückholen“ malst du Gelöschtes wieder ein, „Zurück“ nimmt den letzten Strich zurück.';
   el().hint.hidden = false;
+  el().zoomRow.hidden = false;
+  el().preview.closest('dialog').classList.add('tooling'); // Foto bleibt oben stehen, während man die Werkzeuge darunter benutzt
   const ctx = cv.getContext('2d');
   let pts = [];
   const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };

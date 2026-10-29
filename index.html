@@ -149,7 +149,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
 <dialog id="itemDialog">
   <form method="dialog" id="itemForm">
-    <div class="up-preview"><img id="itemPreview" alt=""></div>
+    <div class="up-preview"><div class="up-zoom"><img id="itemPreview" alt=""></div></div>
     <label class="field">Name
       <input type="text" id="itemName" maxlength="60">
     </label>
@@ -171,6 +171,14 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <button class="btn grow" type="button" id="itDraw">Bereich einzeichnen</button>
         <button class="btn grow" type="button" id="itErase">Radierer</button>
         <button class="btn" type="button" id="itUndo" hidden>Zurück</button>
+      </div>
+      <div class="field" id="itZoomRow" hidden>
+        <div class="zoom-line">
+          <label>Zoom <b id="itZoomVal">100 %</b>
+            <input type="range" id="itZoom" min="100" max="400" step="10" value="100">
+          </label>
+          <button class="btn" type="button" id="itPan" aria-pressed="false">Verschieben</button>
+        </div>
       </div>
       <div class="field" id="itBrushRow" hidden>
         <div class="chips up-mode">
@@ -224,7 +232,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <dialog id="uploadDialog">
   <form method="dialog" onsubmit="return false">
     <p class="muted small" id="upProgress"></p>
-    <div class="up-preview"><img id="upPreview" alt=""></div>
+    <div class="up-preview"><div class="up-zoom"><img id="upPreview" alt=""></div></div>
     <div class="rotate">
       <button class="icon" type="button" id="upRotL" title="90° nach links" aria-label="90° nach links">⟲</button>
       <input type="range" id="upAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
@@ -234,6 +242,14 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="btn grow" type="button" id="upDraw">Bereich einzeichnen</button>
       <button class="btn grow" type="button" id="upErase">Radierer</button>
       <button class="btn" type="button" id="upUndo" hidden>Zurück</button>
+    </div>
+    <div class="field" id="upZoomRow" hidden>
+      <div class="zoom-line">
+        <label>Zoom <b id="upZoomVal">100 %</b>
+          <input type="range" id="upZoom" min="100" max="400" step="10" value="100">
+        </label>
+        <button class="btn" type="button" id="upPan" aria-pressed="false">Verschieben</button>
+      </div>
     </div>
     <div class="field" id="upBrushRow" hidden>
       <div class="chips up-mode">

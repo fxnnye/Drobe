@@ -193,11 +193,16 @@ dialog { border: 0; border-radius: 32px; background: var(--bg); color: var(--tex
 dialog::backdrop { background: rgba(0, 0, 0, .5); }
 dialog img { display: block; width: 100%; max-height: 260px; object-fit: contain; background: var(--gray); border-radius: 16px; margin-bottom: 14px; padding: 8px; }
 .up-preview {
-  position: relative; height: 280px; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; border-radius: 16px; margin-bottom: 12px; padding: 8px;
+  position: relative; height: 280px; display: block; overflow: auto; border-radius: 16px; margin-bottom: 12px; padding: 8px;
   background: repeating-conic-gradient(#ececec 0 25%, #fff 0 50%) 0 0 / 16px 16px; /* Schachbrett zeigt Transparenz */
 }
-.up-preview img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: none; padding: 0; margin: 0; border-radius: 0; }
-.up-preview.busy img { opacity: .4; }
+.up-zoom { position: relative; --z: 1; width: calc(var(--z) * 100%); height: calc(var(--z) * 100%); display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
+.up-zoom img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; background: none; padding: 0; margin: 0; border-radius: 0; }
+.up-zoom.busy img { opacity: .4; }
+.zoom-line { display: flex; align-items: flex-end; gap: 12px; }
+.zoom-line label { flex: 1; font-size: 13px; }
+.zoom-line input { margin-top: 6px; }
+.zoom-line .btn { padding: 12px 12px; }
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
@@ -364,3 +369,5 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
   position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; padding: 0;
   border: 0; background: #ffb020; color: #111; font-weight: 800; font-size: 15px; line-height: 24px; text-align: center; cursor: pointer;
 }
+
+dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0 6px 0 var(--bg); }
