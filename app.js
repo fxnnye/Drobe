@@ -407,6 +407,10 @@ function stopDraw() {
   if (drawCanvas) { drawCanvas.remove(); drawCanvas = null; }
   $('upDraw').classList.remove('on');
   $('upDraw').textContent = 'Bereich einzeichnen';
+  $('upErase').classList.remove('on');
+  $('upErase').textContent = 'Radierer';
+  $('upBrushRow').hidden = true;
+  $('upDrawHint').textContent = 'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.';
   $('upDrawHint').hidden = true;
 }
 // Abgebildeter Bereich des Fotos innerhalb des Elements (object-fit: contain)
@@ -479,7 +483,7 @@ $('upDraw').addEventListener('click', () => {
     try {
       const area = containedRect($('upPreview'), cv.getBoundingClientRect());
       const out = await cropToPath(u.shown || u.orig, drawn, area);
-      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle });
+      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased });
       u.orig = out; u.cut = null; u.useCut = false; u.angle = 0;
       $('upAngle').value = 0;
     } catch (ex) {
@@ -492,10 +496,110 @@ $('upDraw').addEventListener('click', () => {
   };
   cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
 });
+// Fertiges Bild für das Speichern: gedreht und, falls radiert wurde, von leeren Rändern befreit
+async function trimBlob(blob) {
+  const src = URL.createObjectURL(blob);
+  try {
+    const img = await loadImage(src);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    return await canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+  } finally {
+    URL.revokeObjectURL(src);
+  }
+}
+async function upFinal(u) {
+  const b = await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0);
+  return u.erased ? trimBlob(b) : b;
+}
+// Einen Pinselstrich in das Foto radieren (verlustfrei, damit mehrfaches Radieren die Qualität nicht mindert)
+async function eraseStroke(blob, pts, area, width) {
+  const src = URL.createObjectURL(blob);
+  try {
+    const img = await loadImage(src);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.fillStyle = ctx.strokeStyle = '#000';
+    const at = pts.map((p) => ({ x: (p.x - area.x) / area.s, y: (p.y - area.y) / area.s }));
+    ctx.beginPath();
+    at.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    if (at.length === 1) { ctx.arc(at[0].x, at[0].y, width / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.stroke();
+    return await canvasBlob(c, 'image/png');
+  } finally {
+    URL.revokeObjectURL(src);
+  }
+}
+$('upErase').addEventListener('click', () => {
+  const u = upCur;
+  if (!u || u.busy) return;
+  const wasOn = $('upErase').classList.contains('on');
+  stopDraw();
+  if (wasOn) return;
+  const box = $('upPreview').parentElement;
+  const cv = document.createElement('canvas');
+  const br = box.getBoundingClientRect();
+  cv.width = br.width; cv.height = br.height;
+  cv.className = 'up-draw';
+  box.appendChild(cv);
+  drawCanvas = cv;
+  $('upErase').classList.add('on');
+  $('upErase').textContent = 'Fertig';
+  $('upBrushRow').hidden = false;
+  $('upDrawHint').textContent = 'Male über Stellen, die weg sollen. Du kannst mehrmals radieren, „Zurück“ nimmt den letzten Strich zurück.';
+  $('upDrawHint').hidden = false;
+  const ctx = cv.getContext('2d');
+  let pts = [];
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const paint = () => {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.lineWidth = +$('upBrush').value; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = ctx.fillStyle = 'rgba(230, 0, 35, .45)';
+    ctx.beginPath();
+    pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+    if (pts.length === 1) { ctx.arc(pts[0].x, pts[0].y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.stroke();
+  };
+  cv.onpointerdown = (e) => {
+    e.preventDefault();
+    pts = [pos(e)];
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* Zeiger schon weg: dann bricht der Strich einfach ab */ }
+    paint();
+  };
+  cv.onpointermove = (e) => {
+    if (!pts.length) return;
+    pts.push(pos(e));
+    paint();
+  };
+  cv.onpointerup = async () => {
+    if (!pts.length) return;
+    const stroke = pts; pts = [];
+    const brush = +$('upBrush').value;
+    u.busy = true; refreshUpload();
+    try {
+      const area = containedRect($('upPreview'), cv.getBoundingClientRect());
+      const out = await eraseStroke(u.shown || u.orig, stroke, area, brush / area.s);
+      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased });
+      u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
+      u.shown = out; // angle ist 0: die Vorschau zeigt genau dieses Bild, der nächste Strich kann sofort darauf aufbauen
+      $('upAngle').value = 0;
+    } catch (ex) {
+      console.error(ex);
+      toast('Das Radieren hat nicht geklappt');
+    }
+    u.busy = false;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (upCur === u) refreshUpload();
+  };
+  cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
+});
 $('upUndo').addEventListener('click', () => {
   const u = upCur;
   if (!u || u.busy || !u.history || !u.history.length) return;
-  stopDraw();
+  if (!$('upErase').classList.contains('on')) stopDraw(); // beim Radieren darf es direkt weitergehen
   Object.assign(u, u.history.pop());
   $('upAngle').value = u.angle || 0;
   refreshUpload();
@@ -507,6 +611,7 @@ function refreshUpload() {
   $('upProgress').textContent = upTotal > 1 ? `Foto ${upDone} von ${upTotal}` : '';
   $('upRemove').disabled = u.busy;
   $('upDraw').disabled = u.busy;
+  $('upErase').disabled = u.busy;
   $('upUndo').hidden = !(u.history && u.history.length);
   $('upUndo').disabled = u.busy;
   $('upAdd').disabled = u.busy;
@@ -547,7 +652,7 @@ $('upAdd').addEventListener('click', async () => {
   if (rawLink && upTarget === 'wish' && !link) return toast('Der Link sieht nicht richtig aus');
   const rec = {
     id: uid(), name: $('upName').value.trim() || 'Neues Teil', category: $('upCategory').value,
-    blob: await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0), created: Date.now(),
+    blob: await upFinal(u), created: Date.now(),
   };
   const note = $('upNote').value.trim().slice(0, 120);
   if (upTarget === 'wish' && note) rec.note = note;
@@ -566,7 +671,7 @@ $('upAll').addEventListener('click', async () => {
   const category = $('upCategory').value;
   const bgAll = $('upAllBg').checked;
   const jobs = [
-    { name: $('upName').value.trim() || nameFromFile(u.file), blob: await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0), cut: u.useCut },
+    { name: $('upName').value.trim() || nameFromFile(u.file), blob: await upFinal(u), cut: u.useCut },
     ...upQueue.map((file) => ({ file, name: nameFromFile(file) })),
   ];
   upQueue = [];
