@@ -411,6 +411,7 @@ function setAngle(a) {
   const u = cur();
   if (!u || u.busy) return;
   stopDraw();
+  u.base = null; // gedrehtes Bild passt nicht mehr zum Zustand vor dem Radieren
   u.angle = a;
   el().angle.value = a;
   updatePreview(u);
@@ -504,7 +505,8 @@ bindTool('draw', () => {
     try {
       const area = containedRect(el().preview, cv.getBoundingClientRect());
       const out = await cropToPath(u.shown || u.orig, drawn, area);
-      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased });
+      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, base: u.base });
+      u.base = null; // Bildausschnitt ändert sich: Zurückholen bezieht sich danach auf neue Radierungen
       u.orig = out; u.cut = null; u.useCut = false; u.angle = 0;
       el().angle.value = 0;
     } catch (ex) {
@@ -535,7 +537,7 @@ async function upFinal(u) {
   return u.erased ? trimBlob(b) : b;
 }
 // Einen Pinselstrich in das Foto radieren (verlustfrei, damit mehrfaches Radieren die Qualität nicht mindert)
-async function eraseStroke(blob, pts, area, width) {
+async function eraseStroke(blob, pts, area, width, restoreFrom) {
   const src = URL.createObjectURL(blob);
   try {
     const img = await loadImage(src);
@@ -543,18 +545,46 @@ async function eraseStroke(blob, pts, area, width) {
     c.width = img.naturalWidth; c.height = img.naturalHeight;
     const ctx = c.getContext('2d');
     ctx.drawImage(img, 0, 0);
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.fillStyle = ctx.strokeStyle = '#000';
     const at = pts.map((p) => ({ x: (p.x - area.x) / area.s, y: (p.y - area.y) / area.s }));
-    ctx.beginPath();
-    at.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-    if (at.length === 1) { ctx.arc(at[0].x, at[0].y, width / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.stroke();
+    const drawStroke = (x) => {
+      x.lineWidth = width; x.lineCap = 'round'; x.lineJoin = 'round';
+      x.fillStyle = x.strokeStyle = '#000';
+      x.beginPath();
+      at.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
+      if (at.length === 1) { x.arc(at[0].x, at[0].y, width / 2, 0, Math.PI * 2); x.fill(); } else x.stroke();
+    };
+    ctx.globalCompositeOperation = 'destination-out';
+    drawStroke(ctx); // Strich: Pixel löschen
+    if (restoreFrom) {
+      // Zurückholen: an der Stelle des Strichs die Pixel aus dem Zustand vor dem Radieren wieder einsetzen
+      const bsrc = URL.createObjectURL(restoreFrom);
+      try {
+        const bimg = await loadImage(bsrc);
+        const layer = document.createElement('canvas');
+        layer.width = c.width; layer.height = c.height;
+        const lx = layer.getContext('2d');
+        lx.drawImage(bimg, 0, 0, c.width, c.height);
+        lx.globalCompositeOperation = 'destination-in';
+        drawStroke(lx);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(layer, 0, 0);
+      } finally {
+        URL.revokeObjectURL(bsrc);
+      }
+    }
     return await canvasBlob(c, 'image/png');
   } finally {
     URL.revokeObjectURL(src);
   }
 }
+// Radierer: „Löschen“ macht Stellen transparent, „Zurückholen“ malt Gelöschtes aus dem Zustand vor dem Radieren wieder ein
+let eraseMode = 'erase';
+document.querySelectorAll('.up-mode .chip').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    eraseMode = chip.dataset.mode;
+    document.querySelectorAll('.up-mode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === eraseMode));
+  });
+});
 bindTool('erase', () => {
   const u = cur();
   if (!u || u.busy) return;
@@ -571,7 +601,7 @@ bindTool('erase', () => {
   el().erase.classList.add('on');
   el().erase.textContent = 'Fertig';
   el().brushRow.hidden = false;
-  el().hint.textContent = 'Male über Stellen, die weg sollen. Du kannst mehrmals radieren, „Zurück“ nimmt den letzten Strich zurück.';
+  el().hint.textContent = 'Male über Stellen, die weg sollen. Mit „Zurückholen“ malst du Gelöschtes wieder ein, „Zurück“ nimmt den letzten Strich zurück.';
   el().hint.hidden = false;
   const ctx = cv.getContext('2d');
   let pts = [];
@@ -579,13 +609,14 @@ bindTool('erase', () => {
   const paint = () => {
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.lineWidth = +el().brush.value; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = ctx.fillStyle = 'rgba(230, 0, 35, .45)';
+    ctx.strokeStyle = ctx.fillStyle = eraseMode === 'restore' ? 'rgba(26, 158, 92, .5)' : 'rgba(230, 0, 35, .45)';
     ctx.beginPath();
     pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
     if (pts.length === 1) { ctx.arc(pts[0].x, pts[0].y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.stroke();
   };
   cv.onpointerdown = (e) => {
     e.preventDefault();
+    if (u.busy) return; // der vorige Strich wird noch eingerechnet
     pts = [pos(e)];
     try { cv.setPointerCapture(e.pointerId); } catch (err) { /* Zeiger schon weg: dann bricht der Strich einfach ab */ }
     paint();
@@ -602,11 +633,19 @@ bindTool('erase', () => {
     u.busy = true; activeCtx.refresh();
     try {
       const area = containedRect(el().preview, cv.getBoundingClientRect());
-      const out = await eraseStroke(u.shown || u.orig, stroke, area, brush / area.s);
-      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased });
-      u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
-      u.shown = out; // angle ist 0: die Vorschau zeigt genau dieses Bild, der nächste Strich kann sofort darauf aufbauen
-      el().angle.value = 0;
+      const now = u.shown || u.orig;
+      if (eraseMode === 'restore' && !u.base) {
+        toast('Es gibt noch nichts zum Zurückholen. Radiere zuerst etwas weg.');
+      } else {
+        // Zustand vor dem ersten Radieren merken, damit sich Gelöschtes zurückholen lässt
+        const base = u.base || now;
+        const out = await eraseStroke(now, stroke, area, brush / area.s, eraseMode === 'restore' ? base : null);
+        (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, base: u.base });
+        u.base = base;
+        u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
+        u.shown = out; // angle ist 0: die Vorschau zeigt genau dieses Bild, der nächste Strich kann sofort darauf aufbauen
+        el().angle.value = 0;
+      }
     } catch (ex) {
       console.error(ex);
       toast('Das Radieren hat nicht geklappt');
@@ -652,6 +691,7 @@ bindTool('remove', async () => {
   const u = cur();
   if (u.busy) return;
   stopDraw();
+  u.base = null; // anderes Bild: der Zustand vor dem Radieren gilt nicht mehr
   if (u.cut) { u.useCut = !u.useCut; return activeCtx.refresh(); }
   u.busy = true; activeCtx.refresh();
   try {
