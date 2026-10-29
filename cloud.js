@@ -6,7 +6,8 @@ const Cloud = (() => {
   const MAIL_DOMAIN = 'drobe.example.com'; // es wird nie eine Mail verschickt, der Benutzername wird nur zu einer Pseudo-Adresse
   const KINDS = ['items', 'outfits', 'wishlist'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
-  const LOCAL_ONLY = ['blob', 'thumb', '_fp'];
+  const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp'];
+  const srcPath = (kind, id) => `${user.id}/${kind}-${id}-src`; // Ausgangsfoto zum Zurückholen von Hintergrund
 
   let sb = null;
   let user = null; // { id, name }
@@ -39,19 +40,31 @@ const Cloud = (() => {
       const { error } = await sb.storage.from('images').upload(path, blob, { upsert: true, contentType: blob.type || 'image/png' });
       if (error) throw error;
     }
+    const sblob = rec.source;
+    const sfp = sblob ? String(sblob.size) : '';
+    if (sblob && rec._sfp !== sfp) {
+      const { error } = await sb.storage.from('images').upload(srcPath(kind, id), sblob, { upsert: true, contentType: sblob.type || 'image/webp' });
+      if (error) throw error;
+    }
+    if (!sblob && rec._sfp) await sb.storage.from('images').remove([srcPath(kind, id)]); // Ausgangsfoto wurde entfernt
     const data = {};
     for (const k of Object.keys(rec)) if (!LOCAL_ONLY.includes(k)) data[k] = rec[k];
     data.fp = fp;
+    if (sfp) data.sfp = sfp;
     data.updated = rec.updated || rec.created || Date.now();
     const { error } = await sb.from('records').upsert({ kind, id, data }, { onConflict: 'user_id,kind,id' });
     if (error) throw error;
-    if (blob && rec._fp !== fp) {
-      // Merken, dass dieses Bild schon oben liegt, ohne eine neuere Bearbeitung zu überschreiben
+    if ((blob && rec._fp !== fp) || (sblob && rec._sfp !== sfp) || (!sblob && rec._sfp)) {
+      // Merken, was schon oben liegt, ohne eine neuere Bearbeitung zu überschreiben
       await tx(kind, 'readwrite', (o) => {
         const r = o.get(id);
         r.onsuccess = () => {
           const cur = r.result;
-          if (cur && cur[imgKey(kind)] && String(cur[imgKey(kind)].size) === fp) { cur._fp = fp; o.put(cur); }
+          if (!cur) return;
+          if (cur[imgKey(kind)] && String(cur[imgKey(kind)].size) === fp) cur._fp = fp;
+          if (cur.source && String(cur.source.size) === sfp) cur._sfp = sfp;
+          if (!cur.source) delete cur._sfp;
+          o.put(cur);
         };
       });
     }
@@ -61,7 +74,7 @@ const Cloud = (() => {
     // Der Eintrag bleibt als „gelöscht“ stehen, damit andere Geräte das Löschen mitbekommen
     const { error } = await sb.from('records').upsert({ kind, id, data: { deleted: true, updated: Date.now() } }, { onConflict: 'user_id,kind,id' });
     if (error) throw error;
-    await sb.storage.from('images').remove([`${user.id}/${kind}-${id}`]);
+    await sb.storage.from('images').remove([`${user.id}/${kind}-${id}`, srcPath(kind, id)]);
   }
 
   let running = false, again = false;
@@ -108,6 +121,11 @@ const Cloud = (() => {
         if (dlErr || !blob) continue;
         const rec = { ...d, [imgKey(row.kind)]: blob, _fp: d.fp };
         delete rec.fp;
+        if (d.sfp) {
+          const { data: sblob } = await sb.storage.from('images').download(srcPath(row.kind, row.id));
+          if (sblob) { rec.source = sblob; rec._sfp = d.sfp; }
+        }
+        delete rec.sfp;
         await rawPut(row.kind, rec);
         changed = true;
       } else if ((l.updated || 0) > d.updated) {

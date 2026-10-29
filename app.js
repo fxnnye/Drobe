@@ -272,6 +272,10 @@ const BG_LIB = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+es
 let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 
 function trimAlpha(canvas) {
+  return trimAlphaBox(canvas).canvas;
+}
+// Wie trimAlpha, liefert zusätzlich die Position des Zuschnitts im Original
+function trimAlphaBox(canvas) {
   const { width: w, height: h } = canvas;
   const d = canvas.getContext('2d').getImageData(0, 0, w, h).data;
   let minX = w, minY = h, maxX = -1, maxY = -1;
@@ -281,14 +285,14 @@ function trimAlpha(canvas) {
       if (y < minY) minY = y; if (y > maxY) maxY = y;
     }
   }
-  if (maxX < 0) return canvas;
+  if (maxX < 0) return { canvas, x: 0, y: 0 };
   const out = document.createElement('canvas');
   out.width = maxX - minX + 1; out.height = maxY - minY + 1;
   out.getContext('2d').drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
-  return out;
+  return { canvas: out, x: minX, y: minY };
 }
 // KI-Freistellen im Browser (lädt beim ersten Mal das Modell, danach schnell). Ohne Netz: einfache Methode.
-async function removeBackground(blob, onProgress = () => {}) {
+async function removeBackground(blob, onProgress = () => {}, trim = true) {
   const src = URL.createObjectURL(blob);
   try {
     const img = await loadImage(src);
@@ -302,13 +306,13 @@ async function removeBackground(blob, onProgress = () => {}) {
       });
       const oi = await loadImage(URL.createObjectURL(out));
       c.getContext('2d').drawImage(oi, 0, 0, c.width, c.height);
-      return canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+      return canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.9);
     } catch (e) {
       console.warn('KI-Freistellen nicht verfügbar, nutze einfache Methode', e);
       c.getContext('2d').drawImage(img, 0, 0);
       const simple = cutOut(c);
       if (simple === c) throw new Error('Hintergrund nicht erkannt');
-      return canvasBlob(simple, 'image/webp', 0.9);
+      return canvasBlob(trim ? simple : c, 'image/webp', 0.9); // cutOut verändert c selbst und liefert nur eine zugeschnittene Kopie
     }
   } finally {
     URL.revokeObjectURL(src);
@@ -344,7 +348,7 @@ async function nextUpload() {
   }
   try {
     const orig = await shrink(f);
-    upCur = { file: f, orig, cut: null, useCut: false, busy: false, url: null, angle: 0 };
+    upCur = { file: f, orig, src: orig, cut: null, useCut: false, busy: false, url: null, angle: 0 };
     $('upAngle').value = 0;
     $('upName').value = nameFromFile(f);
     $('upCategory').value = (upTarget === 'wish' ? $('wishUploadCategory') : $('uploadCategory')).value;
@@ -361,8 +365,9 @@ async function nextUpload() {
     nextUpload();
   }
 }
-// Dreht ein Bild um beliebige Grad; die Leinwand wächst mit, überstehende leere Ränder werden abgeschnitten
-async function rotateBlob(blob, deg) {
+// Dreht ein Bild um beliebige Grad; die Leinwand wächst mit. Zugeschnitten wird erst beim Speichern (trim), damit
+// beim Bearbeiten Original und Bearbeitung dieselbe Größe behalten und sich Gelöschtes zurückholen lässt.
+async function rotateBlob(blob, deg, trim = false) {
   if (!deg) return blob;
   const src = URL.createObjectURL(blob);
   try {
@@ -375,7 +380,7 @@ async function rotateBlob(blob, deg) {
     ctx.translate(c.width / 2, c.height / 2);
     ctx.rotate(r);
     ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-    return await canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+    return await canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.9);
   } finally {
     URL.revokeObjectURL(src);
   }
@@ -411,7 +416,6 @@ function setAngle(a) {
   const u = cur();
   if (!u || u.busy) return;
   stopDraw();
-  u.base = null; // gedrehtes Bild passt nicht mehr zum Zustand vor dem Radieren
   u.angle = a;
   el().angle.value = a;
   updatePreview(u);
@@ -487,15 +491,16 @@ async function cropToPath(blob, pts, area) {
     ctx.closePath();
     ctx.clip();
     ctx.drawImage(img, 0, 0);
-    return await canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+    return await canvasBlob(c, 'image/webp', 0.9); // gleiche Größe wie vorher, außerhalb der Linie transparent
   } finally {
     URL.revokeObjectURL(src);
   }
 }
-bindTool('draw', () => {
+bindTool('draw', async () => {
   const u = cur();
   if (!u || u.busy) return;
   if (drawCanvas) return stopDraw();
+  if (u.pendingBox) { await ensureFull(u); activeCtx.refresh(); }
   const box = el().preview.parentElement;
   const cv = document.createElement('canvas');
   const br = box.getBoundingClientRect();
@@ -537,8 +542,8 @@ bindTool('draw', () => {
     try {
       const area = containedRect(el().preview, cv.getBoundingClientRect());
       const out = await cropToPath(u.shown || u.orig, drawn, area);
-      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, base: u.base });
-      u.base = null; // Bildausschnitt ändert sich: Zurückholen bezieht sich danach auf neue Radierungen
+      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, src: u.src });
+      if (u.angle) u.src = await rotateBlob(u.src, u.angle); // Ausgangsfoto bekommt dieselbe Drehung, damit Zurückholen passt
       u.orig = out; u.cut = null; u.useCut = false; u.angle = 0;
       el().angle.value = 0;
     } catch (ex) {
@@ -551,22 +556,52 @@ bindTool('draw', () => {
   };
   cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
 });
-// Fertiges Bild für das Speichern: gedreht und, falls radiert wurde, von leeren Rändern befreit
-async function trimBlob(blob) {
+// Fertiges Bild für das Speichern: gedreht und von leeren Rändern befreit. Gibt außerdem Ausgangsfoto und Lage des Zuschnitts
+// zurück, damit sich später (beim Bearbeiten) Hintergrund und Weggeschnittenes zurückholen lässt.
+async function trimBlobBox(blob) {
   const src = URL.createObjectURL(blob);
   try {
     const img = await loadImage(src);
     const c = document.createElement('canvas');
     c.width = img.naturalWidth; c.height = img.naturalHeight;
     c.getContext('2d').drawImage(img, 0, 0);
-    return await canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+    const { x, y, canvas } = trimAlphaBox(c);
+    return { blob: await canvasBlob(canvas, 'image/webp', 0.9), x, y };
   } finally {
     URL.revokeObjectURL(src);
   }
 }
-async function upFinal(u) {
+const upEdited = (u) => !!((u.history && u.history.length) || u.angle || u.useCut || u.erased);
+async function upResult(u) {
+  if (!upEdited(u)) return { blob: u.useCut ? u.cut : u.orig };
+  await ensureFull(u);
   const b = await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0);
-  return u.erased ? trimBlob(b) : b;
+  const t = await trimBlobBox(b);
+  const res = { blob: t.blob };
+  if (u.erased || u.useCut || (u.history && u.history.length) || u.hadSource) {
+    res.source = u.angle ? await rotateBlob(u.src, u.angle) : u.src;
+    res.srcBox = { x: t.x, y: t.y };
+  }
+  return res;
+}
+// Ein gespeichertes, zugeschnittenes Teil wieder auf die Größe des Ausgangsfotos bringen, bevor man damit arbeitet
+async function ensureFull(u) {
+  if (!u.pendingBox) return;
+  const box = u.pendingBox;
+  u.pendingBox = null;
+  const [a, b] = await Promise.all([blobToImage(u.orig), blobToImage(u.src)]);
+  const c = document.createElement('canvas');
+  c.width = Math.max(b.naturalWidth, box.x + a.naturalWidth);
+  c.height = Math.max(b.naturalHeight, box.y + a.naturalHeight);
+  c.getContext('2d').drawImage(a, box.x, box.y);
+  u.orig = await canvasBlob(c, 'image/png');
+  u.cut = null; u.useCut = false;
+  u.shown = null; // Vorschau wird gleich neu gerechnet
+  u.hadSource = true;
+}
+async function blobToImage(blob) {
+  const url = URL.createObjectURL(blob);
+  try { return await loadImage(url); } finally { URL.revokeObjectURL(url); }
 }
 // Einen Pinselstrich in das Foto radieren (verlustfrei, damit mehrfaches Radieren die Qualität nicht mindert)
 async function eraseStroke(blob, pts, area, width, restoreFrom) {
@@ -629,12 +664,13 @@ document.querySelectorAll('.up-mode .chip').forEach((chip) => {
     document.querySelectorAll('.up-mode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === eraseMode));
   });
 });
-bindTool('erase', () => {
+bindTool('erase', async () => {
   const u = cur();
   if (!u || u.busy) return;
   const wasOn = el().erase.classList.contains('on');
   stopDraw();
   if (wasOn) return;
+  if (u.pendingBox) { await ensureFull(u); activeCtx.refresh(); }
   const box = el().preview.parentElement;
   const cv = document.createElement('canvas');
   const br = box.getBoundingClientRect();
@@ -669,14 +705,12 @@ bindTool('erase', () => {
   const apply = async (st) => {
     try {
       const now = u.shown || u.orig;
-      if (st.mode === 'restore' && !u.base) {
-        toast('Es gibt noch nichts zum Zurückholen. Radiere zuerst etwas weg.');
-      } else {
-        // Zustand vor dem ersten Radieren merken, damit sich Gelöschtes zurückholen lässt
-        const base = u.base || now;
-        const out = await eraseStroke(now, st.pts, st.area, st.brush / st.area.s, st.mode === 'restore' ? base : null);
-        (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, base: u.base });
-        u.base = base;
+      // Ausgangsfoto in derselben Drehung wie das Bild: daraus wird alles zurückgeholt, auch Hintergrund und Weggeschnittenes
+      const srcNow = u.angle ? await rotateBlob(u.src, u.angle) : u.src;
+      {
+        const out = await eraseStroke(now, st.pts, st.area, st.brush / st.area.s, st.mode === 'restore' ? srcNow : null);
+        (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, src: u.src });
+        u.src = srcNow;
         u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
         u.shown = out; // angle ist 0: die Vorschau zeigt genau dieses Bild, der nächste Strich kann sofort darauf aufbauen
         el().angle.value = 0;
@@ -750,7 +784,7 @@ bindTool('remove', async () => {
   const u = cur();
   if (u.busy) return;
   stopDraw();
-  u.base = null; // anderes Bild: der Zustand vor dem Radieren gilt nicht mehr
+  await ensureFull(u);
   if (u.cut) { u.useCut = !u.useCut; return activeCtx.refresh(); }
   u.busy = true; activeCtx.refresh();
   try {
@@ -760,7 +794,7 @@ bindTool('remove', async () => {
         ? `KI-Modell wird geladen … ${Math.round(frac * 100)} % (einmalig)`
         : 'Hintergrund wird entfernt …';
       if (cur() === u) el().remove.textContent = u.status;
-    });
+    }, false); // ohne Zuschnitt: bleibt deckungsgleich mit dem Ausgangsfoto
     u.useCut = true;
   } catch (e) {
     console.error(e);
@@ -775,10 +809,12 @@ $('upAdd').addEventListener('click', async () => {
   const rawLink = $('upLink').value.trim();
   const link = upTarget === 'wish' ? cleanLink(rawLink) : '';
   if (rawLink && upTarget === 'wish' && !link) return toast('Der Link sieht nicht richtig aus');
+  const res = await upResult(u);
   const rec = {
     id: uid(), name: $('upName').value.trim() || 'Neues Teil', category: $('upCategory').value,
-    blob: await upFinal(u), created: Date.now(),
+    blob: res.blob, created: Date.now(),
   };
+  if (res.source) { rec.source = res.source; rec.srcBox = res.srcBox; }
   const note = $('upNote').value.trim().slice(0, 120);
   if (upTarget === 'wish' && note) rec.note = note;
   if (link) rec.link = link;
@@ -796,7 +832,7 @@ $('upAll').addEventListener('click', async () => {
   const category = $('upCategory').value;
   const bgAll = $('upAllBg').checked;
   const jobs = [
-    { name: $('upName').value.trim() || nameFromFile(u.file), blob: await upFinal(u), cut: u.useCut },
+    { name: $('upName').value.trim() || nameFromFile(u.file), res: await upResult(u), cut: u.useCut },
     ...upQueue.map((file) => ({ file, name: nameFromFile(file) })),
   ];
   upQueue = [];
@@ -806,11 +842,12 @@ $('upAll').addEventListener('click', async () => {
   for (const [i, j] of jobs.entries()) {
     $('upAll').textContent = `Wird hinzugefügt … ${i + 1}/${jobs.length}`;
     try {
-      let blob = j.blob || await shrink(j.file);
+      let blob = j.res ? j.res.blob : await shrink(j.file);
       if (bgAll && !j.cut) {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
       const rec = { id: uid(), name: j.name, category, blob, created: Date.now() };
+      if (j.res && j.res.source) { rec.source = j.res.source; rec.srcBox = j.res.srcBox; }
       const coll = upColl();
       await dbPut(coll.store, rec);
       coll.list.push(rec);
@@ -870,7 +907,7 @@ function openItemDialog(it) {
   stopDraw();
   activeCtx = ctxIt;
   // Bildzustand fürs Bearbeiten: startet mit dem gespeicherten Bild, gespeichert wird nur bei Änderungen
-  itCur = { orig: it.blob, cut: null, useCut: false, busy: false, url: null, angle: 0, history: [], erased: false };
+  itCur = { orig: it.blob, src: it.source || it.blob, pendingBox: it.source ? it.srcBox : null, hadSource: false, cut: null, useCut: false, busy: false, url: null, angle: 0, history: [], erased: false };
   $('itAngle').value = 0;
   $('itemCategory').value = it.category;
   $('itScale').max = scaleMax(it.category);
@@ -893,8 +930,10 @@ $('itemForm').addEventListener('submit', async (e) => {
     const scale = +$('itScale').value / 100;
     if (scale === 1) delete it.scale; else it.scale = scale;
     const u = itCur;
-    if (u && (u.history.length || u.angle || u.useCut)) { // bearbeitetes Bild dauerhaft übernehmen
-      it.blob = await upFinal(u);
+    if (u && upEdited(u)) { // bearbeitetes Bild dauerhaft übernehmen
+      const res = await upResult(u);
+      it.blob = res.blob;
+      if (res.source) { it.source = res.source; it.srcBox = res.srcBox; } else { delete it.source; delete it.srcBox; }
       if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
       aspects.delete(it.id);
     }
@@ -1380,6 +1419,7 @@ $('wishBought').onclick = async () => {
   const w = wishEditing;
   if (!applyWishFields(w)) return;
   const rec = { id: w.id, name: w.name, category: w.category, blob: w.blob, created: Date.now() };
+  if (w.source) { rec.source = w.source; rec.srcBox = w.srcBox; }
   if (w.note) rec.note = w.note;
   await dbPut('items', rec);
   await dbDel('wishlist', w.id);
@@ -1487,6 +1527,7 @@ $('backupExport').onclick = async () => {
       app: 'kleiderschrank', version: 1, exported: new Date().toISOString(),
       items: await Promise.all(items.map(async (i) => ({
         id: i.id, name: i.name, category: i.category, created: i.created, scale: i.scale, note: i.note, image: await blobToDataUrl(i.blob),
+        source: i.source ? await blobToDataUrl(i.source) : undefined, srcBox: i.source ? i.srcBox : undefined,
       }))),
       wishlist: await Promise.all(wishlist.map(async (w) => ({
         id: w.id, name: w.name, category: w.category, created: w.created, note: w.note, link: w.link, image: await blobToDataUrl(w.blob),
@@ -1532,6 +1573,10 @@ async function importBackup(file) {
     };
     if (num(i.scale) && i.scale >= 0.3 && i.scale <= 3 && i.scale !== 1) rec.scale = i.scale;
     if (typeof i.note === 'string' && i.note.trim()) rec.note = i.note.trim().slice(0, 120);
+    if (typeof i.source === 'string' && i.source.startsWith('data:image/') && i.srcBox && num(i.srcBox.x) && num(i.srcBox.y)) {
+      rec.source = await dataUrlToBlob(i.source);
+      rec.srcBox = { x: i.srcBox.x, y: i.srcBox.y };
+    }
     await dbPut('items', rec);
     items.push(rec);
     addedItems++;
