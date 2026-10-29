@@ -1,14 +1,14 @@
-const CATEGORIES = ['Jacken', 'Pullover', 'Shirts', 'Hosen', 'Schuhe', 'Taschen', 'Schmuck', 'Kopfbedeckung', 'Gürtel'];
+const CATEGORIES = ['Jacken', 'Pullover', 'Shirts', 'Hosen', 'Schuhe', 'Taschen', 'Schmuck', 'Caps', 'Gürtel'];
 // Hauptkategorien mit Unterkategorien (Teile selbst tragen immer eine Unterkategorie)
 const GROUPS = {
   Oberteile: ['Jacken', 'Pullover', 'Shirts'],
-  Accessoires: ['Taschen', 'Schmuck', 'Kopfbedeckung', 'Gürtel'],
+  Accessoires: ['Taschen', 'Schmuck', 'Caps', 'Gürtel'],
 };
 const DEFAULT_SUB = { Oberteile: 'Shirts', Accessoires: 'Taschen' }; // Vorauswahl beim Hochladen
 const TOP = ['Oberteile', 'Hosen', 'Schuhe', 'Accessoires'];
 // Alte Kategorien aus früheren Versionen (inklusive der früheren englischen Namen)
 const LEGACY = {
-  Outerwear: 'Jacken', Sweater: 'Pullover', 'Caps/Beanies': 'Kopfbedeckung', Belts: 'Gürtel',
+  Outerwear: 'Jacken', Sweater: 'Pullover', 'Caps/Beanies': 'Caps', Kopfbedeckung: 'Caps', Belts: 'Gürtel',
   Oberteile: 'Shirts', Accessoires: 'Taschen', Kleider: 'Shirts',
 };
 // Maximalgröße je Kategorie (w: Anteil der Bühnenbreite, h: Anteil der Bühnenhöhe). Ein Teil wird mit seinem
@@ -21,14 +21,14 @@ const PLACEMENT = {
   Gürtel: { w: 0.28, h: 0.05 },
   Taschen: { w: 0.40, h: 0.22 },
   Schmuck: { w: 0.14, h: 0.08 },
-  'Kopfbedeckung': { w: 0.30, h: 0.12 },
+  'Caps': { w: 0.30, h: 0.12 },
   Schuhe: { w: 0.44, h: 0.15 },
 };
 const STAGE_RATIO = 16 / 9; // Höhe : Breite der Bühne
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
 const EXCLUSIVE = { Shirts: ['Shirts', 'Pullover'], Pullover: ['Shirts', 'Pullover'] }; // ersetzen sich gegenseitig
 // Standard-Stapelreihenfolge (hinten → vorne)
-const STACK = ['Jacken', 'Shirts', 'Pullover', 'Hosen', 'Gürtel', 'Taschen', 'Schmuck', 'Kopfbedeckung', 'Schuhe'];
+const STACK = ['Jacken', 'Shirts', 'Pullover', 'Hosen', 'Gürtel', 'Taschen', 'Schmuck', 'Caps', 'Schuhe'];
 const EXPORT_W = 900, EXPORT_H = 1600;
 
 const $ = (id) => document.getElementById(id);
@@ -681,7 +681,7 @@ async function relayout() {
 
   // Linke Spalte von oben nach unten
   let y = 0.03, pants = null;
-  for (const cat of ['Kopfbedeckung', 'Shirts', 'Pullover', 'Hosen']) {
+  for (const cat of ['Caps', 'Shirts', 'Pullover', 'Hosen']) {
     for (const l of of(cat)) {
       if (cat === 'Hosen') pants = l;
       y = place(l, COL_LEFT, y);
