@@ -1,31 +1,34 @@
-const CATEGORIES = ['Outerwear', 'Sweater', 'Shirts', 'Hosen', 'Schuhe', 'Taschen', 'Schmuck', 'Caps/Beanies', 'Belts'];
+const CATEGORIES = ['Jacken', 'Pullover', 'Shirts', 'Hosen', 'Schuhe', 'Taschen', 'Schmuck', 'Kopfbedeckung', 'Gürtel'];
 // Hauptkategorien mit Unterkategorien (Teile selbst tragen immer eine Unterkategorie)
 const GROUPS = {
-  Oberteile: ['Outerwear', 'Sweater', 'Shirts'],
-  Accessoires: ['Taschen', 'Schmuck', 'Caps/Beanies', 'Belts'],
+  Oberteile: ['Jacken', 'Pullover', 'Shirts'],
+  Accessoires: ['Taschen', 'Schmuck', 'Kopfbedeckung', 'Gürtel'],
 };
 const DEFAULT_SUB = { Oberteile: 'Shirts', Accessoires: 'Taschen' }; // Vorauswahl beim Hochladen
 const TOP = ['Oberteile', 'Hosen', 'Schuhe', 'Accessoires'];
-// Alte Kategorien aus früheren Versionen
-const LEGACY = { Jacken: 'Outerwear', Oberteile: 'Shirts', Accessoires: 'Taschen', Kleider: 'Shirts' };
+// Alte Kategorien aus früheren Versionen (inklusive der früheren englischen Namen)
+const LEGACY = {
+  Outerwear: 'Jacken', Sweater: 'Pullover', 'Caps/Beanies': 'Kopfbedeckung', Belts: 'Gürtel',
+  Oberteile: 'Shirts', Accessoires: 'Taschen', Kleider: 'Shirts',
+};
 // Maximalgröße je Kategorie (w: Anteil der Bühnenbreite, h: Anteil der Bühnenhöhe). Ein Teil wird mit seinem
 // Seitenverhältnis so eingepasst, dass es hineinpasst: so wirken Hose, Jacke und Schuhe im gleichen Maßstab.
 const PLACEMENT = {
-  Outerwear: { w: 0.55, h: 0.32 },
+  Jacken: { w: 0.55, h: 0.32 },
   Shirts: { w: 0.52, h: 0.30 },
-  Sweater: { w: 0.58, h: 0.32 },
+  Pullover: { w: 0.58, h: 0.32 },
   Hosen: { w: 0.50, h: 0.50 },
-  Belts: { w: 0.28, h: 0.05 },
+  Gürtel: { w: 0.28, h: 0.05 },
   Taschen: { w: 0.40, h: 0.22 },
   Schmuck: { w: 0.14, h: 0.08 },
-  'Caps/Beanies': { w: 0.30, h: 0.12 },
+  'Kopfbedeckung': { w: 0.30, h: 0.12 },
   Schuhe: { w: 0.44, h: 0.15 },
 };
 const STAGE_RATIO = 16 / 9; // Höhe : Breite der Bühne
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
-const EXCLUSIVE = { Shirts: ['Shirts', 'Sweater'], Sweater: ['Shirts', 'Sweater'] }; // ersetzen sich gegenseitig
+const EXCLUSIVE = { Shirts: ['Shirts', 'Pullover'], Pullover: ['Shirts', 'Pullover'] }; // ersetzen sich gegenseitig
 // Standard-Stapelreihenfolge (hinten → vorne)
-const STACK = ['Outerwear', 'Shirts', 'Sweater', 'Hosen', 'Belts', 'Taschen', 'Schmuck', 'Caps/Beanies', 'Schuhe'];
+const STACK = ['Jacken', 'Shirts', 'Pullover', 'Hosen', 'Gürtel', 'Taschen', 'Schmuck', 'Kopfbedeckung', 'Schuhe'];
 const EXPORT_W = 900, EXPORT_H = 1600;
 
 const $ = (id) => document.getElementById(id);
@@ -651,7 +654,7 @@ const fitWidth = (it, aspect) => {
 async function addLayer(it) {
   const aspect = await aspectOf(it);
   const w = fitWidth(it, aspect) * (it.scale || 1); // it.scale: vom Nutzer gemerkte Anpassung
-  // Regeln: pro Kategorie nur ein Teil (Schmuck: beliebig viele), Shirt und Sweater schließen sich aus
+  // Regeln: pro Kategorie nur ein Teil (Schmuck: beliebig viele), Shirt und Pullover schließen sich aus
   const replaced = MULTI.includes(it.category) ? [] : EXCLUSIVE[it.category] || [it.category];
   state.outfit.layers = state.outfit.layers.filter((l) => !replaced.includes(itemById(l.itemId)?.category));
   const layer = { uid: uid(), itemId: it.id, x: 0.3, y: 0.3, w };
@@ -678,17 +681,17 @@ async function relayout() {
 
   // Linke Spalte von oben nach unten
   let y = 0.03, pants = null;
-  for (const cat of ['Caps/Beanies', 'Shirts', 'Sweater', 'Hosen']) {
+  for (const cat of ['Kopfbedeckung', 'Shirts', 'Pullover', 'Hosen']) {
     for (const l of of(cat)) {
       if (cat === 'Hosen') pants = l;
       y = place(l, COL_LEFT, y);
     }
   }
-  for (const l of of('Belts')) place(l, COL_LEFT, pants ? pants.y + 0.005 : y); // Gürtel auf dem Hosenbund
+  for (const l of of('Gürtel')) place(l, COL_LEFT, pants ? pants.y + 0.005 : y); // Gürtel auf dem Hosenbund
 
   // Rechte Spalte: ohne Jacke beginnt sie auf Höhe der Hose
-  let yr = of('Outerwear').length ? 0.03 : (pants ? pants.y : 0.3);
-  for (const cat of ['Outerwear', 'Taschen', 'Schuhe']) for (const l of of(cat)) yr = place(l, COL_RIGHT, yr);
+  let yr = of('Jacken').length ? 0.03 : (pants ? pants.y : 0.3);
+  for (const cat of ['Jacken', 'Taschen', 'Schuhe']) for (const l of of(cat)) yr = place(l, COL_RIGHT, yr);
 
   // Schmuck: kleine Reihe unter der rechten Spalte
   of('Schmuck').forEach((l, k) => {
@@ -1235,9 +1238,20 @@ fillSelect($('upCategory'));
 fillSelect($('wishCategory'));
 fillSelect($('wishUploadCategory'));
 
+// Alte Kategorien umsortieren (z. B. Outerwear → Jacken, Oberteile → Shirts, Accessoires → Taschen)
+async function migrateCategories() {
+  for (const it of items) {
+    if (!CATEGORIES.includes(it.category)) { it.category = LEGACY[it.category] || 'Shirts'; await dbPut('items', it); }
+  }
+  for (const w of wishlist) {
+    if (!CATEGORIES.includes(w.category)) { w.category = LEGACY[w.category] || 'Shirts'; await dbPut('wishlist', w); }
+  }
+}
+
 // Alles aus dem lokalen Speicher neu einlesen und anzeigen (nach dem Abgleich mit dem Konto)
 async function reloadAll() {
   [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
+  await migrateCategories();
   for (const u of urls.values()) URL.revokeObjectURL(u);
   urls.clear();
   items.sort((a, b) => a.created - b.created);
@@ -1303,13 +1317,7 @@ async function startApp(userId) {
     console.error(e);
     toast('Speicher im Browser nicht verfügbar');
   }
-  // Alte Kategorien umsortieren (Jacken → Outerwear, Oberteile → Shirts, Accessoires → Taschen)
-  for (const it of items) {
-    if (!CATEGORIES.includes(it.category)) { it.category = LEGACY[it.category] || 'Shirts'; await dbPut('items', it); }
-  }
-  for (const w of wishlist) {
-    if (!CATEGORIES.includes(w.category)) { w.category = LEGACY[w.category] || 'Shirts'; await dbPut('wishlist', w); }
-  }
+  await migrateCategories();
   items.sort((a, b) => a.created - b.created);
   renderCloset();
   renderWishlist();
