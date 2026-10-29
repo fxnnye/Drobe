@@ -1539,7 +1539,9 @@ async function offerLegacy(userId) {
   const total = old.items.length + old.outfits.length + old.wishlist.length;
   if (!total) return;
   const text = `Auf diesem Gerät liegen noch ${old.items.length} Teile, ${old.outfits.length} Outfits und ${old.wishlist.length} Wünsche von vor dem Login. In dein Konto übernehmen?`;
-  if (!(await askConfirm(text, 'Übernehmen'))) return;
+  const yes = await askConfirm(text, 'Übernehmen');
+  try { localStorage.setItem(flag, '1'); } catch (e) { /* egal */ } // die Frage kommt nur einmal, egal wie die Antwort ausfällt
+  if (!yes) return;
   for (const name of ['items', 'outfits', 'wishlist']) {
     const have = new Set((await dbAll(name)).map((r) => r.id));
     for (const rec of old[name]) {
@@ -1548,7 +1550,6 @@ async function offerLegacy(userId) {
       Cloud.queue(name, rec.id, 'put');
     }
   }
-  try { localStorage.setItem(flag, '1'); } catch (e) { /* egal */ }
 }
 
 // Wird nach der Anmeldung aufgerufen; jeder Nutzer hat auf dem Gerät seine eigene lokale Datenbank
