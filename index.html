@@ -149,7 +149,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
 <dialog id="itemDialog">
   <form method="dialog" id="itemForm">
-    <img id="itemPreview" alt="">
+    <div class="up-preview"><img id="itemPreview" alt=""></div>
     <label class="field">Name
       <input type="text" id="itemName" maxlength="60">
     </label>
@@ -167,6 +167,16 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <input type="range" id="itAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
         <button class="icon" type="button" id="itRotR" title="90° nach rechts" aria-label="90° nach rechts">⟳</button>
       </div>
+      <div class="row up-draw-row">
+        <button class="btn grow" type="button" id="itDraw">Bereich einzeichnen</button>
+        <button class="btn grow" type="button" id="itErase">Radierer</button>
+        <button class="btn" type="button" id="itUndo" hidden>Zurück</button>
+      </div>
+      <label class="field" id="itBrushRow" hidden>Pinselgröße
+        <input type="range" id="itBrush" min="6" max="60" step="1" value="24">
+      </label>
+      <p class="muted small" id="itDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.</p>
+      <button class="btn full" type="button" id="itRemove">Hintergrund entfernen</button>
       <label class="field">Größe im Outfit: <span id="itScaleVal">100 %</span>
         <input type="range" id="itScale" min="50" max="150" step="5" value="100">
       </label>

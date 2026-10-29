@@ -331,6 +331,7 @@ const nameFromFile = (f) => f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '
 
 async function nextUpload() {
   stopDraw();
+  activeCtx = ctxUp;
   const f = upQueue.shift();
   if (upCur && upCur.url) URL.revokeObjectURL(upCur.url);
   if (!f) {
@@ -381,37 +382,57 @@ async function rotateBlob(blob, deg) {
 }
 const wrapAngle = (a) => ((a + 180) % 360 + 360) % 360 - 180;
 
-async function updateUpPreview(u) {
+// Die Bildwerkzeuge (Drehen, Einzeichnen, Radierer, Hintergrund entfernen) gibt es im Upload-Dialog und beim Bearbeiten eines Teils.
+// Es ist immer nur ein Dialog offen; `activeCtx` sagt, welcher: seine Elemente und sein Bildzustand werden benutzt.
+const ctxUp = {
+  cur: () => upCur, refresh: () => refreshUpload(),
+  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle') },
+};
+let itCur = null;
+const ctxIt = {
+  cur: () => itCur, refresh: () => renderTools(itCur),
+  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle') },
+};
+let activeCtx = ctxUp;
+const cur = () => activeCtx.cur();
+const el = () => activeCtx.el;
+const bindTool = (name, fn) => [ctxUp, ctxIt].forEach((c) => c.el[name].addEventListener('click', fn));
+
+async function updatePreview(u) {
   const seq = u.seq = (u.seq || 0) + 1;
   const blob = await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0);
-  if (seq !== u.seq || upCur !== u) return;
+  if (seq !== u.seq || cur() !== u) return;
   u.shown = blob; // genau das, was die Vorschau gerade zeigt (gedreht, ggf. freigestellt)
   if (u.url) URL.revokeObjectURL(u.url);
   u.url = URL.createObjectURL(blob);
-  $('upPreview').src = u.url;
+  el().preview.src = u.url;
 }
-function setUpAngle(a) {
-  if (!upCur || upCur.busy) return;
+function setAngle(a) {
+  const u = cur();
+  if (!u || u.busy) return;
   stopDraw();
-  upCur.angle = a;
-  $('upAngle').value = a;
-  updateUpPreview(upCur);
+  u.angle = a;
+  el().angle.value = a;
+  updatePreview(u);
 }
-$('upRotL').onclick = () => setUpAngle(wrapAngle((upCur.angle || 0) - 90));
-$('upRotR').onclick = () => setUpAngle(wrapAngle((upCur.angle || 0) + 90));
-$('upAngle').oninput = (e) => setUpAngle(+e.target.value);
+[ctxUp, ctxIt].forEach((c, i) => {
+  const p = i ? 'it' : 'up';
+  $(p + 'RotL').onclick = () => setAngle(wrapAngle((cur().angle || 0) - 90));
+  $(p + 'RotR').onclick = () => setAngle(wrapAngle((cur().angle || 0) + 90));
+  c.el.angle.oninput = (e) => setAngle(+e.target.value);
+});
 
 /* Bereich einzeichnen: grob um das Teil malen, alles außerhalb wird transparent und abgeschnitten */
 let drawCanvas = null;
 function stopDraw() {
   if (drawCanvas) { drawCanvas.remove(); drawCanvas = null; }
-  $('upDraw').classList.remove('on');
-  $('upDraw').textContent = 'Bereich einzeichnen';
-  $('upErase').classList.remove('on');
-  $('upErase').textContent = 'Radierer';
-  $('upBrushRow').hidden = true;
-  $('upDrawHint').textContent = 'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.';
-  $('upDrawHint').hidden = true;
+  el().draw.classList.remove('on');
+  el().draw.textContent = 'Bereich einzeichnen';
+  el().erase.classList.remove('on');
+  el().erase.textContent = 'Radierer';
+  el().brushRow.hidden = true;
+  el().hint.textContent = 'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.';
+  el().hint.hidden = true;
 }
 // Abgebildeter Bereich des Fotos innerhalb des Elements (object-fit: contain)
 function containedRect(img, box) {
@@ -440,20 +461,20 @@ async function cropToPath(blob, pts, area) {
     URL.revokeObjectURL(src);
   }
 }
-$('upDraw').addEventListener('click', () => {
-  const u = upCur;
+bindTool('draw', () => {
+  const u = cur();
   if (!u || u.busy) return;
   if (drawCanvas) return stopDraw();
-  const box = $('upPreview').parentElement;
+  const box = el().preview.parentElement;
   const cv = document.createElement('canvas');
   const br = box.getBoundingClientRect();
   cv.width = br.width; cv.height = br.height;
   cv.className = 'up-draw';
   box.appendChild(cv);
   drawCanvas = cv;
-  $('upDraw').classList.add('on');
-  $('upDraw').textContent = 'Einzeichnen abbrechen';
-  $('upDrawHint').hidden = false;
+  el().draw.classList.add('on');
+  el().draw.textContent = 'Einzeichnen abbrechen';
+  el().hint.hidden = false;
   const ctx = cv.getContext('2d');
   let pts = [];
   const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -479,20 +500,20 @@ $('upDraw').addEventListener('click', () => {
   cv.onpointerup = async (e) => {
     if (pts.length < 8) { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); return toast('Zeichne einmal rund um das Teil'); }
     const drawn = pts; pts = [];
-    u.busy = true; refreshUpload();
+    u.busy = true; activeCtx.refresh();
     try {
-      const area = containedRect($('upPreview'), cv.getBoundingClientRect());
+      const area = containedRect(el().preview, cv.getBoundingClientRect());
       const out = await cropToPath(u.shown || u.orig, drawn, area);
       (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased });
       u.orig = out; u.cut = null; u.useCut = false; u.angle = 0;
-      $('upAngle').value = 0;
+      el().angle.value = 0;
     } catch (ex) {
       console.error(ex);
       toast('Der Bereich konnte nicht übernommen werden');
     }
     u.busy = false;
     stopDraw();
-    if (upCur === u) refreshUpload();
+    if (cur() === u) activeCtx.refresh();
   };
   cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
 });
@@ -534,30 +555,30 @@ async function eraseStroke(blob, pts, area, width) {
     URL.revokeObjectURL(src);
   }
 }
-$('upErase').addEventListener('click', () => {
-  const u = upCur;
+bindTool('erase', () => {
+  const u = cur();
   if (!u || u.busy) return;
-  const wasOn = $('upErase').classList.contains('on');
+  const wasOn = el().erase.classList.contains('on');
   stopDraw();
   if (wasOn) return;
-  const box = $('upPreview').parentElement;
+  const box = el().preview.parentElement;
   const cv = document.createElement('canvas');
   const br = box.getBoundingClientRect();
   cv.width = br.width; cv.height = br.height;
   cv.className = 'up-draw';
   box.appendChild(cv);
   drawCanvas = cv;
-  $('upErase').classList.add('on');
-  $('upErase').textContent = 'Fertig';
-  $('upBrushRow').hidden = false;
-  $('upDrawHint').textContent = 'Male über Stellen, die weg sollen. Du kannst mehrmals radieren, „Zurück“ nimmt den letzten Strich zurück.';
-  $('upDrawHint').hidden = false;
+  el().erase.classList.add('on');
+  el().erase.textContent = 'Fertig';
+  el().brushRow.hidden = false;
+  el().hint.textContent = 'Male über Stellen, die weg sollen. Du kannst mehrmals radieren, „Zurück“ nimmt den letzten Strich zurück.';
+  el().hint.hidden = false;
   const ctx = cv.getContext('2d');
   let pts = [];
   const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
   const paint = () => {
     ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.lineWidth = +$('upBrush').value; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = +el().brush.value; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = ctx.fillStyle = 'rgba(230, 0, 35, .45)';
     ctx.beginPath();
     pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
@@ -577,64 +598,69 @@ $('upErase').addEventListener('click', () => {
   cv.onpointerup = async () => {
     if (!pts.length) return;
     const stroke = pts; pts = [];
-    const brush = +$('upBrush').value;
-    u.busy = true; refreshUpload();
+    const brush = +el().brush.value;
+    u.busy = true; activeCtx.refresh();
     try {
-      const area = containedRect($('upPreview'), cv.getBoundingClientRect());
+      const area = containedRect(el().preview, cv.getBoundingClientRect());
       const out = await eraseStroke(u.shown || u.orig, stroke, area, brush / area.s);
       (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased });
       u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
       u.shown = out; // angle ist 0: die Vorschau zeigt genau dieses Bild, der nächste Strich kann sofort darauf aufbauen
-      $('upAngle').value = 0;
+      el().angle.value = 0;
     } catch (ex) {
       console.error(ex);
       toast('Das Radieren hat nicht geklappt');
     }
     u.busy = false;
     ctx.clearRect(0, 0, cv.width, cv.height);
-    if (upCur === u) refreshUpload();
+    if (cur() === u) activeCtx.refresh();
   };
   cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
 });
-$('upUndo').addEventListener('click', () => {
-  const u = upCur;
+bindTool('undo', () => {
+  const u = cur();
   if (!u || u.busy || !u.history || !u.history.length) return;
-  if (!$('upErase').classList.contains('on')) stopDraw(); // beim Radieren darf es direkt weitergehen
+  if (!el().erase.classList.contains('on')) stopDraw(); // beim Radieren darf es direkt weitergehen
   Object.assign(u, u.history.pop());
-  $('upAngle').value = u.angle || 0;
-  refreshUpload();
+  el().angle.value = u.angle || 0;
+  activeCtx.refresh();
 });
 
+// Gemeinsamer Teil: Vorschau und Zustand der Werkzeug-Knöpfe
+function renderTools(u) {
+  updatePreview(u);
+  const e = el();
+  e.remove.disabled = u.busy;
+  e.draw.disabled = u.busy;
+  e.erase.disabled = u.busy;
+  e.undo.hidden = !(u.history && u.history.length);
+  e.undo.disabled = u.busy;
+  e.remove.textContent = u.busy ? (u.status || 'Hintergrund wird entfernt …') : u.useCut ? 'Original anzeigen' : 'Hintergrund entfernen';
+  e.preview.parentElement.classList.toggle('busy', u.busy);
+}
 function refreshUpload() {
-  const u = upCur;
-  updateUpPreview(u);
+  const u = cur();
+  renderTools(u);
   $('upProgress').textContent = upTotal > 1 ? `Foto ${upDone} von ${upTotal}` : '';
-  $('upRemove').disabled = u.busy;
-  $('upDraw').disabled = u.busy;
-  $('upErase').disabled = u.busy;
-  $('upUndo').hidden = !(u.history && u.history.length);
-  $('upUndo').disabled = u.busy;
   $('upAdd').disabled = u.busy;
   $('upSkip').disabled = u.busy;
   $('upAll').disabled = u.busy;
   $('upBatch').hidden = upQueue.length === 0 || upTarget === 'wish'; // Links sind pro Teil, deshalb kein Sammel-Upload
   if (!u.busy) $('upAll').textContent = `Alle ${upQueue.length + 1} Fotos hinzufügen`;
-  $('upRemove').textContent = u.busy ? (u.status || 'Hintergrund wird entfernt …') : u.useCut ? 'Original anzeigen' : 'Hintergrund entfernen';
-  $('upPreview').parentElement.classList.toggle('busy', u.busy);
 }
-$('upRemove').addEventListener('click', async () => {
-  const u = upCur;
+bindTool('remove', async () => {
+  const u = cur();
   if (u.busy) return;
   stopDraw();
-  if (u.cut) { u.useCut = !u.useCut; return refreshUpload(); }
-  u.busy = true; refreshUpload();
+  if (u.cut) { u.useCut = !u.useCut; return activeCtx.refresh(); }
+  u.busy = true; activeCtx.refresh();
   try {
     u.status = 'KI-Modell wird geladen … (einmalig, kann etwas dauern)';
     u.cut = await removeBackground(u.orig, (phase, frac) => {
       u.status = phase === 'download'
         ? `KI-Modell wird geladen … ${Math.round(frac * 100)} % (einmalig)`
         : 'Hintergrund wird entfernt …';
-      if (upCur === u) $('upRemove').textContent = u.status;
+      if (cur() === u) el().remove.textContent = u.status;
     });
     u.useCut = true;
   } catch (e) {
@@ -642,7 +668,7 @@ $('upRemove').addEventListener('click', async () => {
     toast('Hintergrund konnte nicht entfernt werden');
   }
   u.busy = false;
-  if (upCur === u) refreshUpload();
+  if (cur() === u) activeCtx.refresh();
 });
 $('upAdd').addEventListener('click', async () => {
   const u = upCur;
@@ -721,27 +747,11 @@ wdz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files, 'wish'));
 
 /* Teil bearbeiten */
 const dlg = $('itemDialog');
-let itAngle = 0, itSeq = 0, itUrl = null;
-async function updateItemPreview() {
-  const seq = ++itSeq;
-  const blob = await rotateBlob(state.editingItem.blob, itAngle);
-  if (seq !== itSeq) return;
-  if (itUrl) URL.revokeObjectURL(itUrl);
-  itUrl = URL.createObjectURL(blob);
-  $('itemPreview').src = itUrl;
-}
-function setItemAngle(a) {
-  itAngle = a;
-  $('itAngle').value = a;
-  updateItemPreview();
-}
-$('itRotL').onclick = () => setItemAngle(wrapAngle(itAngle - 90));
-$('itRotR').onclick = () => setItemAngle(wrapAngle(itAngle + 90));
-$('itAngle').oninput = (e) => setItemAngle(+e.target.value);
 $('itScale').oninput = (e) => { $('itScaleVal').textContent = e.target.value + ' %'; };
 
 function setItemEditOpen(open) {
   $('itEdit').hidden = !open;
+  dlg.classList.toggle('editing', open); // Vorschau bleibt beim Bearbeiten oben sichtbar
   $('itEditToggle').setAttribute('aria-expanded', open);
   $('itEditToggle').textContent = open ? 'Bearbeiten schließen' : 'Bearbeiten';
 }
@@ -758,7 +768,10 @@ $('itemCategory').addEventListener('change', () => {
 
 function openItemDialog(it) {
   state.editingItem = it;
-  itAngle = 0;
+  stopDraw();
+  activeCtx = ctxIt;
+  // Bildzustand fürs Bearbeiten: startet mit dem gespeicherten Bild, gespeichert wird nur bei Änderungen
+  itCur = { orig: it.blob, cut: null, useCut: false, busy: false, url: null, angle: 0, history: [], erased: false };
   $('itAngle').value = 0;
   $('itemCategory').value = it.category;
   $('itScale').max = scaleMax(it.category);
@@ -766,6 +779,7 @@ function openItemDialog(it) {
   $('itScaleVal').textContent = $('itScale').value + ' %';
   setItemEditOpen(false); // Drehen und Größe sind erst nach „Bearbeiten“ sichtbar
   $('itemPreview').src = urlFor(it);
+  renderTools(itCur);
   $('itemName').value = it.name;
   $('itemNote').value = it.note || '';
   dlg.showModal();
@@ -779,8 +793,9 @@ $('itemForm').addEventListener('submit', async (e) => {
     if (note) it.note = note; else delete it.note;
     const scale = +$('itScale').value / 100;
     if (scale === 1) delete it.scale; else it.scale = scale;
-    if (itAngle) { // gedrehtes Bild dauerhaft übernehmen
-      it.blob = await rotateBlob(it.blob, itAngle);
+    const u = itCur;
+    if (u && (u.history.length || u.angle || u.useCut)) { // bearbeitetes Bild dauerhaft übernehmen
+      it.blob = await upFinal(u);
       if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
       aspects.delete(it.id);
     }
@@ -789,6 +804,11 @@ $('itemForm').addEventListener('submit', async (e) => {
     renderPicker();
     renderStage();
   }
+});
+dlg.addEventListener('close', () => {
+  stopDraw();
+  if (itCur && itCur.url) URL.revokeObjectURL(itCur.url);
+  itCur = null;
 });
 $('itemDelete').addEventListener('click', async () => {
   const it = state.editingItem;

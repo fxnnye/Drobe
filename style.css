@@ -354,3 +354,6 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
   #uploadDialog { width: min(620px, 92vw); }
   #uploadDialog .up-preview { height: 340px; }
 }
+
+/* Beim Bearbeiten bleibt das Foto oben stehen, während man die Werkzeuge darunter benutzt */
+#itemDialog.editing .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0 6px 0 var(--bg); }
