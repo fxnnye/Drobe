@@ -330,6 +330,7 @@ async function addFiles(files, target = 'closet') {
 const nameFromFile = (f) => f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 60) || 'Neues Teil';
 
 async function nextUpload() {
+  stopDraw();
   const f = upQueue.shift();
   if (upCur && upCur.url) URL.revokeObjectURL(upCur.url);
   if (!f) {
@@ -384,12 +385,14 @@ async function updateUpPreview(u) {
   const seq = u.seq = (u.seq || 0) + 1;
   const blob = await rotateBlob(u.useCut ? u.cut : u.orig, u.angle || 0);
   if (seq !== u.seq || upCur !== u) return;
+  u.shown = blob; // genau das, was die Vorschau gerade zeigt (gedreht, ggf. freigestellt)
   if (u.url) URL.revokeObjectURL(u.url);
   u.url = URL.createObjectURL(blob);
   $('upPreview').src = u.url;
 }
 function setUpAngle(a) {
   if (!upCur || upCur.busy) return;
+  stopDraw();
   upCur.angle = a;
   $('upAngle').value = a;
   updateUpPreview(upCur);
@@ -398,11 +401,114 @@ $('upRotL').onclick = () => setUpAngle(wrapAngle((upCur.angle || 0) - 90));
 $('upRotR').onclick = () => setUpAngle(wrapAngle((upCur.angle || 0) + 90));
 $('upAngle').oninput = (e) => setUpAngle(+e.target.value);
 
+/* Bereich einzeichnen: grob um das Teil malen, alles außerhalb wird transparent und abgeschnitten */
+let drawCanvas = null;
+function stopDraw() {
+  if (drawCanvas) { drawCanvas.remove(); drawCanvas = null; }
+  $('upDraw').classList.remove('on');
+  $('upDraw').textContent = 'Bereich einzeichnen';
+  $('upDrawHint').hidden = true;
+}
+// Abgebildeter Bereich des Fotos innerhalb des Elements (object-fit: contain)
+function containedRect(img, box) {
+  const r = img.getBoundingClientRect();
+  const s = Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
+  const w = img.naturalWidth * s, h = img.naturalHeight * s;
+  return { x: r.left - box.left + (r.width - w) / 2, y: r.top - box.top + (r.height - h) / 2, w, h, s };
+}
+async function cropToPath(blob, pts, area) {
+  const src = URL.createObjectURL(blob);
+  try {
+    const img = await loadImage(src);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = (p.x - area.x) / area.s, y = (p.y - area.y) / area.s;
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    });
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, 0, 0);
+    return await canvasBlob(trimAlpha(c), 'image/webp', 0.9);
+  } finally {
+    URL.revokeObjectURL(src);
+  }
+}
+$('upDraw').addEventListener('click', () => {
+  const u = upCur;
+  if (!u || u.busy) return;
+  if (drawCanvas) return stopDraw();
+  const box = $('upPreview').parentElement;
+  const cv = document.createElement('canvas');
+  const br = box.getBoundingClientRect();
+  cv.width = br.width; cv.height = br.height;
+  cv.className = 'up-draw';
+  box.appendChild(cv);
+  drawCanvas = cv;
+  $('upDraw').classList.add('on');
+  $('upDraw').textContent = 'Einzeichnen abbrechen';
+  $('upDrawHint').hidden = false;
+  const ctx = cv.getContext('2d');
+  let pts = [];
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.onpointerdown = (e) => {
+    e.preventDefault();
+    pts = [pos(e)];
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* Zeiger schon weg: dann bricht die Linie einfach ab */ }
+  };
+  cv.onpointermove = (e) => {
+    if (!pts.length) return;
+    const p = pos(e);
+    const last = pts[pts.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < 2) return;
+    pts.push(p);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#e60023';
+    ctx.fillStyle = 'rgba(230, 0, 35, .12)';
+    ctx.beginPath();
+    pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  cv.onpointerup = async (e) => {
+    if (pts.length < 8) { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); return toast('Zeichne einmal rund um das Teil'); }
+    const drawn = pts; pts = [];
+    u.busy = true; refreshUpload();
+    try {
+      const area = containedRect($('upPreview'), cv.getBoundingClientRect());
+      const out = await cropToPath(u.shown || u.orig, drawn, area);
+      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle });
+      u.orig = out; u.cut = null; u.useCut = false; u.angle = 0;
+      $('upAngle').value = 0;
+    } catch (ex) {
+      console.error(ex);
+      toast('Der Bereich konnte nicht übernommen werden');
+    }
+    u.busy = false;
+    stopDraw();
+    if (upCur === u) refreshUpload();
+  };
+  cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
+});
+$('upUndo').addEventListener('click', () => {
+  const u = upCur;
+  if (!u || u.busy || !u.history || !u.history.length) return;
+  stopDraw();
+  Object.assign(u, u.history.pop());
+  $('upAngle').value = u.angle || 0;
+  refreshUpload();
+});
+
 function refreshUpload() {
   const u = upCur;
   updateUpPreview(u);
   $('upProgress').textContent = upTotal > 1 ? `Foto ${upDone} von ${upTotal}` : '';
   $('upRemove').disabled = u.busy;
+  $('upDraw').disabled = u.busy;
+  $('upUndo').hidden = !(u.history && u.history.length);
+  $('upUndo').disabled = u.busy;
   $('upAdd').disabled = u.busy;
   $('upSkip').disabled = u.busy;
   $('upAll').disabled = u.busy;
@@ -414,6 +520,7 @@ function refreshUpload() {
 $('upRemove').addEventListener('click', async () => {
   const u = upCur;
   if (u.busy) return;
+  stopDraw();
   if (u.cut) { u.useCut = !u.useCut; return refreshUpload(); }
   u.busy = true; refreshUpload();
   try {

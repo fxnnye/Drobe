@@ -214,6 +214,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <input type="range" id="upAngle" min="-180" max="180" step="1" value="0" aria-label="Drehen">
       <button class="icon" type="button" id="upRotR" title="90° nach rechts" aria-label="90° nach rechts">⟳</button>
     </div>
+    <div class="row up-draw-row">
+      <button class="btn grow" type="button" id="upDraw">Bereich einzeichnen</button>
+      <button class="btn" type="button" id="upUndo" hidden>Zurück</button>
+    </div>
+    <p class="muted small" id="upDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.</p>
     <button class="btn full" type="button" id="upRemove">Hintergrund entfernen</button>
     <label class="field">Name
       <input type="text" id="upName" maxlength="60">
