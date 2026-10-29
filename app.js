@@ -390,7 +390,7 @@ const ctxUp = {
 };
 let itCur = null;
 const ctxIt = {
-  cur: () => itCur, refresh: () => renderTools(itCur),
+  cur: () => itCur, refresh: () => { renderTools(itCur); $('itemSave').disabled = !!itCur && (itCur.busy || itCur.queue > 0); },
   el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle'), zoomRow: $('itZoomRow'), zoom: $('itZoom'), zoomVal: $('itZoomVal'), pan: $('itPan') },
 };
 let activeCtx = ctxUp;
@@ -578,15 +578,27 @@ async function eraseStroke(blob, pts, area, width, restoreFrom) {
     const ctx = c.getContext('2d');
     ctx.drawImage(img, 0, 0);
     const at = pts.map((p) => ({ x: (p.x - area.x) / area.s, y: (p.y - area.y) / area.s }));
-    const drawStroke = (x) => {
-      x.lineWidth = width; x.lineCap = 'round'; x.lineJoin = 'round';
-      x.fillStyle = x.strokeStyle = '#000';
-      x.beginPath();
-      at.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
-      if (at.length === 1) { x.arc(at[0].x, at[0].y, width / 2, 0, Math.PI * 2); x.fill(); } else x.stroke();
-    };
+    // Maske des Strichs ohne weiche Kante: Löschen und Zurückholen treffen so genau dieselben Pixel.
+    // Zurückholen nimmt auch halb getroffene Randpixel mit, damit nach dem Zurückholen kein Rand stehen bleibt.
+    const m = document.createElement('canvas');
+    m.width = c.width; m.height = c.height;
+    const mx = m.getContext('2d');
+    mx.lineWidth = width; mx.lineCap = 'round'; mx.lineJoin = 'round';
+    mx.fillStyle = mx.strokeStyle = '#000';
+    mx.beginPath();
+    at.forEach((p, i) => (i ? mx.lineTo(p.x, p.y) : mx.moveTo(p.x, p.y)));
+    if (at.length === 1) { mx.arc(at[0].x, at[0].y, width / 2, 0, Math.PI * 2); mx.fill(); } else mx.stroke();
+    const xs = at.map((p) => p.x), ys = at.map((p) => p.y);
+    const x0 = Math.max(0, Math.floor(Math.min(...xs) - width)), y0 = Math.max(0, Math.floor(Math.min(...ys) - width));
+    const x1 = Math.min(m.width, Math.ceil(Math.max(...xs) + width)), y1 = Math.min(m.height, Math.ceil(Math.max(...ys) + width));
+    if (x1 > x0 && y1 > y0) {
+      const md = mx.getImageData(x0, y0, x1 - x0, y1 - y0);
+      const limit = restoreFrom ? 0 : 127;
+      for (let i = 3; i < md.data.length; i += 4) md.data[i] = md.data[i] > limit ? 255 : 0;
+      mx.putImageData(md, x0, y0);
+    }
     ctx.globalCompositeOperation = 'destination-out';
-    drawStroke(ctx); // Strich: Pixel löschen
+    ctx.drawImage(m, 0, 0); // Strich: Pixel löschen
     if (restoreFrom) {
       // Zurückholen: an der Stelle des Strichs die Pixel aus dem Zustand vor dem Radieren wieder einsetzen
       const bsrc = URL.createObjectURL(restoreFrom);
@@ -597,7 +609,7 @@ async function eraseStroke(blob, pts, area, width, restoreFrom) {
         const lx = layer.getContext('2d');
         lx.drawImage(bimg, 0, 0, c.width, c.height);
         lx.globalCompositeOperation = 'destination-in';
-        drawStroke(lx);
+        lx.drawImage(m, 0, 0);
         ctx.globalCompositeOperation = 'source-over';
         ctx.drawImage(layer, 0, 0);
       } finally {
@@ -639,41 +651,30 @@ bindTool('erase', () => {
   el().preview.closest('dialog').classList.add('tooling'); // Foto bleibt oben stehen, während man die Werkzeuge darunter benutzt
   const ctx = cv.getContext('2d');
   let pts = [];
+  const pending = []; // Striche, die schon gemalt, aber noch nicht eingerechnet sind: sie bleiben sichtbar
   const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const line = (list, width, mode) => {
+    ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = ctx.fillStyle = mode === 'restore' ? 'rgba(26, 158, 92, .5)' : 'rgba(230, 0, 35, .45)';
+    ctx.beginPath();
+    list.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+    if (list.length === 1) { ctx.arc(list[0].x, list[0].y, width / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.stroke();
+  };
   const paint = () => {
     ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.lineWidth = +el().brush.value; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = ctx.fillStyle = eraseMode === 'restore' ? 'rgba(26, 158, 92, .5)' : 'rgba(230, 0, 35, .45)';
-    ctx.beginPath();
-    pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
-    if (pts.length === 1) { ctx.arc(pts[0].x, pts[0].y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.stroke();
+    pending.forEach((st) => line(st.pts, st.brush, st.mode));
+    if (pts.length) line(pts, +el().brush.value, eraseMode);
   };
-  cv.onpointerdown = (e) => {
-    e.preventDefault();
-    if (u.busy) return; // der vorige Strich wird noch eingerechnet
-    pts = [pos(e)];
-    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* Zeiger schon weg: dann bricht der Strich einfach ab */ }
-    paint();
-  };
-  cv.onpointermove = (e) => {
-    if (!pts.length) return;
-    pts.push(pos(e));
-    paint();
-  };
-  cv.onpointerup = async () => {
-    if (!pts.length) return;
-    const stroke = pts; pts = [];
-    const brush = +el().brush.value;
-    u.busy = true; activeCtx.refresh();
+  // Einen Strich ins Bild rechnen. Die Striche laufen nacheinander, es geht keiner verloren.
+  const apply = async (st) => {
     try {
-      const area = containedRect(el().preview, cv.getBoundingClientRect());
       const now = u.shown || u.orig;
-      if (eraseMode === 'restore' && !u.base) {
+      if (st.mode === 'restore' && !u.base) {
         toast('Es gibt noch nichts zum Zurückholen. Radiere zuerst etwas weg.');
       } else {
         // Zustand vor dem ersten Radieren merken, damit sich Gelöschtes zurückholen lässt
         const base = u.base || now;
-        const out = await eraseStroke(now, stroke, area, brush / area.s, eraseMode === 'restore' ? base : null);
+        const out = await eraseStroke(now, st.pts, st.area, st.brush / st.area.s, st.mode === 'restore' ? base : null);
         (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, base: u.base });
         u.base = base;
         u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
@@ -684,15 +685,37 @@ bindTool('erase', () => {
       console.error(ex);
       toast('Das Radieren hat nicht geklappt');
     }
-    u.busy = false;
-    ctx.clearRect(0, 0, cv.width, cv.height);
+    pending.splice(pending.indexOf(st), 1);
+    u.queue--;
+    paint();
     if (cur() === u) activeCtx.refresh();
   };
-  cv.onpointercancel = () => { pts = []; ctx.clearRect(0, 0, cv.width, cv.height); };
+  cv.onpointerdown = (e) => {
+    e.preventDefault();
+    pts = [pos(e)];
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* Zeiger schon weg: dann bricht der Strich einfach ab */ }
+    paint();
+  };
+  cv.onpointermove = (e) => {
+    if (!pts.length) return;
+    pts.push(pos(e));
+    paint();
+  };
+  cv.onpointerup = () => {
+    if (!pts.length) return;
+    const st = { pts, brush: +el().brush.value, mode: eraseMode, area: containedRect(el().preview, cv.getBoundingClientRect()) };
+    pts = [];
+    pending.push(st);
+    u.queue = (u.queue || 0) + 1;
+    paint();
+    activeCtx.refresh();
+    u.chain = (u.chain || Promise.resolve()).then(() => apply(st));
+  };
+  cv.onpointercancel = () => { pts = []; paint(); };
 });
 bindTool('undo', () => {
   const u = cur();
-  if (!u || u.busy || !u.history || !u.history.length) return;
+  if (!u || u.busy || u.queue > 0 || !u.history || !u.history.length) return;
   if (!el().erase.classList.contains('on')) stopDraw(); // beim Radieren darf es direkt weitergehen
   Object.assign(u, u.history.pop());
   el().angle.value = u.angle || 0;
@@ -703,11 +726,12 @@ bindTool('undo', () => {
 function renderTools(u) {
   updatePreview(u);
   const e = el();
-  e.remove.disabled = u.busy;
-  e.draw.disabled = u.busy;
-  e.erase.disabled = u.busy;
+  const locked = u.busy || u.queue > 0; // beim Einrechnen von Strichen nichts anderes anfassen
+  e.remove.disabled = locked;
+  e.draw.disabled = locked;
+  e.erase.disabled = locked;
   e.undo.hidden = !(u.history && u.history.length);
-  e.undo.disabled = u.busy;
+  e.undo.disabled = locked;
   e.remove.textContent = u.busy ? (u.status || 'Hintergrund wird entfernt …') : u.useCut ? 'Original anzeigen' : 'Hintergrund entfernen';
   e.preview.parentElement.classList.toggle('busy', u.busy);
 }
@@ -715,9 +739,10 @@ function refreshUpload() {
   const u = cur();
   renderTools(u);
   $('upProgress').textContent = upTotal > 1 ? `Foto ${upDone} von ${upTotal}` : '';
-  $('upAdd').disabled = u.busy;
-  $('upSkip').disabled = u.busy;
-  $('upAll').disabled = u.busy;
+  const locked = u.busy || u.queue > 0;
+  $('upAdd').disabled = locked;
+  $('upSkip').disabled = locked;
+  $('upAll').disabled = locked;
   $('upBatch').hidden = upQueue.length === 0 || upTarget === 'wish'; // Links sind pro Teil, deshalb kein Sammel-Upload
   if (!u.busy) $('upAll').textContent = `Alle ${upQueue.length + 1} Fotos hinzufügen`;
 }
