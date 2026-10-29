@@ -197,6 +197,34 @@ const Cloud = (() => {
         err.textContent = authError(ex);
       } finally { $('authSubmit').disabled = false; }
     };
+    $('syncNowBtn').onclick = async () => {
+      if (!navigator.onLine) return toast('Keine Verbindung');
+      await sync();
+    };
+    $('pwToggle').onclick = () => {
+      const box = $('pwBox');
+      box.hidden = !box.hidden;
+      $('pwToggle').setAttribute('aria-expanded', String(!box.hidden));
+      $('pwMsg').textContent = '';
+    };
+    $('pwSave').onclick = async () => {
+      const msg = $('pwMsg');
+      const a = $('pwNew').value, b = $('pwNew2').value;
+      msg.className = 'pw-msg err';
+      if (a.length < 8) { msg.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
+      if (a !== b) { msg.textContent = 'Die beiden Passwörter sind nicht gleich.'; return; }
+      if (!sb || !navigator.onLine) { msg.textContent = 'Dafür brauchst du eine Internetverbindung.'; return; }
+      $('pwSave').disabled = true;
+      try {
+        const { error } = await sb.auth.updateUser({ password: a });
+        if (error) throw error;
+        $('pwNew').value = ''; $('pwNew2').value = '';
+        msg.className = 'pw-msg';
+        msg.textContent = 'Passwort geändert.';
+      } catch (ex) {
+        msg.textContent = authError(ex);
+      } finally { $('pwSave').disabled = false; }
+    };
     $('logoutBtn').onclick = async () => {
       if (sb) { try { await sb.auth.signOut(); } catch (e) { /* offline: lokal abmelden reicht */ } }
       try { localStorage.removeItem('drobe-last-user'); } catch (e) { /* egal */ }

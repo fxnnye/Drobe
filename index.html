@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Drobe</title>
 <meta name="theme-color" content="#333638">
+<script>
+// Gewähltes Erscheinungsbild vor dem ersten Zeichnen setzen, damit nichts aufblitzt
+try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Drobe">
@@ -40,7 +44,9 @@
     <button class="tab" data-view="outfits" role="tab">Outfits <span id="outfitCount" class="badge">0</span></button>
     <button class="tab" data-view="wishlist" role="tab">Wunschliste</button>
   </nav>
-  <button class="btn backup" id="backupBtn">Sicherung</button>
+  <button class="btn menu" id="menuBtn" aria-label="Einstellungen" title="Einstellungen">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
 </header>
 
 <main>
@@ -248,13 +254,48 @@
   </form>
 </dialog>
 
+<dialog id="settingsDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2>Einstellungen</h2>
+
+    <h3 class="set-title">Konto</h3>
+    <div class="account">
+      <div><span class="muted small">Angemeldet als</span><br><strong id="accName"></strong><br><span class="muted small" id="syncStatus"></span></div>
+    </div>
+    <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
+    <button class="btn full" type="button" id="pwToggle" aria-expanded="false" aria-controls="pwBox">Passwort ändern</button>
+    <div class="pw-box" id="pwBox" hidden>
+      <label class="field">Neues Passwort
+        <input type="password" id="pwNew" autocomplete="new-password">
+      </label>
+      <label class="field">Neues Passwort wiederholen
+        <input type="password" id="pwNew2" autocomplete="new-password">
+      </label>
+      <p class="pw-msg" id="pwMsg" role="status"></p>
+      <button class="btn primary full" type="button" id="pwSave">Passwort speichern</button>
+    </div>
+    <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
+
+    <h3 class="set-title">Darstellung</h3>
+    <div class="chips" id="themeChips">
+      <button class="chip" type="button" data-theme="light">Hell</button>
+      <button class="chip" type="button" data-theme="dark">Dunkel</button>
+      <button class="chip" type="button" data-theme="system">Automatisch</button>
+    </div>
+
+    <h3 class="set-title">Daten</h3>
+    <button class="btn full" type="button" id="backupOpen">Sicherung speichern oder laden</button>
+
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="settingsClose">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="backupDialog">
   <form method="dialog" onsubmit="return false">
     <h2>Sicherung</h2>
-    <div class="account">
-      <div><span class="muted small">Angemeldet als</span><br><strong id="accName"></strong><br><span class="muted small" id="syncStatus"></span></div>
-      <button class="btn" type="button" id="logoutBtn">Abmelden</button>
-    </div>
     <p class="muted small">Dein Schrank liegt in deinem Konto und auf diesem Gerät. Speichere trotzdem ab und zu eine Sicherung, dann ist im Notfall alles schnell wieder da.</p>
     <button class="btn primary full" type="button" id="backupExport">Sicherung speichern</button>
     <p class="muted small" id="backupInfo"></p>

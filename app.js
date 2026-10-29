@@ -1090,10 +1090,34 @@ const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
 const dataUrlToBlob = async (url) => (await fetch(url)).blob();
 
 const backupDlg = $('backupDialog');
-$('backupBtn').onclick = () => {
+const settingsDlg = $('settingsDialog');
+$('menuBtn').onclick = () => settingsDlg.showModal();
+$('settingsClose').onclick = () => settingsDlg.close();
+$('backupOpen').onclick = () => {
+  settingsDlg.close();
   $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits, ${wishlist.length} Wünsche.`;
   backupDlg.showModal();
 };
+
+/* ---------- Erscheinungsbild ---------- */
+function applyTheme(mode) {
+  const root = document.documentElement;
+  if (mode === 'light' || mode === 'dark') root.dataset.theme = mode; else delete root.dataset.theme;
+  document.querySelectorAll('#themeChips .chip').forEach((c) => c.classList.toggle('active', c.dataset.theme === (mode === 'light' || mode === 'dark' ? mode : 'system')));
+  const dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelector('meta[name=theme-color]').content = dark ? '#121212' : '#333638';
+}
+let themeMode = 'system';
+try { themeMode = localStorage.getItem('drobe-theme') || 'system'; } catch (e) { /* ohne Speicher: automatisch */ }
+applyTheme(themeMode);
+document.querySelectorAll('#themeChips .chip').forEach((c) => {
+  c.onclick = () => {
+    themeMode = c.dataset.theme;
+    try { localStorage.setItem('drobe-theme', themeMode); } catch (e) { /* gilt dann nur bis zum Neuladen */ }
+    applyTheme(themeMode);
+  };
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(themeMode));
 $('backupClose').onclick = () => backupDlg.close();
 
 $('backupExport').onclick = async () => {
