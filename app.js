@@ -1080,7 +1080,7 @@ renderColors();
 $('colorsBtn').onclick = () => $('colorsDialog').showModal();
 $('colorsClose').onclick = () => $('colorsDialog').close();
 
-/* ---------- Sicherung ---------- */
+/* ---------- Backup ---------- */
 const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
   const r = new FileReader();
   r.onload = () => resolve(r.result);
@@ -1152,10 +1152,10 @@ $('backupExport').onclick = async () => {
     a.download = `kleiderschrank-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast('Sicherung gespeichert');
+    toast('Backup gespeichert');
   } catch (e) {
     console.error(e);
-    toast('Sicherung fehlgeschlagen');
+    toast('Backup fehlgeschlagen');
   } finally {
     btn.disabled = false;
   }
@@ -1168,7 +1168,7 @@ async function importBackup(file) {
     data = JSON.parse(await file.text());
     if (data.app !== 'kleiderschrank' || !Array.isArray(data.items) || !Array.isArray(data.outfits)) throw new Error('format');
   } catch (e) {
-    return toast('Das ist keine gültige Sicherungsdatei');
+    return toast('Das ist keine gültige Backup-Datei');
   }
   const haveItems = new Set(items.map((i) => i.id));
   const haveOutfits = new Set(outfits.map((o) => o.id));
@@ -1220,7 +1220,7 @@ async function importBackup(file) {
   $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits, ${wishlist.length} Wünsche.`;
   toast(addedItems || addedOutfits || addedWish
     ? `${addedItems} Teile, ${addedOutfits} Outfits und ${addedWish} Wünsche hinzugefügt`
-    : 'Alles aus der Sicherung war schon vorhanden');
+    : 'Alles aus dem Backup war schon vorhanden');
 }
 $('backupFile').addEventListener('change', (e) => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });
 const drop = $('backupDrop');

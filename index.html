@@ -29,7 +29,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <label class="field">Passwort
       <input type="password" id="authPass" autocomplete="current-password" required>
     </label>
-    <p class="muted small" id="authNote" hidden>Merk dir das Passwort gut. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Eine Sicherungsdatei hilft im Notfall.</p>
+    <p class="muted small" id="authNote" hidden>Merk dir das Passwort gut. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Eine Backup-Datei hilft im Notfall.</p>
     <p class="auth-error" id="authError" role="alert"></p>
     <button class="btn primary full" type="submit" id="authSubmit">Anmelden</button>
     <button class="btn full" type="button" id="authSwitch">Neues Konto erstellen</button>
@@ -267,7 +267,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="set-row" type="button" data-open="account">Konto</button>
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
-      <button class="set-row" type="button" id="backupOpen">Sicherung</button>
+      <button class="set-row" type="button" id="backupOpen">Backup</button>
     </div>
 
     <div class="set-panel" data-panel="account" data-title="Konto" hidden>
@@ -307,12 +307,12 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
 <dialog id="backupDialog">
   <form method="dialog" onsubmit="return false">
-    <h2>Sicherung</h2>
-    <p class="muted small">Dein Schrank liegt in deinem Konto und auf diesem Gerät. Speichere trotzdem ab und zu eine Sicherung, dann ist im Notfall alles schnell wieder da.</p>
-    <button class="btn primary full" type="button" id="backupExport">Sicherung speichern</button>
+    <h2>Backup</h2>
+    <p class="muted small">Dein Schrank liegt in deinem Konto und auf diesem Gerät. Speichere trotzdem ab und zu ein Backup, dann ist im Notfall alles schnell wieder da.</p>
+    <button class="btn primary full" type="button" id="backupExport">Backup speichern</button>
     <p class="muted small" id="backupInfo"></p>
     <label class="dropbox" id="backupDrop">
-      Sicherungsdatei hierher ziehen<br><span class="muted small">oder klicken zum Auswählen</span>
+      Backup-Datei hierher ziehen<br><span class="muted small">oder klicken zum Auswählen</span>
       <input type="file" id="backupFile" accept=".json,application/json" hidden>
     </label>
     <p class="muted small">Beim Laden wird alles hinzugefügt. Vorhandene Teile und Outfits werden nicht überschrieben oder gelöscht.</p>
