@@ -14,7 +14,24 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="locked">
+<div class="auth" id="auth" hidden>
+  <form class="auth-card" id="authForm" autocomplete="on">
+    <h1>Drobe</h1>
+    <h2 id="authTitle">Anmelden</h2>
+    <label class="field">Benutzername
+      <input type="text" id="authName" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20" required>
+    </label>
+    <label class="field">Passwort
+      <input type="password" id="authPass" autocomplete="current-password" required>
+    </label>
+    <p class="muted small" id="authNote" hidden>Merk dir das Passwort gut. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Eine Sicherungsdatei hilft im Notfall.</p>
+    <p class="auth-error" id="authError" role="alert"></p>
+    <button class="btn primary full" type="submit" id="authSubmit">Anmelden</button>
+    <button class="btn full" type="button" id="authSwitch">Neues Konto erstellen</button>
+  </form>
+</div>
+
 <header class="top">
   <h1>Drobe</h1>
   <nav class="tabs" role="tablist">
@@ -234,7 +251,11 @@
 <dialog id="backupDialog">
   <form method="dialog" onsubmit="return false">
     <h2>Sicherung</h2>
-    <p class="muted small">Dein Schrank liegt nur in diesem Browser. Speichere ab und zu eine Sicherung, dann ist im Notfall alles schnell wieder da, auch auf einem anderen Gerät.</p>
+    <div class="account">
+      <div><span class="muted small">Angemeldet als</span><br><strong id="accName"></strong><br><span class="muted small" id="syncStatus"></span></div>
+      <button class="btn" type="button" id="logoutBtn">Abmelden</button>
+    </div>
+    <p class="muted small">Dein Schrank liegt in deinem Konto und auf diesem Gerät. Speichere trotzdem ab und zu eine Sicherung, dann ist im Notfall alles schnell wieder da.</p>
     <button class="btn primary full" type="button" id="backupExport">Sicherung speichern</button>
     <p class="muted small" id="backupInfo"></p>
     <label class="dropbox" id="backupDrop">
@@ -262,6 +283,7 @@
 
 <div id="toast" class="toast" role="status"></div>
 <script src="colors.js"></script>
+<script src="cloud.js"></script>
 <script src="app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

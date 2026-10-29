@@ -33,9 +33,9 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 
 /* ---------- Speicher (IndexedDB) ---------- */
 let db;
-function openDb() {
+function openDb(name) {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('kleiderschrank', 2);
+    const req = indexedDB.open(name, 2);
     req.onupgradeneeded = () => {
       for (const name of ['items', 'outfits', 'wishlist']) {
         if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, { keyPath: 'id' });
@@ -54,8 +54,20 @@ function tx(store, mode, fn) {
   });
 }
 const dbAll = (s) => tx(s, 'readonly', (o) => o.getAll());
-const dbPut = (s, v) => tx(s, 'readwrite', (o) => o.put(v));
-const dbDel = (s, id) => tx(s, 'readwrite', (o) => o.delete(id));
+const rawPut = (s, v) => tx(s, 'readwrite', (o) => o.put(v));
+const rawDel = (s, id) => tx(s, 'readwrite', (o) => o.delete(id));
+// Alle Änderungen der App laufen hier durch: lokal speichern, dann im Hintergrund ins Konto
+async function dbPut(s, v) {
+  v.updated = Date.now();
+  const r = await rawPut(s, v);
+  Cloud.queue(s, v.id, 'put');
+  return r;
+}
+async function dbDel(s, id) {
+  const r = await rawDel(s, id);
+  Cloud.queue(s, id, 'del');
+  return r;
+}
 
 /* ---------- Zustand ---------- */
 let items = [];
@@ -1184,16 +1196,74 @@ const drop = $('backupDrop');
 drop.addEventListener('drop', (e) => { if (e.dataTransfer.files[0]) importBackup(e.dataTransfer.files[0]); });
 
 /* ---------- Start ---------- */
-(async function init() {
-  fillSelect($('uploadCategory'));
-  fillSelect($('itemCategory'));
-  fillSelect($('upCategory'));
-  fillSelect($('wishCategory'));
-  fillSelect($('wishUploadCategory'));
+fillSelect($('uploadCategory'));
+fillSelect($('itemCategory'));
+fillSelect($('upCategory'));
+fillSelect($('wishCategory'));
+fillSelect($('wishUploadCategory'));
+
+// Alles aus dem lokalen Speicher neu einlesen und anzeigen (nach dem Abgleich mit dem Konto)
+async function reloadAll() {
+  [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
+  for (const u of urls.values()) URL.revokeObjectURL(u);
+  urls.clear();
+  items.sort((a, b) => a.created - b.created);
+  wishlist.sort((a, b) => a.created - b.created);
+  outfits.sort((a, b) => a.created - b.created);
+  renderCloset(); renderWishlist(); renderOutfits(); renderPicker();
+}
+
+// Daten aus der Zeit vor dem Login (gleicher Browser, alte Datenbank) lesen
+function readLegacyDb() {
+  return new Promise(async (resolve) => {
+    try {
+      if (indexedDB.databases && !(await indexedDB.databases()).some((d) => d.name === 'kleiderschrank')) return resolve(null);
+    } catch (e) { /* ältere Browser: einfach versuchen */ }
+    const req = indexedDB.open('kleiderschrank');
+    req.onerror = () => resolve(null);
+    req.onsuccess = async () => {
+      const old = req.result;
+      const out = {};
+      try {
+        for (const name of ['items', 'outfits', 'wishlist']) {
+          out[name] = old.objectStoreNames.contains(name)
+            ? await new Promise((res, rej) => { const r = old.transaction(name, 'readonly').objectStore(name).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })
+            : [];
+        }
+      } catch (e) { old.close(); return resolve(null); }
+      old.close();
+      resolve(out);
+    };
+  });
+}
+
+async function offerLegacy(userId) {
+  const flag = 'drobe-legacy-' + userId;
+  try { if (localStorage.getItem(flag)) return; } catch (e) { return; }
+  const old = await readLegacyDb();
+  if (!old) return;
+  const total = old.items.length + old.outfits.length + old.wishlist.length;
+  if (!total) return;
+  const text = `Auf diesem Gerät liegen noch ${old.items.length} Teile, ${old.outfits.length} Outfits und ${old.wishlist.length} Wünsche von vor dem Login. In dein Konto übernehmen?`;
+  if (!(await askConfirm(text, 'Übernehmen'))) return;
+  for (const name of ['items', 'outfits', 'wishlist']) {
+    const have = new Set((await dbAll(name)).map((r) => r.id));
+    for (const rec of old[name]) {
+      if (have.has(rec.id)) continue;
+      await rawPut(name, rec);
+      Cloud.queue(name, rec.id, 'put');
+    }
+  }
+  try { localStorage.setItem(flag, '1'); } catch (e) { /* egal */ }
+}
+
+// Wird nach der Anmeldung aufgerufen; jeder Nutzer hat auf dem Gerät seine eigene lokale Datenbank
+async function startApp(userId) {
   // Browser bitten, die Daten dauerhaft zu behalten (nicht bei Speicherknappheit aufzuräumen)
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   try {
-    db = await openDb();
+    db = await openDb('kleiderschrank-u-' + userId);
+    await offerLegacy(userId);
     [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
     wishlist.sort((a, b) => a.created - b.created);
   } catch (e) {
@@ -1211,4 +1281,6 @@ drop.addEventListener('drop', (e) => { if (e.dataTransfer.files[0]) importBackup
   renderCloset();
   renderWishlist();
   renderOutfits();
-})();
+}
+
+Cloud.boot();
