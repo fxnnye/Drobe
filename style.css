@@ -379,3 +379,25 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 }
 
 dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0 6px 0 var(--bg); }
+
+/* ---------- Gäste und öffentliche Profile ---------- */
+.guest-actions { margin-left: auto; display: flex; gap: 8px; }
+.guest-actions[hidden] { display: none; }
+.guest .tabs, .guest .menu { display: none; }
+.guest main, .viewing-profile main { display: none; }
+.landing, .public { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+.landing[hidden], .public[hidden] { display: none; }
+.landing h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -.02em; }
+.find { display: flex; gap: 8px; margin: 18px 0 6px; max-width: 460px; }
+.pub-back { margin-bottom: 14px; }
+.pub-name { font-size: 30px; margin: 0 0 14px; letter-spacing: -.02em; }
+.pub-banner { background: var(--gray); border-radius: 14px; padding: 10px 14px; font-size: 13px; margin: 0 0 14px; }
+.pub-section { margin-bottom: 28px; }
+.pub-section h3 { margin: 0 0 10px; font-size: 18px; }
+.pub-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.pub-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--gray); }
+.pub-tag.hot { background: var(--text); color: var(--on-text); }
+@media (max-width: 700px) {
+  .guest-actions .btn { padding: 8px 12px; font-size: 14px; }
+  .landing, .public { padding: 20px 16px 48px; }
+}

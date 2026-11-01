@@ -176,9 +176,20 @@ const Cloud = (() => {
     return 'Das hat nicht geklappt: ' + m;
   }
 
-  function showAuth() {
+  // Anmeldefenster: aus der Gast-Ansicht heraus lässt es sich wieder schließen
+  function showAuth(reg) {
+    setMode(!!reg);
     document.body.classList.add('locked');
     $('auth').hidden = false;
+    $('authCancel').hidden = !document.body.classList.contains('guest');
+  }
+  // Ohne Konto: Gäste sehen die Startseite und öffentliche Profile, Anmelden liegt oben rechts
+  function enterGuest() {
+    document.body.classList.remove('locked');
+    document.body.classList.add('guest');
+    $('auth').hidden = true;
+    $('guestActions').hidden = false;
+    Profile.start();
   }
 
   let registering = false;
@@ -194,6 +205,9 @@ const Cloud = (() => {
 
   function bindAuthUi() {
     $('authSwitch').onclick = () => setMode(!registering);
+    $('authCancel').onclick = () => { $('auth').hidden = true; document.body.classList.remove('locked'); };
+    $('guestLogin').onclick = () => showAuth(false);
+    $('guestRegister').onclick = () => showAuth(true);
     $('authForm').onsubmit = async (e) => {
       e.preventDefault();
       const name = cleanName($('authName').value);
@@ -249,9 +263,11 @@ const Cloud = (() => {
     user = { id: u.id, name };
     try { localStorage.setItem('drobe-last-user', JSON.stringify(user)); } catch (e) { /* egal */ }
     $('auth').hidden = true;
-    document.body.classList.remove('locked');
+    document.body.classList.remove('locked', 'guest');
+    $('guestActions').hidden = true;
     $('accName').textContent = name;
     await startApp(user.id);
+    Profile.start();
     sync();
   }
 
@@ -279,11 +295,11 @@ const Cloud = (() => {
     let last = null;
     try { last = JSON.parse(localStorage.getItem('drobe-last-user') || 'null'); } catch (e) { /* egal */ }
     if (last && last.id && (!sb || !navigator.onLine)) return enter(last);
-    showAuth();
+    enterGuest();
   }
 
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
   window.addEventListener('online', syncSoon);
 
-  return { boot, queue };
+  return { boot, queue, client: () => sb, user: () => user, sync };
 })();

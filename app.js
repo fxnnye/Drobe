@@ -137,7 +137,8 @@ function buildDetails(box, p, kind) {
     : '';
   const sale = kind === 'items'
     ? `<label class="field" id="${p}priceRow" hidden>Preis (€)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
-       <label class="field" id="${p}swapRow" hidden>Tauschwunsch<input type="text" id="${p}swap" maxlength="${SWAP_MAX}" placeholder="z. B. Größe M oder Nike Dunk Low"></label>`
+       <label class="field" id="${p}swapRow" hidden>Tauschwunsch<input type="text" id="${p}swap" maxlength="${SWAP_MAX}" placeholder="z. B. Größe M oder Nike Dunk Low"></label>
+       <label class="check" id="${p}pinRow" hidden><input type="checkbox" id="${p}pin"> Oben im Profil anpinnen (Showcase, max. 6)</label>`
     : '';
   box.innerHTML = `<details class="more"><summary>Details und Sichtbarkeit</summary>
     <div class="more-grid">${text}${extra}</div>
@@ -147,13 +148,19 @@ function buildDetails(box, p, kind) {
 }
 function syncVisRows(p) {
   const v = $(p + 'vis').value;
-  if ($(p + 'priceRow')) { $(p + 'priceRow').hidden = v !== 'sale'; $(p + 'swapRow').hidden = v !== 'trade'; }
+  if ($(p + 'priceRow')) {
+    $(p + 'priceRow').hidden = v !== 'sale'; $(p + 'swapRow').hidden = v !== 'trade';
+    $(p + 'pinRow').hidden = v === 'private'; // Anpinnen nur bei Teilen, die andere überhaupt sehen
+  }
 }
 function fillDetails(p, rec) {
   for (const k of Object.keys(DETAIL_TEXT)) $(p + k).value = rec[k] || '';
   if ($(p + 'cond')) { $(p + 'cond').value = rec.cond || ''; $(p + 'rarity').value = rec.rarity || ''; }
   $(p + 'vis').value = visOf(rec);
-  if ($(p + 'price')) { $(p + 'price').value = rec.price != null ? String(rec.price).replace('.', ',') : ''; $(p + 'swap').value = rec.swap || ''; }
+  if ($(p + 'price')) {
+    $(p + 'price').value = rec.price != null ? String(rec.price).replace('.', ',') : ''; $(p + 'swap').value = rec.swap || '';
+    $(p + 'pin').checked = typeof Profile !== 'undefined' && Profile.isPinned(rec.id);
+  }
   syncVisRows(p);
   const d = $(p + 'vis').closest('details');
   d.open = visOf(rec) !== 'private' || Object.keys(DETAIL_TEXT).some((k) => rec[k]);
@@ -1011,6 +1018,7 @@ $('itemForm').addEventListener('submit', async (e) => {
   if (e.submitter && e.submitter.value === 'save') {
     const it = state.editingItem;
     if (!readDetails('itd', 'items', it)) return e.preventDefault(); // Preis falsch: Dialog bleibt offen
+    if (typeof Profile !== 'undefined') Profile.setPinned(it.id, visOf(it) !== 'private' && $('itdpin').checked);
     it.name = $('itemName').value.trim() || it.name;
     it.category = $('itemCategory').value;
     const note = $('itemNote').value.trim();
