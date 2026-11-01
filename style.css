@@ -438,3 +438,12 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .inbox-item p { margin: 0; }
 #wishMatches { margin-bottom: 12px; }
 #wishMatches .member { width: 100%; margin-bottom: 6px; }
+
+/* ---------- Plus neben den Kategorien (Computer); am Handy übernimmt der Plus-Reiter unten ---------- */
+.filter-row { display: flex; align-items: flex-start; gap: 12px; }
+.filter-row .chips { flex: 1; min-width: 0; }
+.add-btn { flex: none; width: 44px; height: 44px; border: 0; border-radius: 14px; background: var(--gray); font-size: 28px; font-weight: 400; line-height: 1; cursor: pointer; }
+.add-btn:hover { background: var(--gray-hover); }
+.members-mode .filter-row { display: none; }
+@media (min-width: 701px) { .tab-add { display: none; } }
+@media (max-width: 700px) { .add-btn { display: none; } }

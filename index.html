@@ -77,20 +77,27 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       </div>
     </div>
     <div class="member-results" id="memberResults" hidden></div>
-    <div class="chips" id="closetFilter"></div>
+    <div class="filter-row">
+      <div class="chips" id="closetFilter"></div>
+      <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen">+</button>
+    </div>
     <div class="grid" id="closetGrid"></div>
     <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Tippe auf +, um das erste Teil hinzuzufügen.</p>
   </section>
 
   <!-- WUNSCHLISTE -->
   <section id="view-wishlist" class="view">
-    <div class="chips" id="wishFilter"></div>
+    <div class="filter-row">
+      <div class="chips" id="wishFilter"></div>
+      <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen">+</button>
+    </div>
     <div class="grid" id="wishGrid"></div>
     <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
   </section>
 
   <!-- HINZUFÜGEN -->
   <section id="view-add" class="view">
+    <button class="btn builder-back" type="button" id="addBack">← Zurück</button>
     <h2 class="page-title">Hinzufügen</h2>
     <div class="chips" id="addTarget">
       <button class="chip active" type="button" data-target="closet">Schrank</button>
