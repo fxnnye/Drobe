@@ -64,7 +64,21 @@ const Profile = (() => {
   }
   const money = (n) => Number(n).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
-  function card(rec, urls, tags) {
+  /* ---------- Treffer: passt ein Wunsch zu einem Teil? ---------- */
+  const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').trim();
+  const words = (s) => norm(s).split(/\s+/).filter((t) => t.length >= 3);
+  // Gleiche Artikelnummer ist ein sicherer Treffer; sonst müssen Marke gleich sein, die Größe (falls beide angegeben) passen
+  // und mindestens die Hälfte der Wörter aus dem Wunschnamen im Namen des Teils vorkommen.
+  function matches(wish, item) {
+    if (wish.sku && item.sku && norm(wish.sku).replace(/ /g, '') === norm(item.sku).replace(/ /g, '')) return true;
+    if (!wish.brand || !item.brand || norm(wish.brand) !== norm(item.brand)) return false;
+    if (wish.size && item.size && norm(wish.size) !== norm(item.size)) return false;
+    const a = words(wish.name), b = new Set(words(item.name));
+    return !a.length || a.filter((t) => b.has(t)).length >= Math.ceil(a.length / 2);
+  }
+  const mine = (k) => (k === 'items' ? (typeof items !== 'undefined' ? items : []) : (typeof wishlist !== 'undefined' ? wishlist : []));
+
+  function card(rec, urls, tags, action) {
     const c = el('div', 'card');
     const img = el('div', 'img');
     if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.src = urls[rec.path]; img.append(i); }
@@ -76,6 +90,12 @@ const Profile = (() => {
       const row = el('div', 'pub-tags');
       for (const [text, cls] of tags) row.append(el('span', 'pub-tag' + (cls ? ' ' + cls : ''), text));
       meta.append(row);
+    }
+    if (action) {
+      const b = el('button', 'btn pub-action', action.label);
+      b.type = 'button';
+      b.onclick = action.fn;
+      meta.append(b);
     }
     c.append(img, meta);
     return c;
@@ -128,13 +148,124 @@ const Profile = (() => {
     if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
     box.append(el('h2', 'pub-name', data.username));
 
+    // Bei fremden Profilen: „Interesse“ an Teilen, „Hab ich“ bei Wünschen und Treffer mit der eigenen Liste
+    const own = !!me && me.name === data.username;
+    const askLogin = () => Cloud.showAuth(false);
+    const wishMatch = (it) => mine('wishlist').find((w) => matches(w, it));
+    const itemMatch = (w) => mine('items').find((i) => matches(w, i));
+    const itemCard = (it) => {
+      const tags = itemTags(it), w = !own && me ? wishMatch(it) : null;
+      if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
+      return card(it, urls, tags, own ? null : { label: 'Interesse', fn: me ? () => askInterest('interest', data.username, it) : askLogin });
+    };
+    const wishCard = (w) => {
+      const m = !own && me ? itemMatch(w) : null;
+      const tags = m ? [['Du hast: ' + m.name, 'match']] : [];
+      return card(w, urls, tags, own ? null : { label: 'Hab ich', fn: me ? () => askInterest('have', data.username, w, m) : askLogin });
+    };
+    if (!own && me) {
+      const n = data.items.filter(wishMatch).length;
+      if (n) box.append(el('p', 'pub-banner match', n === 1 ? 'Ein Teil hier passt zu deiner Wunschliste.' : n + ' Teile hier passen zu deiner Wunschliste.'));
+    }
+
     const byId = new Map(data.items.map((i) => [i.id, i]));
     const pinned = data.showcase.map((id) => byId.get(id)).filter(Boolean);
-    if (pinned.length) box.append(section('Showcase', pinned.map((i) => card(i, urls, itemTags(i))), 'pub-showcase'));
-    if (data.items.length) box.append(section('Schrank', data.items.map((i) => card(i, urls, itemTags(i)))));
+    if (pinned.length) box.append(section('Showcase', pinned.map(itemCard), 'pub-showcase'));
+    if (data.items.length) box.append(section('Schrank', data.items.map(itemCard)));
     if (data.outfits.length) box.append(section('Outfits', data.outfits.map((o) => card(o, urls))));
-    if (data.wishlist.length) box.append(section('Gesucht', data.wishlist.map((w) => card(w, urls))));
+    if (data.wishlist.length) box.append(section('Gesucht', data.wishlist.map(wishCard)));
     if (!data.items.length && !data.outfits.length && !data.wishlist.length) box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.'));
+  }
+
+  /* ---------- Interesse und „Hab ich“ ---------- */
+  let intCtx = null;
+  function askInterest(kind, to, rec, myItem) {
+    intCtx = { kind, to, rec, ref: null };
+    $('intTitle').textContent = kind === 'interest' ? 'Interesse melden' : 'Hab ich';
+    $('intWhat').textContent = (kind === 'interest' ? to + ' · ' : to + ' sucht · ') + (rec.name || '');
+    $('intMsg').value = '';
+    $('intError').textContent = '';
+    // Ein passendes eigenes Teil lässt sich anhängen, wenn es öffentlich ist (sonst könnte die Person es nicht sehen)
+    const pub = kind === 'have' && myItem && myItem.vis && myItem.vis !== 'private';
+    $('intRefRow').hidden = !pub;
+    if (pub) { intCtx.ref = myItem.id; $('intRefText').textContent = 'Mein Teil anhängen: ' + myItem.name; $('intRef').checked = true; }
+    $('intMsg').placeholder = kind === 'interest' ? 'z. B. Ist es noch da?' : 'z. B. Habe ich in Größe L';
+    $('interestDialog').showModal();
+  }
+  async function sendInterest() {
+    const c = intCtx, sb = Cloud.client();
+    if (!c || !sb) return;
+    $('intSend').disabled = true;
+    try {
+      const { error } = await sb.rpc('send_interest', {
+        p_to: c.to, p_kind: c.kind, p_record_id: c.rec.id,
+        p_message: $('intMsg').value.trim() || null, p_ref_item: c.ref && $('intRef').checked ? c.ref : null,
+      });
+      if (error) throw error;
+      $('interestDialog').close();
+      toast(c.kind === 'interest' ? 'Interesse gesendet' : 'Gesendet');
+    } catch (e) {
+      console.error(e);
+      $('intError').textContent = (e && e.message) || 'Das hat nicht geklappt.';
+    } finally { $('intSend').disabled = false; }
+  }
+
+  /* ---------- Mitteilungen ---------- */
+  async function loadInbox(markRead) {
+    const sb = Cloud.client();
+    if (!sb || !Cloud.user() || !navigator.onLine) return;
+    let list;
+    try {
+      const { data, error } = await sb.rpc('my_interests');
+      if (error) throw error;
+      list = data || [];
+      if (markRead) await sb.rpc('mark_interests_read');
+    } catch (e) { console.error(e); return; }
+    const unread = list.filter((x) => x.unread).length;
+    $('inboxBadge').textContent = unread ? String(unread) : '';
+    $('menuBtn').classList.toggle('has-unread', unread > 0 && !markRead);
+    if (!markRead) return;
+    $('inboxEmpty').hidden = list.length > 0;
+    const box = $('inboxList');
+    box.replaceChildren();
+    for (const m of list) {
+      const row = el('div', 'inbox-item' + (m.unread ? ' unread' : ''));
+      const what = m.kind === 'interest'
+        ? m.from + ' hat Interesse an „' + (m.record_name || 'einem Teil') + '“'
+        : m.from + ' hat etwas zu deinem Wunsch „' + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
+      row.append(el('b', null, what));
+      if (m.message) row.append(el('p', null, m.message));
+      row.append(el('span', 'muted small', new Date(m.created_at).toLocaleDateString('de-DE')));
+      const open = el('button', 'btn', 'Profil ansehen');
+      open.type = 'button';
+      open.onclick = () => { $('settingsDialog').close(); location.hash = '#/u/' + m.from; };
+      row.append(open);
+      box.append(row);
+    }
+  }
+
+  // Zu einem Wunsch passende öffentliche Teile anderer suchen
+  async function findFor(w, box, onOpen) {
+    box.replaceChildren();
+    const note = (t) => box.append(el('p', 'muted small', t));
+    const sb = Cloud.client();
+    if (!w.brand.trim()) return note('Trag zuerst unter „Details und Sichtbarkeit“ eine Marke ein, dann kann ich passende Teile suchen.');
+    if (!sb || !navigator.onLine) return note('Dafür brauchst du eine Internetverbindung.');
+    note('Suche …');
+    let list;
+    try {
+      const { data, error } = await sb.rpc('find_public_items', { p_brand: w.brand, p_query: w.name, p_size: w.size || null });
+      if (error) throw error;
+      list = data || [];
+    } catch (e) { console.error(e); box.replaceChildren(); return note('Die Suche ist gerade nicht verfügbar.'); }
+    box.replaceChildren();
+    if (!list.length) return note('Noch keine passenden öffentlichen Teile.');
+    for (const it of list) {
+      const b = el('button', 'member', it.username + ' · ' + (it.name || '') + (it.size ? ' · ' + it.size : '') + (it.vis === 'sale' && it.price != null ? ' · ' + money(it.price) : it.vis === 'trade' ? ' · Tausch' : ''));
+      b.type = 'button';
+      b.onclick = () => { if (onOpen) onOpen(); location.hash = '#/u/' + it.username; };
+      box.append(b);
+    }
   }
 
   /* ---------- Navigation ---------- */
@@ -166,6 +297,9 @@ const Profile = (() => {
       const u = Cloud.user();
       $('profLink').value = u ? profileLink(u.name) : '';
     });
+    $('intCancel').onclick = () => $('interestDialog').close();
+    $('intSend').onclick = sendInterest;
+    document.querySelector('[data-open=inbox]').addEventListener('click', () => loadInbox(true));
     $('profCopy').onclick = async () => {
       const text = $('profLink').value;
       try { await navigator.clipboard.writeText(text); toast('Link kopiert'); }
@@ -185,7 +319,7 @@ const Profile = (() => {
   // Wird vom Konto-Code nach dem Start (Gast oder angemeldet) aufgerufen
   async function start() {
     if (!started) { started = true; wire(); }
-    if (Cloud.user()) loadOwn();
+    if (Cloud.user()) { loadOwn(); loadInbox(false); }
     await route();
   }
 
@@ -198,5 +332,5 @@ const Profile = (() => {
     return Array.isArray(data) ? data : [];
   }
 
-  return { start, isPinned, setPinned, search };
+  return { start, isPinned, setPinned, search, findFor };
 })();

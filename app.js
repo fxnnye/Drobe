@@ -300,13 +300,15 @@ function setAddTarget(t) {
   document.querySelectorAll('#addTarget .chip').forEach((c) => c.classList.toggle('active', c.dataset.target === t));
 }
 document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () => setAddTarget(c.dataset.target); });
+$('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
+document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien (Computer)
 
 function showView(name) {
   const prev = state.view;
   state.view = name;
   const tab = name === 'builder' ? 'outfits' : name; // der Outfit-Bereich gehört zum Reiter „Outfits“
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === tab));
-  if (name === 'add') setAddTarget(prev === 'wishlist' ? 'wish' : 'closet');
+  if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; setAddTarget(prev === 'wishlist' ? 'wish' : 'closet'); }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
 }
@@ -1584,9 +1586,11 @@ function openWishDialog(w) {
   $('wishNote').value = w.note || '';
   $('wishLink').value = w.link || '';
   fillDetails('wsd', w);
+  $('wishMatches').replaceChildren();
   wishDlg.showModal();
 }
 $('wishCancel').onclick = () => wishDlg.close();
+$('wishFind').onclick = () => Profile.findFor({ name: $('wishName').value, brand: $('wsdbrand').value, size: $('wsdsize').value }, $('wishMatches'), () => wishDlg.close());
 // Übernimmt die Eingaben aus dem Dialog; false, wenn der Link nicht stimmt
 function applyWishFields(w) {
   const raw = $('wishLink').value.trim();
