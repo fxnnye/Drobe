@@ -135,6 +135,9 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
           <button class="btn" id="newOutfit">Neu</button>
           <button class="btn" id="colorsBtn" type="button">Farben</button>
         </div>
+        <label class="field">Sichtbarkeit
+          <select id="outfitVis"><option value="private">Privat</option><option value="public">Öffentlich</option></select>
+        </label>
         <p class="muted small hint">Teile ziehen zum Verschieben, Ecke unten rechts zum Skalieren.</p>
       </aside>
     </div>
@@ -159,6 +162,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <label class="field">Notizen
       <input type="text" id="itemNote" maxlength="120" placeholder="z. B. Preis, Größe, Marke">
     </label>
+    <div id="itemMore"></div>
     <button class="btn full" type="button" id="itEditToggle" aria-expanded="false" aria-controls="itEdit">Bearbeiten</button>
     <div id="itEdit" hidden>
       <p class="muted small">Drehen, wenn das Foto schief ist</p>
@@ -219,6 +223,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <label class="field">Link zum Shop
       <input type="text" id="wishLink" inputmode="url" autocapitalize="off" placeholder="https://…">
     </label>
+    <div id="wishMore"></div>
     <button class="btn full" type="button" id="wishBought">Gekauft: in den Schrank legen</button>
     <div class="row">
       <button class="btn danger" type="button" id="wishDelete">Löschen</button>

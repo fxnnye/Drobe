@@ -113,6 +113,12 @@ input[type=text], input[type=password], select {
 }
 input[type=text]:focus, input[type=password]:focus, select:focus { outline: 0; border-color: #0074e8; }
 
+/* Details und Sichtbarkeit in den Bearbeiten-Dialogen */
+.more { margin-bottom: 14px; }
+.more summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 6px 0 12px; }
+.more-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 420px) { .more-grid { grid-template-columns: 1fr; } }
+
 /* Upload */
 .upload {
   display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
@@ -265,6 +271,7 @@ dialog { max-height: 92vh; overflow: auto; }
   .panel > .row { order: 1; margin: 0; }
   .stage-wrap { order: 2; }
   .panel > .field:nth-child(2) { order: 3; margin: 0; }
+  .panel > .field:nth-child(4) { order: 3; margin: 0; }
   .picker { order: 4; }
   .panel .hint { display: none; }
   .builder .panel .btn:not(.primary) { background: var(--gray); }

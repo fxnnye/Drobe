@@ -91,6 +91,92 @@ function urlFor(rec) {
   return urls.get(rec.id);
 }
 
+/* ---------- Details und Sichtbarkeit ---------- */
+// Alles ist standardmäßig privat: fehlt `vis` an einem Eintrag, gilt er als privat (so auch bei allen alten Teilen).
+const DETAIL_TEXT = { brand: ['Marke', 40], size: ['Größe', 20], sku: ['Artikelnummer (vom Etikett)', 40] };
+const CONDS = ['Neu / DS', 'Sehr gut', 'Gut', 'Getragen'];
+const RARITIES = ['Alltag', 'Rare', 'Grail'];
+const VIS = {
+  items: { private: 'Privat', public: 'Öffentlich', trade: 'Zum Tausch', sale: 'Zum Verkauf' },
+  wishlist: { private: 'Privat', public: 'Öffentlich' },
+  outfits: { private: 'Privat', public: 'Öffentlich' },
+};
+const visOf = (rec) => rec.vis || 'private';
+const PRICE_MAX = 100000, SWAP_MAX = 200;
+
+// Prüft und kürzt die Detailfelder eines Eintrags (für Backup-Import und Speichern): unbekannte oder ungültige Werte entfallen
+function cleanDetails(src, kind) {
+  const out = {};
+  if (kind !== 'outfits') {
+    for (const [k, [, max]] of Object.entries(DETAIL_TEXT)) {
+      if (typeof src[k] === 'string' && src[k].trim()) out[k] = src[k].trim().slice(0, max);
+    }
+  }
+  if (kind === 'items') {
+    if (CONDS.includes(src.cond)) out.cond = src.cond;
+    if (RARITIES.includes(src.rarity)) out.rarity = src.rarity;
+  }
+  if (src.vis && src.vis !== 'private' && VIS[kind][src.vis]) out.vis = src.vis;
+  if (kind === 'items' && out.vis === 'sale' && num(src.price) && src.price >= 0 && src.price <= PRICE_MAX) out.price = src.price;
+  if (kind === 'items' && out.vis === 'trade' && typeof src.swap === 'string' && src.swap.trim()) out.swap = src.swap.trim().slice(0, SWAP_MAX);
+  return out;
+}
+
+const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'vis', 'price', 'swap'];
+const setDetails = (rec, clean) => { for (const k of DETAIL_KEYS) delete rec[k]; Object.assign(rec, clean); };
+
+// Baut die ausklappbaren Detailfelder in einen Dialog (p = Präfix der Feld-IDs)
+function buildDetails(box, p, kind) {
+  const text = Object.entries(DETAIL_TEXT).map(([k, [label, max]]) =>
+    `<label class="field">${label}<input type="text" id="${p}${k}" maxlength="${max}"></label>`).join('');
+  const sel = (id, label, opts) => `<label class="field">${label}<select id="${p}${id}">${opts}</select></label>`;
+  const visOpts = Object.entries(VIS[kind]).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  const extra = kind === 'items'
+    ? sel('cond', 'Zustand', '<option value="">–</option>' + CONDS.map((c) => `<option>${c}</option>`).join(''))
+      + sel('rarity', 'Seltenheit', '<option value="">–</option>' + RARITIES.map((c) => `<option>${c}</option>`).join(''))
+    : '';
+  const sale = kind === 'items'
+    ? `<label class="field" id="${p}priceRow" hidden>Preis (€)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
+       <label class="field" id="${p}swapRow" hidden>Tauschwunsch<input type="text" id="${p}swap" maxlength="${SWAP_MAX}" placeholder="z. B. Größe M oder Nike Dunk Low"></label>`
+    : '';
+  box.innerHTML = `<details class="more"><summary>Details und Sichtbarkeit</summary>
+    <div class="more-grid">${text}${extra}</div>
+    ${sel('vis', 'Sichtbarkeit', visOpts)}${sale}
+    <p class="muted small">Privat ist der Standard. Notizen und Shop-Links bleiben immer privat.</p></details>`;
+  $(p + 'vis').onchange = () => syncVisRows(p);
+}
+function syncVisRows(p) {
+  const v = $(p + 'vis').value;
+  if ($(p + 'priceRow')) { $(p + 'priceRow').hidden = v !== 'sale'; $(p + 'swapRow').hidden = v !== 'trade'; }
+}
+function fillDetails(p, rec) {
+  for (const k of Object.keys(DETAIL_TEXT)) $(p + k).value = rec[k] || '';
+  if ($(p + 'cond')) { $(p + 'cond').value = rec.cond || ''; $(p + 'rarity').value = rec.rarity || ''; }
+  $(p + 'vis').value = visOf(rec);
+  if ($(p + 'price')) { $(p + 'price').value = rec.price != null ? String(rec.price).replace('.', ',') : ''; $(p + 'swap').value = rec.swap || ''; }
+  syncVisRows(p);
+  const d = $(p + 'vis').closest('details');
+  d.open = visOf(rec) !== 'private' || Object.keys(DETAIL_TEXT).some((k) => rec[k]);
+}
+// Liest die Felder zurück in den Eintrag; false, wenn der Preis nicht stimmt
+function readDetails(p, kind, rec) {
+  const src = { vis: $(p + 'vis').value };
+  for (const k of Object.keys(DETAIL_TEXT)) src[k] = $(p + k).value;
+  if (kind === 'items') {
+    src.cond = $(p + 'cond').value; src.rarity = $(p + 'rarity').value;
+    const raw = $(p + 'price').value.trim().replace(',', '.');
+    if (src.vis === 'sale' && raw) {
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0 || n > PRICE_MAX) { toast('Der Preis sieht nicht richtig aus'); return false; }
+      src.price = Math.round(n * 100) / 100;
+    }
+    src.swap = $(p + 'swap').value;
+  }
+  setDetails(rec, cleanDetails(src, kind));
+  return true;
+}
+const visLabel = (rec, kind) => (visOf(rec) === 'private' ? '' : VIS[kind][visOf(rec)]);
+
 // Eigene Rückfrage statt confirm(), das in eingebetteten Browsern oft stumm „Nein“ liefert
 function askConfirm(text, yesLabel = 'Löschen') {
   const d = $('confirmDialog');
@@ -255,7 +341,7 @@ function renderCloset() {
     card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span><i class="note"></i></div>`;
     card.querySelector('img').src = urlFor(it);
     card.querySelector('b').textContent = it.name;
-    card.querySelector('span').textContent = it.category;
+    card.querySelector('span').textContent = [it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');
     card.querySelector('.note').textContent = it.note || '';
     card.onclick = () => openItemDialog(it);
     grid.appendChild(card);
@@ -918,11 +1004,13 @@ function openItemDialog(it) {
   renderTools(itCur);
   $('itemName').value = it.name;
   $('itemNote').value = it.note || '';
+  fillDetails('itd', it);
   dlg.showModal();
 }
 $('itemForm').addEventListener('submit', async (e) => {
   if (e.submitter && e.submitter.value === 'save') {
     const it = state.editingItem;
+    if (!readDetails('itd', 'items', it)) return e.preventDefault(); // Preis falsch: Dialog bleibt offen
     it.name = $('itemName').value.trim() || it.name;
     it.category = $('itemCategory').value;
     const note = $('itemNote').value.trim();
@@ -1149,7 +1237,9 @@ function updatePanel() {
   $('bgCustom').value = bg;
   $('bgCustom').parentElement.classList.toggle('active', !BG_COLORS.includes(bg.toLowerCase()));
   $('outfitName').value = state.outfit.name;
+  $('outfitVis').value = state.outfit.vis || 'private';
 }
+$('outfitVis').onchange = () => { state.outfit.vis = $('outfitVis').value; };
 // Hintergrundfarbe des Outfits: feste Farben plus freie Farbwahl
 const BG_COLORS = ['#ffffff', '#f1efe9', '#e9e9e9', '#f6d5d9', '#d6e4f0', '#d9e8d4', '#111111'];
 function setupSwatches() {
@@ -1253,6 +1343,7 @@ $('saveOutfit').onclick = async () => {
     bg: o.bg || '#ffffff',
     thumb, created: Date.now(),
   };
+  if (o.vis === 'public') rec.vis = 'public';
   await dbPut('outfits', rec);
   const idx = outfits.findIndex((x) => x.id === rec.id);
   if (idx >= 0) outfits[idx] = rec; else outfits.push(rec);
@@ -1279,7 +1370,7 @@ function renderOutfits() {
     card.querySelector('b').textContent = o.name;
     // Teile, die inzwischen aus dem Schrank gelöscht wurden, fehlen im Outfit: kleines Ausrufezeichen
     const missing = o.layers.filter((l) => !itemById(l.itemId)).length;
-    card.querySelector('span').textContent = o.layers.length + ' Teile' + (missing ? ` · ${missing} fehlt` : '');
+    card.querySelector('span').textContent = o.layers.length + ' Teile' + (missing ? ` · ${missing} fehlt` : '') + (visOf(o) === 'public' ? ' · Öffentlich' : '');
     if (missing) {
       const w = document.createElement('button');
       w.type = 'button';
@@ -1307,7 +1398,7 @@ function renderOutfits() {
 
 function editOutfit(o) {
   state.outfit = {
-    id: o.id, name: o.name, bg: o.bg || '#ffffff',
+    id: o.id, name: o.name, bg: o.bg || '#ffffff', vis: visOf(o),
     layers: o.layers.filter((l) => itemById(l.itemId)).map((l) => ({ ...l, uid: uid(), manual: true })),
   };
   state.selected = null;
@@ -1353,7 +1444,7 @@ function renderWishlist() {
     card.innerHTML = '<div class="img" tabindex="0" role="button"><img alt=""></div><div class="meta"><b></b><span></span><i class="note"></i></div>';
     card.querySelector('img').src = urlFor(w);
     card.querySelector('b').textContent = w.name;
-    card.querySelector('span').textContent = w.category;
+    card.querySelector('span').textContent = [w.category, visLabel(w, 'wishlist')].filter(Boolean).join(' · ');
     card.querySelector('.note').textContent = w.note || '';
     if (w.link && cleanLink(w.link)) {
       const a = document.createElement('a');
@@ -1383,6 +1474,7 @@ function openWishDialog(w) {
   $('wishCategory').value = w.category;
   $('wishNote').value = w.note || '';
   $('wishLink').value = w.link || '';
+  fillDetails('wsd', w);
   wishDlg.showModal();
 }
 $('wishCancel').onclick = () => wishDlg.close();
@@ -1391,6 +1483,7 @@ function applyWishFields(w) {
   const raw = $('wishLink').value.trim();
   const link = cleanLink(raw);
   if (raw && !link) { toast('Der Link sieht nicht richtig aus'); return false; }
+  readDetails('wsd', 'wishlist', w);
   w.name = $('wishName').value.trim() || w.name;
   w.category = $('wishCategory').value;
   const note = $('wishNote').value.trim().slice(0, 120);
@@ -1421,6 +1514,8 @@ $('wishBought').onclick = async () => {
   const rec = { id: w.id, name: w.name, category: w.category, blob: w.blob, created: Date.now() };
   if (w.source) { rec.source = w.source; rec.srcBox = w.srcBox; }
   if (w.note) rec.note = w.note;
+  // Marke, Modell, Größe usw. wandern mit; der Schrank-Eintrag startet immer privat
+  setDetails(rec, cleanDetails({ ...w, vis: 'private' }, 'items'));
   await dbPut('items', rec);
   await dbDel('wishlist', w.id);
   items.push(rec);
@@ -1524,16 +1619,19 @@ $('backupExport').onclick = async () => {
   btn.disabled = true;
   try {
     const data = {
-      app: 'kleiderschrank', version: 1, exported: new Date().toISOString(),
+      app: 'kleiderschrank', version: 2, exported: new Date().toISOString(),
       items: await Promise.all(items.map(async (i) => ({
         id: i.id, name: i.name, category: i.category, created: i.created, scale: i.scale, note: i.note, image: await blobToDataUrl(i.blob),
+        ...cleanDetails(i, 'items'),
         source: i.source ? await blobToDataUrl(i.source) : undefined, srcBox: i.source ? i.srcBox : undefined,
       }))),
       wishlist: await Promise.all(wishlist.map(async (w) => ({
         id: w.id, name: w.name, category: w.category, created: w.created, note: w.note, link: w.link, image: await blobToDataUrl(w.blob),
+        ...cleanDetails(w, 'wishlist'),
       }))),
       outfits: await Promise.all(outfits.map(async (o) => ({
         id: o.id, name: o.name, layers: o.layers, bg: o.bg || '#ffffff', created: o.created, thumb: await blobToDataUrl(o.thumb),
+        ...cleanDetails(o, 'outfits'),
       }))),
     };
     const file = new Blob([JSON.stringify(data)], { type: 'application/json' });
@@ -1573,6 +1671,7 @@ async function importBackup(file) {
     };
     if (num(i.scale) && i.scale >= 0.3 && i.scale <= 3 && i.scale !== 1) rec.scale = i.scale;
     if (typeof i.note === 'string' && i.note.trim()) rec.note = i.note.trim().slice(0, 120);
+    Object.assign(rec, cleanDetails(i, 'items'));
     if (typeof i.source === 'string' && i.source.startsWith('data:image/') && i.srcBox && num(i.srcBox.x) && num(i.srcBox.y)) {
       rec.source = await dataUrlToBlob(i.source);
       rec.srcBox = { x: i.srcBox.x, y: i.srcBox.y };
@@ -1590,6 +1689,7 @@ async function importBackup(file) {
       id: o.id, name: String(o.name || 'Outfit').slice(0, 60), layers,
       bg: /^#[0-9a-f]{6}$/i.test(o.bg) ? o.bg : '#ffffff',
       thumb: await dataUrlToBlob(o.thumb), created: num(o.created) ? o.created : Date.now(),
+      ...cleanDetails(o, 'outfits'),
     };
     await dbPut('outfits', rec);
     outfits.push(rec);
@@ -1603,6 +1703,7 @@ async function importBackup(file) {
       blob: await dataUrlToBlob(w.image), created: num(w.created) ? w.created : Date.now(),
     };
     if (typeof w.note === 'string' && w.note.trim()) rec.note = w.note.trim().slice(0, 120);
+    Object.assign(rec, cleanDetails(w, 'wishlist'));
     const link = typeof w.link === 'string' ? cleanLink(w.link) : '';
     if (link) rec.link = link;
     await dbPut('wishlist', rec);
@@ -1628,6 +1729,8 @@ fillSelect($('itemCategory'));
 fillSelect($('upCategory'));
 fillSelect($('wishCategory'));
 fillSelect($('wishUploadCategory'));
+buildDetails($('itemMore'), 'itd', 'items');
+buildDetails($('wishMore'), 'wsd', 'wishlist');
 
 // Alte Kategorien umsortieren (z. B. Outerwear → Jacken, Oberteile → Shirts, Accessoires → Taschen)
 async function migrateCategories() {
