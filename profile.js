@@ -96,6 +96,12 @@ const Profile = (() => {
       b.type = 'button';
       b.onclick = action.fn;
       meta.append(b);
+      if (action.alt) {
+        const r = el('button', 'pub-report', action.alt.label);
+        r.type = 'button';
+        r.onclick = action.alt.fn;
+        meta.append(r);
+      }
     }
     c.append(img, meta);
     return c;
@@ -134,6 +140,7 @@ const Profile = (() => {
       const res = await sb.rpc('public_profile', { p_username: name });
       if (res.error) throw res.error;
       data = res.data;
+      if (data && Cloud.user()) await loadBlocks(sb);
       if (data) urls = await signedUrls(sb, [...data.items, ...data.outfits, ...data.wishlist].map((r) => r.path));
     } catch (e) {
       console.error(e);
@@ -147,21 +154,46 @@ const Profile = (() => {
     const me = Cloud.user();
     if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
     box.append(el('h2', 'pub-name', data.username));
+    if (me && !own) {
+      const bar = el('div', 'pub-tools');
+      const rb = el('button', 'btn', 'Melden');
+      rb.type = 'button';
+      rb.onclick = () => askReport(data.username, null);
+      const bb = el('button', 'btn', blocked.has(data.username) ? 'Entsperren' : 'Sperren');
+      bb.type = 'button';
+      bb.onclick = async () => {
+        const on = !blocked.has(data.username);
+        if (on && !confirm(data.username + ' sperren? Die Person kann dir dann nichts mehr schicken.')) return;
+        bb.disabled = true;
+        try {
+          const { error } = await Cloud.client().rpc('set_block', { p_username: data.username, p_block: on });
+          if (error) throw error;
+          on ? blocked.add(data.username) : blocked.delete(data.username);
+          bb.textContent = on ? 'Entsperren' : 'Sperren';
+          toast(on ? 'Gesperrt' : 'Entsperrt');
+        } catch (e) { console.error(e); toast('Das hat nicht geklappt.'); }
+        bb.disabled = false;
+      };
+      bar.append(rb, bb);
+      box.append(bar);
+    }
 
     // Bei fremden Profilen: „Interesse“ an Teilen, „Hab ich“ bei Wünschen und Treffer mit der eigenen Liste
     const own = !!me && me.name === data.username;
     const askLogin = () => Cloud.showAuth(false);
+    const rep = (rec) => ({ label: 'Melden', fn: me ? () => askReport(data.username, rec) : askLogin });
     const wishMatch = (it) => mine('wishlist').find((w) => matches(w, it));
     const itemMatch = (w) => mine('items').find((i) => matches(w, i));
     const itemCard = (it) => {
       const tags = itemTags(it), w = !own && me ? wishMatch(it) : null;
       if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
-      return card(it, urls, tags, own ? null : { label: 'Interesse', fn: me ? () => askInterest('interest', data.username, it) : askLogin });
+      const buy = it.vis === 'sale';
+      return card(it, urls, tags, own ? null : { label: buy ? 'Anfrage senden' : 'Interesse', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) });
     };
     const wishCard = (w) => {
       const m = !own && me ? itemMatch(w) : null;
       const tags = m ? [['Du hast: ' + m.name, 'match']] : [];
-      return card(w, urls, tags, own ? null : { label: 'Hab ich', fn: me ? () => askInterest('have', data.username, w, m) : askLogin });
+      return card(w, urls, tags, own ? null : { label: 'Hab ich', fn: me ? () => askInterest('have', data.username, w, m) : askLogin, alt: rep(w) });
     };
     if (!own && me) {
       const n = data.items.filter(wishMatch).length;
@@ -177,11 +209,49 @@ const Profile = (() => {
     if (!data.items.length && !data.outfits.length && !data.wishlist.length) box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.'));
   }
 
+  /* ---------- Melden und Sperren ---------- */
+  const blocked = new Set();
+  async function loadBlocks(sb) {
+    try {
+      const { data, error } = await sb.rpc('my_blocks');
+      if (error) throw error;
+      blocked.clear();
+      (data || []).forEach((n) => blocked.add(n));
+    } catch (e) { console.error(e); }
+  }
+  let repCtx = null;
+  function askReport(user, rec) {
+    repCtx = { user, id: rec ? rec.id : null };
+    $('repWhat').textContent = user + (rec ? ' · ' + (rec.name || '') : '');
+    $('repReason').value = 'betrug';
+    $('repNote').value = '';
+    $('repError').textContent = '';
+    $('reportDialog').showModal();
+  }
+  async function sendReport() {
+    const c = repCtx, sb = Cloud.client();
+    if (!c || !sb) return;
+    $('repSend').disabled = true;
+    try {
+      const { error } = await sb.rpc('report_user', {
+        p_username: c.user, p_reason: $('repReason').value, p_record_id: c.id, p_note: $('repNote').value.trim() || null,
+      });
+      if (error) throw error;
+      $('reportDialog').close();
+      toast('Danke, wir schauen es uns an');
+    } catch (e) {
+      console.error(e);
+      $('repError').textContent = (e && e.message) || 'Das hat nicht geklappt.';
+    } finally { $('repSend').disabled = false; }
+  }
+
   /* ---------- Interesse und „Hab ich“ ---------- */
   let intCtx = null;
   function askInterest(kind, to, rec, myItem) {
     intCtx = { kind, to, rec, ref: null };
-    $('intTitle').textContent = kind === 'interest' ? 'Interesse melden' : 'Hab ich';
+    const buy = kind === 'interest' && rec.vis === 'sale';
+    $('intTitle').textContent = buy ? 'Kaufanfrage' : kind === 'interest' ? 'Interesse melden' : 'Hab ich';
+    $('intPayHint').hidden = !buy;
     $('intWhat').textContent = (kind === 'interest' ? to + ' · ' : to + ' sucht · ') + (rec.name || '');
     $('intMsg').value = '';
     $('intError').textContent = '';
@@ -298,6 +368,8 @@ const Profile = (() => {
       $('profLink').value = u ? profileLink(u.name) : '';
     });
     $('intCancel').onclick = () => $('interestDialog').close();
+    $('repCancel').onclick = () => $('reportDialog').close();
+    $('repSend').onclick = sendReport;
     $('intSend').onclick = sendInterest;
     document.querySelector('[data-open=inbox]').addEventListener('click', () => loadInbox(true));
     $('profCopy').onclick = async () => {
