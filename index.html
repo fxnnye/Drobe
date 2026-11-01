@@ -69,6 +69,14 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <main>
   <!-- SCHRANK -->
   <section id="view-closet" class="view active">
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Marke oder Teil suchen" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Suche">
+      <div class="chips search-mode" id="searchMode">
+        <button class="chip active" type="button" data-mode="mine">Meine Teile</button>
+        <button class="chip" type="button" data-mode="members">Mitglieder</button>
+      </div>
+    </div>
+    <div class="member-results" id="memberResults" hidden></div>
     <div class="chips" id="closetFilter"></div>
     <div class="grid" id="closetGrid"></div>
     <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Tippe auf +, um das erste Teil hinzuzufügen.</p>

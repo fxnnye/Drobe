@@ -189,5 +189,14 @@ const Profile = (() => {
     await route();
   }
 
-  return { start, isPinned, setPinned };
+  // Mitglieder nach Benutzername suchen (nur Profile mit öffentlichen Einträgen)
+  async function search(q) {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) throw new Error('offline');
+    const { data, error } = await sb.rpc('search_profiles', { p_query: q });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  }
+
+  return { start, isPinned, setPinned, search };
 })();

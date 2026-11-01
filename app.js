@@ -79,6 +79,8 @@ let wishlist = [];
 const urls = new Map(); // id -> Object-URL
 const state = {
   view: 'closet',
+  search: '',
+  searchMode: 'mine',
   closetFilter: 'Alle',
   wishFilter: 'Alle',
   pickerFilter: 'Alle',
@@ -354,7 +356,9 @@ function renderCloset() {
   }
   const grid = $('closetGrid');
   grid.innerHTML = '';
-  const list = items.filter((i) => matchesFilter(i, state.closetFilter));
+  const q = state.search.trim().toLowerCase();
+  const hit = (i) => !q || [i.name, i.brand, i.category, i.size, i.sku, i.note].some((v) => v && String(v).toLowerCase().includes(q));
+  const list = items.filter((i) => matchesFilter(i, state.closetFilter) && hit(i));
   list.forEach((it) => {
     const card = document.createElement('button');
     card.className = 'card';
@@ -368,9 +372,44 @@ function renderCloset() {
   });
   $('closetEmpty').classList.toggle('show', list.length === 0);
   $('closetEmpty').textContent = items.length === 0
-    ? 'Dein Schrank ist noch leer. Lade oben das erste Teil hoch.'
-    : 'Keine Teile in dieser Kategorie.';
+    ? 'Dein Schrank ist noch leer. Tippe auf +, um das erste Teil hinzuzufügen.'
+    : (q ? 'Nichts gefunden.' : 'Keine Teile in dieser Kategorie.');
 }
+
+/* Suche: eigene Teile nach Marke, Name usw. oder Mitglieder nach Benutzername */
+let searchTimer = null;
+function setSearchMode(mode) {
+  state.searchMode = mode;
+  document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
+  $('searchInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
+  $('view-closet').classList.toggle('members-mode', mode === 'members');
+  runSearch();
+}
+async function runSearch() {
+  const q = $('searchInput').value;
+  if (state.searchMode === 'mine') { state.search = q; $('memberResults').hidden = true; renderCloset(); return; }
+  state.search = '';
+  renderCloset();
+  const box = $('memberResults');
+  box.hidden = false;
+  box.replaceChildren();
+  const note = (t) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = t; box.append(p); };
+  if (q.trim().length < 2) return note('Gib mindestens 2 Zeichen eines Benutzernamens ein.');
+  let names;
+  try { names = await Profile.search(q.trim()); } catch (e) { console.error(e); return note('Die Mitgliedersuche ist gerade nicht verfügbar.'); }
+  if ($('searchInput').value !== q || state.searchMode !== 'members') return; // inzwischen weitergetippt
+  if (!names.length) return note('Keine Mitglieder gefunden. Gefunden werden nur Profile mit öffentlichen Teilen.');
+  for (const n of names) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'member';
+    b.textContent = n;
+    b.onclick = () => { location.hash = '#/u/' + n; };
+    box.append(b);
+  }
+}
+$('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, state.searchMode === 'members' ? 300 : 0); });
+document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 
 /* Upload-Dialog: pro Foto Vorschau, Name, Kategorie und optional „Hintergrund entfernen“ */
 const upDlg = $('uploadDialog');
