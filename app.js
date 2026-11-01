@@ -1363,7 +1363,7 @@ function renderOutfits() {
     card.className = 'card';
     card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>
       <div class="card-actions"><button class="btn" data-a="edit">Bearbeiten</button>
-      <button class="btn" data-a="dl">PNG</button><button class="btn danger" data-a="del">Löschen</button></div>`;
+      <button class="btn" data-a="dl">PNG</button><button class="btn" data-a="share" hidden>Teilen</button><button class="btn danger" data-a="del">Löschen</button></div>`;
     const key = 'thumb-' + o.id;
     if (!urls.has(key)) urls.set(key, URL.createObjectURL(o.thumb));
     card.querySelector('img').src = urls.get(key);
@@ -1384,6 +1384,11 @@ function renderOutfits() {
     }
     card.querySelector('[data-a=edit]').onclick = () => editOutfit(o);
     card.querySelector('[data-a=dl]').onclick = () => downloadOutfit(o);
+    if (navigator.canShare) { // nur zeigen, wo Bilder geteilt werden können (meist Handy)
+      const sb = card.querySelector('[data-a=share]');
+      sb.hidden = false;
+      sb.onclick = () => shareOutfit(o);
+    }
     card.querySelector('[data-a=del]').onclick = async () => {
       if (!(await askConfirm(`„${o.name}" löschen?`))) return;
       await dbDel('outfits', o.id);
@@ -1406,12 +1411,36 @@ function editOutfit(o) {
   const gone = o.layers.length - state.outfit.layers.length;
   if (gone) toast(gone === 1 ? 'Ein Teil fehlt, es wurde aus dem Schrank gelöscht' : `${gone} Teile fehlen, sie wurden aus dem Schrank gelöscht`);
 }
-async function downloadOutfit(o) {
+// Export im Story-Format (9:16) mit dezentem Drobe-Zeichen. Es sitzt etwas über dem unteren Rand, damit die
+// Antwortleiste von Instagram es nicht verdeckt, und passt seine Farbe an den Hintergrund an.
+async function outfitExportCanvas(o) {
   const c = await renderOutfitCanvas(o.layers, EXPORT_W, EXPORT_H, o.bg);
+  const hex = /^#[0-9a-f]{6}$/i.test(o.bg) ? o.bg : '#ffffff';
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const dark = (0.299 * r + 0.587 * g + 0.114 * b) < 128;
+  const ctx = c.getContext('2d');
+  ctx.font = `700 ${Math.round(EXPORT_W * 0.05)}px ${getComputedStyle(document.body).fontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
+  ctx.fillText('Drobe', EXPORT_W / 2, EXPORT_H * 0.9);
+  return c;
+}
+const outfitFileName = (o) => (o.name || 'outfit').replace(/[^\w\-äöüÄÖÜß ]+/g, '').trim() || 'outfit';
+async function downloadOutfit(o) {
+  const c = await outfitExportCanvas(o);
   const a = document.createElement('a');
   a.href = c.toDataURL('image/png');
-  a.download = (o.name || 'outfit').replace(/[^\w\-äöüÄÖÜß ]+/g, '') + '.png';
+  a.download = outfitFileName(o) + '.png';
   a.click();
+}
+// Teilen-Menü des Handys (Instagram, Nachrichten …); wo es das nicht gibt, wird das Bild stattdessen gespeichert
+async function shareOutfit(o) {
+  const blob = await canvasBlob(await outfitExportCanvas(o), 'image/png');
+  const file = new File([blob], outfitFileName(o) + '.png', { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); } catch (e) { if (e.name !== 'AbortError') toast('Teilen hat nicht geklappt'); }
+  } else downloadOutfit(o);
 }
 
 /* ---------- Wunschliste ---------- */

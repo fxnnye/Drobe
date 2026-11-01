@@ -150,6 +150,7 @@ input[type=text]:focus, input[type=password]:focus, select:focus { outline: 0; b
 .outfits .card .img { --pad: 0px; aspect-ratio: 9 / 16; overflow: hidden; background: #fff; border: 1px solid var(--gray-hover); }
 .card-actions { display: flex; gap: 6px; padding: 8px 0 0; }
 .card-actions .btn { padding: 7px 12px; font-size: 13px; }
+.card-actions .btn[hidden] { display: none; }
 
 .empty { text-align: center; color: var(--muted); padding: 64px 0; display: none; }
 .empty.show { display: block; }
