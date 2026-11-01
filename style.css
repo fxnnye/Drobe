@@ -405,7 +405,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 /* ---------- Hinzufügen-Seite, Plus-Reiter, neue Outfit-Kachel ---------- */
 .upload[hidden] { display: none; }
 .page-title { margin: 4px 0 14px; font-size: 24px; letter-spacing: -.02em; }
-.tab-add { font-size: 26px; font-weight: 400; line-height: 1; padding: 8px 18px; }
 .builder-back { margin: 4px 0 12px; }
 .outfits .add-card { cursor: pointer; }
 .outfits .add-card .img {
@@ -415,7 +414,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 }
 .outfits .add-card:hover .img { background: color-mix(in srgb, var(--text) 14%, transparent); }
 .add-card .plus { font-size: 64px; font-weight: 200; line-height: 1; color: var(--muted); }
-@media (max-width: 700px) { .tab.tab-add { flex: 0 0 64px; font-size: 30px; padding: 6px 0; } }
 
 /* ---------- Suche im Schrank ---------- */
 .search { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 16px; }
@@ -439,11 +437,15 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 #wishMatches { margin-bottom: 12px; }
 #wishMatches .member { width: 100%; margin-bottom: 6px; }
 
-/* ---------- Plus neben den Kategorien (Computer); am Handy übernimmt der Plus-Reiter unten ---------- */
+/* ---------- Plus neben den Kategorien (Computer und Handy) ---------- */
 .filter-row { display: flex; align-items: flex-start; gap: 12px; }
 .filter-row .chips { flex: 1; min-width: 0; }
 .add-btn { flex: none; width: 44px; height: 44px; border: 0; border-radius: 14px; background: var(--gray); font-size: 28px; font-weight: 400; line-height: 1; cursor: pointer; }
 .add-btn:hover { background: var(--gray-hover); }
 .members-mode .filter-row { display: none; }
-@media (min-width: 701px) { .tab-add { display: none; } }
-@media (max-width: 700px) { .add-btn { display: none; } }
+@media (max-width: 700px) {
+  /* Am Handy scrollen die Kategorien seitwärts, damit das Plus rechts daneben Platz hat */
+  .filter-row .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .filter-row .chips::-webkit-scrollbar { display: none; }
+  .filter-row .chip { flex: none; }
+}
