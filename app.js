@@ -1584,9 +1584,11 @@ function openWishDialog(w) {
   $('wishNote').value = w.note || '';
   $('wishLink').value = w.link || '';
   fillDetails('wsd', w);
+  $('wishMatches').replaceChildren();
   wishDlg.showModal();
 }
 $('wishCancel').onclick = () => wishDlg.close();
+$('wishFind').onclick = () => Profile.findFor({ name: $('wishName').value, brand: $('wsdbrand').value, size: $('wsdsize').value }, $('wishMatches'), () => wishDlg.close());
 // Übernimmt die Eingaben aus dem Dialog; false, wenn der Link nicht stimmt
 function applyWishFields(w) {
   const raw = $('wishLink').value.trim();

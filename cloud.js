@@ -301,5 +301,5 @@ const Cloud = (() => {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
   window.addEventListener('online', syncSoon);
 
-  return { boot, queue, client: () => sb, user: () => user, sync };
+  return { boot, queue, client: () => sb, user: () => user, sync, showAuth };
 })();

@@ -259,6 +259,8 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <input type="text" id="wishLink" inputmode="url" autocapitalize="off" placeholder="https://…">
     </label>
     <div id="wishMore"></div>
+    <button class="btn full" type="button" id="wishFind">Passende Teile finden</button>
+    <div id="wishMatches"></div>
     <button class="btn full" type="button" id="wishBought">Gekauft: in den Schrank legen</button>
     <div class="row">
       <button class="btn danger" type="button" id="wishDelete">Löschen</button>
@@ -341,6 +343,24 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
+<dialog id="interestDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2 id="intTitle"></h2>
+    <p class="muted" id="intWhat"></p>
+    <label class="check" id="intRefRow" hidden><input type="checkbox" id="intRef" checked> <span id="intRefText"></span></label>
+    <label class="field">Nachricht (optional)
+      <input type="text" id="intMsg" maxlength="200">
+    </label>
+    <p class="muted small">Dein Benutzername und die Nachricht gehen an die Person. Bezahlt wird nicht über Drobe.</p>
+    <p class="auth-error" id="intError" role="alert"></p>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="intCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="intSend">Senden</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="settingsDialog">
   <form method="dialog" onsubmit="return false">
     <div class="set-head">
@@ -352,6 +372,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
     <div class="set-panel" data-panel="main">
       <button class="set-row" type="button" data-open="account">Konto</button>
+      <button class="set-row" type="button" data-open="inbox">Mitteilungen <span class="badge" id="inboxBadge"></span></button>
       <button class="set-row" type="button" data-open="profile">Öffentliches Profil</button>
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
@@ -364,6 +385,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       </div>
       <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
       <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
+    </div>
+
+    <div class="set-panel" data-panel="inbox" data-title="Mitteilungen" hidden>
+      <p class="muted small" id="inboxEmpty">Noch keine Mitteilungen.</p>
+      <div id="inboxList"></div>
     </div>
 
     <div class="set-panel" data-panel="profile" data-title="Öffentliches Profil" hidden>

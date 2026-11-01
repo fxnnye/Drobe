@@ -426,3 +426,15 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .member-results[hidden] { display: none; }
 .member { text-align: left; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--gray); font-weight: 600; cursor: pointer; }
 .member:hover { background: var(--gray-hover); }
+
+/* ---------- Interesse, Treffer, Mitteilungen ---------- */
+.pub-action { margin-top: 8px; padding: 7px 12px; font-size: 13px; }
+.pub-tag.match { background: #1f7a3d; color: #fff; }
+.pub-banner.match { background: #1f7a3d; color: #fff; }
+.top .menu { position: relative; }
+.menu.has-unread::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--bg); }
+.inbox-item { padding: 12px 0; border-bottom: 1px solid var(--gray-hover); display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.inbox-item.unread b::before { content: '● '; color: var(--red); }
+.inbox-item p { margin: 0; }
+#wishMatches { margin-bottom: 12px; }
+#wishMatches .member { width: 100%; margin-bottom: 6px; }
