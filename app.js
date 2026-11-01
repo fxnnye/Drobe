@@ -78,6 +78,7 @@ let outfits = [];
 let wishlist = [];
 const urls = new Map(); // id -> Object-URL
 const state = {
+  view: 'closet',
   closetFilter: 'Alle',
   wishFilter: 'Alle',
   pickerFilter: 'Alle',
@@ -290,8 +291,20 @@ async function shrink(file, removeBg) {
 }
 
 /* ---------- Navigation ---------- */
+// Hinzufügen-Seite: wählt, ob das Foto in den Schrank oder auf die Wunschliste kommt
+function setAddTarget(t) {
+  $('dropzone').hidden = t !== 'closet';
+  $('wishDrop').hidden = t !== 'wish';
+  document.querySelectorAll('#addTarget .chip').forEach((c) => c.classList.toggle('active', c.dataset.target === t));
+}
+document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () => setAddTarget(c.dataset.target); });
+
 function showView(name) {
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
+  const prev = state.view;
+  state.view = name;
+  const tab = name === 'builder' ? 'outfits' : name; // der Outfit-Bereich gehört zum Reiter „Outfits“
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === tab));
+  if (name === 'add') setAddTarget(prev === 'wishlist' ? 'wish' : 'closet');
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
 }
@@ -362,6 +375,8 @@ function renderCloset() {
 /* Upload-Dialog: pro Foto Vorschau, Name, Kategorie und optional „Hintergrund entfernen“ */
 const upDlg = $('uploadDialog');
 const BG_LIB = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm';
+// Nach dem Hinzufügen zurück zur Liste, in die die Teile gekommen sind
+const leaveAddPage = () => { if (upAdded && state.view === 'add') showView(upTarget === 'wish' ? 'wishlist' : 'closet'); };
 let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 
 function trimAlpha(canvas) {
@@ -436,6 +451,7 @@ async function nextUpload() {
     if (upDlg.open) upDlg.close();
     renderLists();
     if (upAdded) toast(upAdded === 1 ? 'Teil hinzugefügt' : upAdded + ' Teile hinzugefügt');
+    leaveAddPage();
     upAdded = 0;
     return;
   }
@@ -961,6 +977,7 @@ upDlg.addEventListener('close', () => { // Esc: Rest der Warteschlange verwerfen
   upCur = null; upQueue = []; upTotal = upDone = 0;
   renderLists();
   if (upAdded) toast(upAdded === 1 ? 'Teil hinzugefügt' : upAdded + ' Teile hinzugefügt');
+  leaveAddPage();
   upAdded = 0;
 });
 $('fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
@@ -1310,6 +1327,7 @@ $('stage').addEventListener('pointerdown', (e) => {
   if (e.target === $('stage') || e.target.id === 'stageHint') { state.selected = null; renderStage(); }
 });
 
+$('builderBack').onclick = () => showView('outfits');
 $('newOutfit').onclick = async () => {
   if (state.outfit.layers.length && !(await askConfirm('Aktuelles Outfit verwerfen und neu beginnen?', 'Verwerfen'))) return;
   state.outfit = { id: null, name: '', bg: '#ffffff', layers: [] };
@@ -1366,6 +1384,21 @@ function renderOutfits() {
   $('outfitCount').textContent = outfits.length;
   const grid = $('outfitGrid');
   grid.innerHTML = '';
+  // Erste Kachel: neues Outfit bauen
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'card add-card';
+  add.setAttribute('aria-label', 'Neues Outfit bauen');
+  add.innerHTML = '<div class="img"><span class="plus" aria-hidden="true">+</span></div><div class="meta"><b>Neues Outfit</b></div>';
+  add.onclick = async () => {
+    const unsaved = state.outfit.layers.length && !state.outfit.id;
+    if (!unsaved || (await askConfirm('Du hast ein nicht gespeichertes Outfit. Neu beginnen?', 'Neu beginnen'))) {
+      state.outfit = { id: null, name: '', bg: '#ffffff', layers: [] };
+      state.selected = null;
+    }
+    showView('builder');
+  };
+  grid.appendChild(add);
   [...outfits].sort((a, b) => b.created - a.created).forEach((o) => {
     const card = document.createElement('div');
     card.className = 'card';
@@ -1498,7 +1531,7 @@ function renderWishlist() {
   });
   $('wishEmpty').classList.toggle('show', list.length === 0);
   $('wishEmpty').textContent = wishlist.length === 0
-    ? 'Deine Wunschliste ist noch leer. Lade oben ein Teil hoch, das du kaufen willst.'
+    ? 'Deine Wunschliste ist noch leer. Tippe auf +, um ein Teil hinzuzufügen, das du kaufen willst.'
     : 'Keine Teile in dieser Kategorie.';
 }
 

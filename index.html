@@ -41,7 +41,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   <h1>Drobe</h1>
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="closet" role="tab">Schrank</button>
-    <button class="tab" data-view="builder" role="tab">Outfit bauen</button>
+    <button class="tab tab-add" data-view="add" role="tab" aria-label="Hinzufügen" title="Hinzufügen">+</button>
     <button class="tab" data-view="outfits" role="tab">Outfits <span id="outfitCount" class="badge">0</span></button>
     <button class="tab" data-view="wishlist" role="tab">Wunschliste</button>
   </nav>
@@ -69,6 +69,25 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <main>
   <!-- SCHRANK -->
   <section id="view-closet" class="view active">
+    <div class="chips" id="closetFilter"></div>
+    <div class="grid" id="closetGrid"></div>
+    <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Tippe auf +, um das erste Teil hinzuzufügen.</p>
+  </section>
+
+  <!-- WUNSCHLISTE -->
+  <section id="view-wishlist" class="view">
+    <div class="chips" id="wishFilter"></div>
+    <div class="grid" id="wishGrid"></div>
+    <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
+  </section>
+
+  <!-- HINZUFÜGEN -->
+  <section id="view-add" class="view">
+    <h2 class="page-title">Hinzufügen</h2>
+    <div class="chips" id="addTarget">
+      <button class="chip active" type="button" data-target="closet">Schrank</button>
+      <button class="chip" type="button" data-target="wish">Wunschliste</button>
+    </div>
     <div class="upload" id="dropzone">
       <div>
         <strong>Klamotten hochladen</strong>
@@ -84,13 +103,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         </label>
       </div>
     </div>
-    <div class="chips" id="closetFilter"></div>
-    <div class="grid" id="closetGrid"></div>
-    <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Lade oben das erste Teil hoch.</p>
-  </section>
-
-  <!-- WUNSCHLISTE -->
-  <section id="view-wishlist" class="view">
     <div class="upload" id="wishDrop">
       <div>
         <strong>Wunschliste</strong>
@@ -106,13 +118,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         </label>
       </div>
     </div>
-    <div class="chips" id="wishFilter"></div>
-    <div class="grid" id="wishGrid"></div>
-    <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
   </section>
 
   <!-- BUILDER -->
   <section id="view-builder" class="view">
+    <button class="btn builder-back" type="button" id="builderBack">← Outfits</button>
     <div class="builder">
       <aside class="picker">
         <div class="chips" id="pickerFilter"></div>

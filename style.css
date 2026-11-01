@@ -401,3 +401,18 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
   .guest-actions .btn { padding: 8px 12px; font-size: 14px; }
   .landing, .public { padding: 20px 16px 48px; }
 }
+
+/* ---------- Hinzufügen-Seite, Plus-Reiter, neue Outfit-Kachel ---------- */
+.upload[hidden] { display: none; }
+.page-title { margin: 4px 0 14px; font-size: 24px; letter-spacing: -.02em; }
+.tab-add { font-size: 26px; font-weight: 400; line-height: 1; padding: 8px 18px; }
+.builder-back { margin: 4px 0 12px; }
+.outfits .add-card { cursor: pointer; }
+.outfits .add-card .img {
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.outfits .add-card:hover .img { background: color-mix(in srgb, var(--text) 14%, transparent); }
+.add-card .plus { font-size: 64px; font-weight: 200; line-height: 1; color: var(--muted); }
+@media (max-width: 700px) { .tab.tab-add { flex: 0 0 64px; font-size: 30px; padding: 6px 0; } }
