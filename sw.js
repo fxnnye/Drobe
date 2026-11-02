@@ -1,6 +1,6 @@
 // Service Worker: legt die App-Dateien im Cache ab, damit Drobe auch offline startet.
 // Bei jeder Änderung an den App-Dateien die Versionsnummer erhöhen.
-const CACHE = 'drobe-v65';
+const CACHE = 'drobe-v67';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'colors.js', 'cloud.js', 'profile.js', 'vendor/supabase.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',

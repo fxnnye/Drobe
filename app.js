@@ -390,7 +390,7 @@ function renderMeHead() {
 }
 
 /* ---------- Feed: öffentliche Teile oder Outfits anderer, neueste zuerst ---------- */
-const feed = { kind: 'items', before: null, loading: false, color: '' };
+const feed = { kind: 'items', before: null, loading: false };
 async function loadFeed(reset) {
   if (feed.loading) return;
   const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore');
@@ -398,9 +398,11 @@ async function loadFeed(reset) {
   feed.loading = true;
   const kind = feed.kind;
   try {
-    const list = await Profile.feed(kind, feed.before, feed.color);
+    const list = await Profile.feed(kind, feed.before);
     if (kind !== feed.kind) return; // inzwischen umgeschaltet
-    await Profile.showFeed(list, grid, kind);
+    // Eigene Teile nie im Feed zeigen (der Server filtert nur bei bestehender Anmeldung); die Seitenzählung bleibt auf der ungefilterten Liste
+    const me = Cloud.user();
+    await Profile.showFeed(me ? list.filter((r) => r.username !== me.name) : list, grid, kind);
     if (list.length) feed.before = list[list.length - 1].ts;
     more.hidden = list.length < 30;
     empty.hidden = grid.children.length > 0;
@@ -415,26 +417,11 @@ async function loadFeed(reset) {
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
   c.onclick = () => {
     feed.kind = c.dataset.kind;
-    $('feedColors').hidden = feed.kind !== 'items';
     document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
     loadFeed(true);
   };
 });
 $('feedMore').onclick = () => loadFeed(false);
-// Farbfilter: Farben stammen automatisch aus den freigestellten Bildern
-function renderFeedColors() {
-  const box = $('feedColors');
-  box.replaceChildren();
-  for (const name of ['', ...COLORS]) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'chip' + (feed.color === name ? ' active' : '');
-    b.textContent = name || 'Alle Farben';
-    b.onclick = () => { feed.color = name; renderFeedColors(); loadFeed(true); };
-    box.append(b);
-  }
-}
-renderFeedColors();
 
 /* ---------- Filter-Chips ---------- */
 // Filterwert ist eine Hauptkategorie, eine Unterkategorie oder „Alle“
