@@ -370,6 +370,22 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <label class="field">Kategorie
       <select id="upCategory"></select>
     </label>
+    <div id="upItem">
+      <label class="field">Marke *
+        <input type="text" id="upBrand" maxlength="40" autocomplete="off">
+      </label>
+      <div class="row2">
+        <label class="field">Größe *
+          <input type="text" id="upSize" maxlength="20" autocomplete="off">
+        </label>
+        <label class="field">Zustand *
+          <select id="upCond"><option value="">Wählen …</option><option>Neu / DS</option><option>Sehr gut</option><option>Gut</option><option>Getragen</option></select>
+        </label>
+      </div>
+      <label class="field">Sichtbarkeit
+        <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="private">Privat</option></select>
+      </label>
+    </div>
     <div id="upWish" hidden>
       <label class="field">Preis / Notiz
         <input type="text" id="upNote" maxlength="120" placeholder="z. B. 89 €">

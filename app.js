@@ -637,6 +637,8 @@ async function nextUpload() {
     $('upName').value = nameFromFile(f);
     $('upCategory').value = (upTarget === 'wish' ? $('wishUploadCategory') : $('uploadCategory')).value;
     $('upWish').hidden = upTarget !== 'wish';
+    $('upItem').hidden = upTarget === 'wish';
+    $('upBrand').value = ''; $('upSize').value = ''; $('upCond').value = '';
     $('upNote').value = '';
     $('upLink').value = '';
     upDone++;
@@ -1087,9 +1089,18 @@ bindTool('remove', async () => {
   u.busy = false;
   if (cur() === u) activeCtx.refresh();
 });
+// Marke, Größe und Zustand sind bei Teilen Pflicht; Sichtbarkeit ist vorausgewählt „Öffentlich“
+function upItemDetails() {
+  if (upTarget === 'wish') return {};
+  const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
+  if (need) { toast('Bitte gib ' + need[1] + ' an'); $(need[0]).focus(); return null; }
+  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, vis: $('upVis').value }, 'items');
+}
 $('upAdd').addEventListener('click', async () => {
   const u = upCur;
   const coll = upColl();
+  const det = upItemDetails();
+  if (!det) return;
   const rawLink = $('upLink').value.trim();
   const link = upTarget === 'wish' ? cleanLink(rawLink) : '';
   if (rawLink && upTarget === 'wish' && !link) return toast('Der Link sieht nicht richtig aus');
@@ -1102,6 +1113,7 @@ $('upAdd').addEventListener('click', async () => {
   const note = $('upNote').value.trim().slice(0, 120);
   if (upTarget === 'wish' && note) rec.note = note;
   if (link) rec.link = link;
+  Object.assign(rec, det);
   await dbPut(coll.store, rec);
   coll.list.push(rec);
   upAdded++;
@@ -1113,6 +1125,8 @@ $('upSkip').addEventListener('click', () => nextUpload());
 $('upAll').addEventListener('click', async () => {
   const u = upCur;
   if (u.busy) return;
+  const det = upItemDetails();
+  if (!det) return;
   const category = $('upCategory').value;
   const bgAll = $('upAllBg').checked;
   const jobs = [
@@ -1130,7 +1144,7 @@ $('upAll').addEventListener('click', async () => {
       if (bgAll && !j.cut) {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
-      const rec = { id: uid(), name: j.name, category, blob, created: Date.now() };
+      const rec = { id: uid(), name: j.name, category, blob, created: Date.now(), ...det };
       if (j.res && j.res.source) { rec.source = j.res.source; rec.srcBox = j.res.srcBox; }
       const coll = upColl();
       await dbPut(coll.store, rec);

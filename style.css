@@ -563,3 +563,5 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .bubble.mine .muted { color: inherit; opacity: .7; }
 .thread-form { display: flex; gap: 8px; }
 .thread-form input { flex: 1; min-width: 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row2 .field { min-width: 0; }
