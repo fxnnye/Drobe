@@ -2263,16 +2263,18 @@ async function migrateCategories() {
   }
 }
 
-// Teile ohne Farbe einmalig nachträglich auswerten (nur freigestellte; die anderen werden als geprüft markiert)
+// Teile ohne Farbe nachträglich auswerten (nur freigestellte; die anderen werden als geprüft markiert).
+// Läuft bei jedem Start und nach jedem Abgleich; `colorV` hebt frühere „geprüft“-Markierungen auf, wenn sich die Erkennung ändert.
+const COLOR_V = 2;
 let colorBusy = false;
 async function backfillColors() {
   if (colorBusy) return;
   colorBusy = true;
   try {
-    for (const it of items.filter((i) => !i.color && !i.colorChecked && i.blob)) {
+    for (const it of items.filter((i) => !i.color && i.colorV !== COLOR_V && i.blob)) {
       const c = await detectColor(it.blob);
       if (c) applyColor(it, c);
-      it.colorChecked = true;
+      it.colorV = COLOR_V;
       await dbPut('items', it);
     }
   } finally { colorBusy = false; }
@@ -2356,6 +2358,7 @@ async function startApp(userId) {
   renderOutfits();
   showView('feed');
   maybeWelcome();
+  backfillColors();
 }
 
 Cloud.boot();
