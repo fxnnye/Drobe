@@ -209,10 +209,43 @@ function askConfirm(text, yesLabel = 'Löschen') {
 
 function toast(msg) {
   const t = $('toast');
+  const bad = /nicht|Fehler|konnte|fehlt|falsch|Limit|zu viele/i.test(msg); // Fehlermeldungen sehen anders aus und bleiben länger
   t.textContent = msg;
+  t.classList.toggle('error', bad);
+  t.setAttribute('role', bad ? 'alert' : 'status');
   t.classList.add('show');
   clearTimeout(toast.t);
-  toast.t = setTimeout(() => t.classList.remove('show'), 2200);
+  toast.t = setTimeout(() => t.classList.remove('show'), bad ? 4200 : 2200);
+}
+// Platzhalter-Karten, solange etwas lädt
+function skeletons(parent, n = 6) {
+  const els = [];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('div');
+    s.className = 'skeleton-card';
+    s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = '<div class="skeleton img"></div><div class="skeleton line"></div><div class="skeleton line short"></div>';
+    els.push(s);
+  }
+  parent.append(...els);
+  return () => els.forEach((s) => s.remove());
+}
+// Fehlerhinweis mit „Nochmal versuchen“
+function errorNotice(box, text, retry) {
+  const n = document.createElement('div');
+  n.className = 'notice error';
+  n.setAttribute('role', 'alert');
+  const p = document.createElement('p');
+  p.textContent = text;
+  n.append(p);
+  if (retry) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn'; b.textContent = 'Nochmal versuchen';
+    b.onclick = retry;
+    n.append(b);
+  }
+  box.append(n);
+  return n;
 }
 
 /* ---------- Bilder ---------- */
@@ -456,16 +489,18 @@ function renderMeHead() {
 const feed = { kind: 'items', before: null, loading: false };
 async function loadFeed(reset) {
   if (feed.loading) return;
-  const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore');
+  const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore'), retry = $('feedRetry');
   if (reset) { feed.before = null; grid.replaceChildren(); }
   feed.loading = true;
+  retry.hidden = true;
+  empty.hidden = true;
   const kind = feed.kind;
+  const done = skeletons(grid, reset ? 8 : 4);
   try {
-    const list = await Profile.feed(kind, feed.before);
+    const list = await Profile.feed(kind, feed.before, feed.color);
     if (kind !== feed.kind) return; // inzwischen umgeschaltet
-    // Eigene Teile nie im Feed zeigen (der Server filtert nur bei bestehender Anmeldung); die Seitenzählung bleibt auf der ungefilterten Liste
-    const me = Cloud.user();
-    await Profile.showFeed(me ? list.filter((r) => r.username !== me.name) : list, grid, kind);
+    done();
+    await Profile.showFeed(list, grid, kind);
     if (list.length) feed.before = list[list.length - 1].ts;
     more.hidden = list.length < 30;
     empty.hidden = grid.children.length > 0;
@@ -475,8 +510,10 @@ async function loadFeed(reset) {
     more.hidden = true;
     empty.hidden = false;
     empty.textContent = navigator.onLine ? 'Der Feed ist gerade nicht verfügbar.' : 'Für den Feed brauchst du eine Internetverbindung.';
-  } finally { feed.loading = false; }
+    retry.hidden = false;
+  } finally { done(); feed.loading = false; }
 }
+$('feedRetry').onclick = () => loadFeed(false);
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
   c.onclick = () => {
     feed.kind = c.dataset.kind;
@@ -639,23 +676,25 @@ async function runSearch() {
   box.hidden = false;
   box.replaceChildren();
   const note = (m) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = m; box.append(p); };
+  const fail = (m) => { box.replaceChildren(); errorNotice(box, m, runSearch); };
   const fkey = JSON.stringify(searchFilters());
   const stale = () => $('soInput').value !== q || state.searchMode !== mode || JSON.stringify(searchFilters()) !== fkey; // inzwischen weitergetippt
   if (mode === 'items') {
     const filters = searchFilters();
     const hasFilter = Object.values(filters).some(Boolean);
     if (t.length < 2 && !hasFilter) return note('Gib mindestens 2 Zeichen ein.');
+    if (state.showResults || hasFilter) { const g = document.createElement('div'); g.className = 'grid'; box.append(g); skeletons(g, 4); }
     try {
       const list = await Profile.fetchItems(t.length >= 2 ? t : '', filters);
       if (stale()) return;
       if (state.showResults || hasFilter) return await Profile.showItems(list, box, stale);
       renderSuggestions(list, t, box);
-    } catch (e) { console.error(e); if (!stale()) { box.replaceChildren(); note('Die Suche ist gerade nicht verfügbar.'); } }
+    } catch (e) { console.error(e); if (!stale()) fail(navigator.onLine ? 'Die Suche ist gerade nicht verfügbar.' : 'Für die Suche brauchst du eine Internetverbindung.'); }
     return;
   }
   if (t.length < 2) return note('Gib mindestens 2 Zeichen eines Benutzernamens ein.');
   let names;
-  try { names = await Profile.search(t); } catch (e) { console.error(e); return note('Die Mitgliedersuche ist gerade nicht verfügbar.'); }
+  try { names = await Profile.search(t); } catch (e) { console.error(e); if (!stale()) fail('Die Mitgliedersuche ist gerade nicht verfügbar.'); return; }
   if (stale()) return;
   if (!names.length) return note('Keine Mitglieder gefunden. Gefunden werden nur Profile mit öffentlichen Teilen.');
   for (const n of names) {

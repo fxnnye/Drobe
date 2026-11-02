@@ -4,6 +4,8 @@
 const Profile = (() => {
   const SHOWCASE_MAX = 6;
   const parseHash = () => { const m = /^#\/u\/([a-z0-9._-]{3,20})$/i.exec(location.hash); return m ? m[1].toLowerCase() : null; };
+  const parseItemHash = () => { const m = /^#\/i\/([a-z0-9._-]{3,20})\/([A-Za-z0-9_-]{1,40})$/.exec(location.hash); return m ? { name: m[1].toLowerCase(), id: m[2] } : null; };
+  const itemLink = (name, id) => '#/i/' + name + '/' + id;
   const profileLink = (name) => location.origin + location.pathname + '#/u/' + name;
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
@@ -78,9 +80,10 @@ const Profile = (() => {
   }
   const mine = (k) => (k === 'items' ? (typeof items !== 'undefined' ? items : []) : (typeof wishlist !== 'undefined' ? wishlist : []));
 
-  function card(rec, urls, tags, action) {
+  function card(rec, urls, tags, action, open) {
     const c = el('div', 'card');
-    const img = el('div', 'img');
+    const img = el(open ? 'button' : 'div', 'img');
+    if (open) { img.type = 'button'; img.onclick = open; img.setAttribute('aria-label', (rec.name || 'Teil') + ' ansehen'); }
     if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.src = urls[rec.path]; img.append(i); }
     const meta = el('div', 'meta');
     meta.append(el('b', null, rec.name || ''));
@@ -123,7 +126,13 @@ const Profile = (() => {
     return s;
   }
 
-  function message(box, text) { box.querySelector('.pub-msg')?.remove(); box.append(el('p', 'muted pub-msg', text)); }
+  // Hinweis in der öffentlichen Ansicht: Ladeanzeige, Fehler mit „Nochmal versuchen“ oder schlichter Text
+  function message(box, text, opts = {}) {
+    box.querySelector('.pub-msg')?.remove();
+    if (opts.loading) { const l = el('div', 'loading pub-msg'); l.setAttribute('role', 'status'); l.append(el('span', 'spinner'), el('span', null, text)); return box.append(l); }
+    if (opts.retry) { const n = el('div', 'notice error pub-msg'); n.setAttribute('role', 'alert'); n.append(el('p', null, text)); const b = el('button', 'btn', 'Nochmal versuchen'); b.type = 'button'; b.onclick = opts.retry; n.append(b); return box.append(n); }
+    box.append(el('p', 'muted pub-msg', text));
+  }
 
   async function render(name) {
     const box = $('publicView');
@@ -132,9 +141,9 @@ const Profile = (() => {
     back.type = 'button';
     back.onclick = leave;
     box.append(back);
-    message(box, 'Lade …');
+    message(box, 'Lade …', { loading: true });
     const sb = Cloud.client();
-    if (!sb || !navigator.onLine) return message(box, 'Zum Ansehen von Profilen brauchst du eine Internetverbindung.');
+    if (!sb || !navigator.onLine) return message(box, 'Zum Ansehen von Profilen brauchst du eine Internetverbindung.', { retry: () => render(name) });
     let data, urls = {};
     try {
       const res = await sb.rpc('public_profile', { p_username: name });
@@ -144,7 +153,7 @@ const Profile = (() => {
       if (data) urls = await signedUrls(sb, [...data.items, ...data.outfits, ...data.wishlist].map((r) => r.path));
     } catch (e) {
       console.error(e);
-      if (name === parseHash()) message(box, 'Das Profil konnte nicht geladen werden.');
+      if (name === parseHash()) message(box, 'Das Profil konnte nicht geladen werden.', { retry: () => render(name) });
       return;
     }
     if (name !== parseHash()) return; // inzwischen woanders hin gewechselt
@@ -188,7 +197,8 @@ const Profile = (() => {
       const tags = itemTags(it), w = !own && me ? wishMatch(it) : null;
       if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
       const buy = it.vis === 'sale';
-      return card(it, urls, tags, own ? null : { label: buy ? 'Anfrage senden' : 'Interesse', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) });
+      const open = () => { location.hash = itemLink(data.username, it.id); };
+      return card(it, urls, tags, own ? null : { label: buy ? 'Anfrage senden' : 'Interesse', fn: open, alt: rep(it) }, open);
     };
     const wishCard = (w) => {
       const m = !own && me ? itemMatch(w) : null;
@@ -207,6 +217,87 @@ const Profile = (() => {
     if (data.outfits.length) box.append(section('Outfits', data.outfits.map((o) => card(o, urls))));
     if (data.wishlist.length) box.append(section('Gesucht', data.wishlist.map(wishCard)));
     if (!data.items.length && !data.outfits.length && !data.wishlist.length) box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.'));
+  }
+
+
+  /* ---------- Detailseite eines Teils (#/i/<name>/<id>) ---------- */
+  async function renderItem(name, id) {
+    const box = $('publicView');
+    box.replaceChildren();
+    const same = () => { const h = parseItemHash(); return h && h.name === name && h.id === id; };
+    const back = el('button', 'btn pub-back', '← Zurück');
+    back.type = 'button';
+    back.onclick = () => { if (history.length > 1) history.back(); else leave(); };
+    box.append(back);
+    message(box, 'Lade …', { loading: true });
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return message(box, 'Zum Ansehen brauchst du eine Internetverbindung.', { retry: () => renderItem(name, id) });
+    let data, urls = {};
+    try {
+      const res = await sb.rpc('public_profile', { p_username: name });
+      if (res.error) throw res.error;
+      data = res.data;
+      if (data && Cloud.user()) await loadBlocks(sb);
+      if (data) urls = await signedUrls(sb, data.items.map((r) => r.path));
+    } catch (e) {
+      console.error(e);
+      if (same()) message(box, 'Das Teil konnte nicht geladen werden.', { retry: () => renderItem(name, id) });
+      return;
+    }
+    if (!same()) return;
+    box.querySelector('.pub-msg')?.remove();
+    const it = data && data.items.find((x) => x.id === id);
+    if (!it) return message(box, 'Dieses Teil ist nicht mehr verfügbar.');
+
+    const me = Cloud.user();
+    const own = !!me && me.name === data.username;
+    const askLogin = () => Cloud.showAuth(false);
+    if (own) box.append(el('p', 'pub-banner', 'So sehen andere dein Teil.'));
+
+    const page = el('div', 'item-page');
+    const photo = el('div', 'item-photo');
+    if (urls[it.path]) { const i = el('img'); i.alt = it.name || ''; i.src = urls[it.path]; photo.append(i); }
+    const info = el('div', 'item-info');
+    info.append(el('h2', 'item-name', it.name || 'Teil'));
+    if (it.vis === 'sale' && it.price != null) info.append(el('p', 'item-price', money(it.price)));
+    else if (it.vis === 'trade') info.append(el('p', 'item-price', 'Zum Tausch' + (it.swap ? ' · sucht: ' + it.swap : '')));
+
+    const facts = el('dl', 'item-facts');
+    for (const [k, v] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : '']]) {
+      if (!v) continue;
+      const row = el('div', 'item-fact');
+      row.append(el('dt', null, k), el('dd', null, v));
+      facts.append(row);
+    }
+    if (facts.children.length) info.append(facts);
+
+    const seller = el('button', 'seller');
+    seller.type = 'button';
+    const sn = el('span', 'seller-name');
+    sn.append(el('b', null, data.username), el('span', 'muted small', 'Zum Profil'));
+    seller.append(el('span', 'avatar', (data.username[0] || '?').toUpperCase()), sn);
+    seller.onclick = () => { location.hash = '#/u/' + data.username; };
+    info.append(seller);
+
+    if (!own) {
+      const buy = it.vis === 'sale';
+      const go = el('button', 'btn primary full', buy ? 'Kaufanfrage senden' : 'Interesse und Nachricht senden');
+      go.type = 'button';
+      go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
+      info.append(go);
+      const rp = el('button', 'pub-report', 'Melden');
+      rp.type = 'button';
+      rp.onclick = me ? () => askReport(data.username, it) : askLogin;
+      info.append(rp);
+    }
+    page.append(photo, info);
+    box.append(page);
+
+    const more = data.items.filter((x) => x.id !== id).slice(0, 6);
+    if (more.length) {
+      const open = (x) => () => { location.hash = itemLink(data.username, x.id); };
+      box.append(section('Mehr von ' + data.username, more.map((x) => card(x, urls, itemTags(x), null, open(x)))));
+    }
   }
 
   /* ---------- Melden und Sperren ---------- */
@@ -274,6 +365,11 @@ const Profile = (() => {
       if (error) throw error;
       $('interestDialog').close();
       toast(c.kind === 'interest' ? 'Interesse gesendet' : 'Gesendet');
+      if (c.kind === 'interest') { // weiter zu den Nachrichten, dort läuft die Unterhaltung
+        history.pushState(null, '', location.pathname + location.search);
+        await route();
+        showView('messages');
+      }
     } catch (e) {
       console.error(e);
       $('intError').textContent = (e && e.message) || 'Das hat nicht geklappt.';
@@ -285,11 +381,17 @@ const Profile = (() => {
     const sb = Cloud.client();
     if (!sb || !Cloud.user() || !navigator.onLine) return;
     let list;
+    const lbox = $('inboxList');
+    if (markRead && !lbox.children.length) { lbox.replaceChildren(el('div', 'loading')); lbox.firstChild.append(el('span', 'spinner'), el('span', null, 'Lade Nachrichten …')); }
     try {
       const { data, error } = await sb.rpc('my_threads');
       if (error) throw error;
       list = data || [];
-    } catch (e) { console.error(e); return; }
+    } catch (e) {
+      console.error(e);
+      if (markRead) { lbox.replaceChildren(); const n = el('div', 'notice error'); n.append(el('p', null, 'Die Nachrichten konnten nicht geladen werden.')); const b = el('button', 'btn', 'Nochmal versuchen'); b.type = 'button'; b.onclick = () => loadInbox(true); n.append(b); lbox.append(n); }
+      return;
+    }
     const unread = list.filter((x) => x.unread).length;
     $('inboxBadge').textContent = unread ? String(unread) : '';
     $('menuBtn').classList.toggle('has-unread', unread > 0 && !markRead);
@@ -332,7 +434,17 @@ const Profile = (() => {
       const { data, error } = await sb.rpc('thread_messages', { p_interest: id });
       if (error) throw error;
       msgs = data || [];
-    } catch (e) { console.error(e); return; }
+    } catch (e) {
+      console.error(e);
+      const b = $('threadMsgs');
+      if (thread && thread.id === id && b.querySelector('.loading')) {
+        b.replaceChildren();
+        const n = el('div', 'notice error'); n.append(el('p', null, 'Die Unterhaltung konnte nicht geladen werden.'));
+        const r = el('button', 'btn', 'Nochmal versuchen'); r.type = 'button'; r.onclick = () => refreshThread(true); n.append(r);
+        b.append(n);
+      }
+      return;
+    }
     if (!thread || thread.id !== id) return;
     const box = $('threadMsgs');
     const atEnd = scroll || box.scrollHeight - box.scrollTop - box.clientHeight < 40;
@@ -370,7 +482,8 @@ const Profile = (() => {
     $('threadAbout').textContent = subject;
     $('threadErr').hidden = true;
     $('threadInput').value = '';
-    $('threadMsgs').replaceChildren();
+    const tl = el('div', 'loading'); tl.append(el('span', 'spinner'), el('span', null, 'Lade …'));
+    $('threadMsgs').replaceChildren(tl);
     refreshThread(true);
     clearInterval(threadTimer);
     threadTimer = setInterval(() => { if (document.hidden || !$('threadPane').offsetParent) return; refreshThread(false); }, 10000);
@@ -454,12 +567,13 @@ const Profile = (() => {
 
   /* ---------- Navigation ---------- */
   async function route() {
-    const name = parseHash();
-    viewing = !!name;
+    const name = parseHash(), itm = parseItemHash();
+    viewing = !!name || !!itm;
     body.classList.toggle('viewing-profile', viewing);
     $('publicView').hidden = !viewing;
     $('landing').hidden = viewing || !body.classList.contains('guest');
     if (name) await render(name);
+    else if (itm) await renderItem(itm.name, itm.id);
   }
   function leave() {
     history.pushState(null, '', location.pathname + location.search);
@@ -537,7 +651,8 @@ const Profile = (() => {
     for (const it of list) {
       const tags = itemTags(it);
       tags.push(['von ' + it.username, '']);
-      grid.append(card(it, urls, tags, { label: 'Profil ansehen', fn: () => { location.hash = '#/u/' + it.username; } }));
+      const open = () => { location.hash = itemLink(it.username, it.id); };
+      grid.append(card(it, urls, tags, { label: 'Ansehen', fn: open }, open));
     }
     box.append(grid);
   }
@@ -553,11 +668,11 @@ const Profile = (() => {
   // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
   function feedCard(rec, urls, kind) {
     const c = el('div', 'card feed-card');
-    const open = () => { location.hash = '#/u/' + rec.username; };
+    const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : '#/u/' + rec.username; };
     const owner = el('button', 'feed-owner');
     owner.type = 'button';
     owner.append(el('span', 'avatar sm', (rec.username[0] || '?').toUpperCase()), el('span', null, rec.username));
-    owner.onclick = open;
+    owner.onclick = () => { location.hash = '#/u/' + rec.username; };
     const img = el('button', 'img feed-img');
     img.type = 'button';
     img.setAttribute('aria-label', (rec.name || 'Eintrag') + ' von ' + rec.username + ' ansehen');
