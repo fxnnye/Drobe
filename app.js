@@ -1435,7 +1435,7 @@ function renderOutfits() {
   add.type = 'button';
   add.className = 'card add-card';
   add.setAttribute('aria-label', 'Neues Outfit bauen');
-  add.innerHTML = '<div class="img"><span class="plus" aria-hidden="true">+</span></div><div class="meta"><b>Neues Outfit</b></div>';
+  add.innerHTML = '<div class="img"><svg class="plus" viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></div><div class="meta"><b>Neues Outfit</b></div>';
   add.onclick = async () => {
     const unsaved = state.outfit.layers.length && !state.outfit.id;
     if (!unsaved || (await askConfirm('Du hast ein nicht gespeichertes Outfit. Neu beginnen?', 'Neu beginnen'))) {

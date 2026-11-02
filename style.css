@@ -248,7 +248,7 @@ dialog { max-height: 92vh; overflow: auto; }
     background: var(--bg); border-top: 1px solid var(--gray-hover);
     padding: 6px 8px calc(12px + env(safe-area-inset-bottom));
   }
-  .tab { flex: 1; padding: 12px 4px; font-size: 14px; text-align: center; }
+  .tab { flex: 1 1 0; min-width: 0; padding: 12px 4px; font-size: 14px; text-align: center; }
   main { padding: 4px 12px calc(96px + env(safe-area-inset-bottom)); }
 
   /* Raster: zwei Spalten */
@@ -413,7 +413,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
 .outfits .add-card:hover .img { background: color-mix(in srgb, var(--text) 14%, transparent); }
-.add-card .plus { font-size: 64px; font-weight: 200; line-height: 1; color: var(--muted); }
+.add-card .plus { display: block; color: var(--muted); }
 
 /* ---------- Suche im Schrank ---------- */
 .search { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 16px; }
@@ -438,9 +438,10 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 #wishMatches .member { width: 100%; margin-bottom: 6px; }
 
 /* ---------- Plus neben den Kategorien (Computer und Handy) ---------- */
-.filter-row { display: flex; align-items: flex-start; gap: 12px; }
-.filter-row .chips { flex: 1; min-width: 0; }
-.add-btn { flex: none; width: 44px; height: 44px; border: 0; border-radius: 14px; background: var(--gray); font-size: 28px; font-weight: 400; line-height: 1; cursor: pointer; }
+.filter-row { display: flex; align-items: center; gap: 12px; }
+.filter-row .chips { flex: 1; min-width: 0; margin-bottom: 0; }
+.filter-row { margin-bottom: 16px; }
+.add-btn { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--gray); display: grid; place-items: center; padding: 0; color: var(--text); cursor: pointer; }
 .add-btn:hover { background: var(--gray-hover); }
 .members-mode .filter-row { display: none; }
 @media (max-width: 700px) {
