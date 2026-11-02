@@ -335,8 +335,8 @@ function colorName(r, g, b) {
   h *= 60;
   if (l < 0.16) return 'Schwarz';
   if (l > 0.9 && s < 0.4) return 'Weiß';
-  if (s < 0.12) return l > 0.82 ? 'Weiß' : 'Grau';
-  if (h >= 15 && h < 50 && s < 0.45 && l >= 0.55) return 'Beige';
+  if (s < 0.12) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
+  if (h >= 15 && h < 65 && s < 0.5 && l >= 0.45) return 'Beige';
   if (h >= 10 && h < 50 && l < 0.42) return 'Braun';
   if (h < 15 || h >= 345) return l > 0.7 ? 'Rosa' : 'Rot';
   if (h < 45) return 'Orange';
@@ -368,7 +368,16 @@ async function detectColor(blob) {
       s.n++; s.r += px[i]; s.g += px[i + 1]; s.b += px[i + 2];
     }
     if (seen < 30 || clear < w * h * 0.03) return null;
-    const [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
+    // Grau und Beige liegen eng beieinander und Schatten mischen sie: erst zusammenfassen, dann nach dem Farbstich entscheiden
+    if (sum.Grau && sum.Beige) {
+      for (const k of ['n', 'r', 'g', 'b']) sum.Grau[k] += sum.Beige[k];
+      delete sum.Beige;
+    }
+    let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
+    if (name === 'Grau' || name === 'Beige') {
+      const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
+      name = warm >= 9 && light >= 0.4 ? 'Beige' : 'Grau';
+    }
     const hex = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('');
     return { color: name, hex };
   } catch (e) { return null; }
@@ -2265,13 +2274,13 @@ async function migrateCategories() {
 
 // Teile ohne Farbe nachträglich auswerten (nur freigestellte; die anderen werden als geprüft markiert).
 // Läuft bei jedem Start und nach jedem Abgleich; `colorV` hebt frühere „geprüft“-Markierungen auf, wenn sich die Erkennung ändert.
-const COLOR_V = 2;
+const COLOR_V = 3;
 let colorBusy = false;
 async function backfillColors() {
   if (colorBusy) return;
   colorBusy = true;
   try {
-    for (const it of items.filter((i) => !i.color && i.colorV !== COLOR_V && i.blob)) {
+    for (const it of items.filter((i) => i.blob && i.colorV !== COLOR_V && (!i.color || i.hex))) { // von Hand gewählte Farben (ohne hex) bleiben
       const c = await detectColor(it.blob);
       if (c) applyColor(it, c);
       it.colorV = COLOR_V;
