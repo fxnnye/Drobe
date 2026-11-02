@@ -96,6 +96,19 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <h2 class="page-title">Nachrichten</h2>
     <p class="muted small" id="inboxEmpty">Noch keine Nachrichten.</p>
     <div id="inboxList"></div>
+    <div class="thread" id="threadPane" hidden>
+      <div class="thread-head">
+        <button class="btn" type="button" id="threadBack" aria-label="Zurück">‹ Zurück</button>
+        <button class="thread-who" type="button" id="threadWho"></button>
+      </div>
+      <p class="muted small" id="threadAbout"></p>
+      <div class="thread-msgs" id="threadMsgs"></div>
+      <form class="thread-form" id="threadForm">
+        <input id="threadInput" type="text" maxlength="500" placeholder="Nachricht schreiben …" autocomplete="off" aria-label="Nachricht">
+        <button class="btn primary" type="submit">Senden</button>
+      </form>
+      <p class="muted small" id="threadErr" hidden></p>
+    </div>
   </section>
 
   <!-- MEIN PROFIL: Kopf mit Reitern für Schrank, Outfits und Wunschliste -->

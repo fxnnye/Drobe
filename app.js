@@ -317,7 +317,7 @@ function showView(name) {
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
   if (name === 'feed') loadFeed(true);
-  if (name === 'messages') Profile.loadInbox(true);
+  if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
   if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
   if (ME_VIEWS.includes(name)) renderMeHead();
   window.scrollTo(0, 0);

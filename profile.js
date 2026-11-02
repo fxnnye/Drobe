@@ -286,10 +286,9 @@ const Profile = (() => {
     if (!sb || !Cloud.user() || !navigator.onLine) return;
     let list;
     try {
-      const { data, error } = await sb.rpc('my_interests');
+      const { data, error } = await sb.rpc('my_threads');
       if (error) throw error;
       list = data || [];
-      if (markRead) await sb.rpc('mark_interests_read');
     } catch (e) { console.error(e); return; }
     const unread = list.filter((x) => x.unread).length;
     $('inboxBadge').textContent = unread ? String(unread) : '';
@@ -299,19 +298,92 @@ const Profile = (() => {
     const box = $('inboxList');
     box.replaceChildren();
     for (const m of list) {
-      const row = el('div', 'inbox-item' + (m.unread ? ' unread' : ''));
-      const what = m.kind === 'interest'
-        ? m.from + ' hat Interesse an „' + (m.record_name || 'einem Teil') + '“'
-        : m.from + ' hat etwas zu deinem Wunsch „' + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
-      row.append(el('b', null, what));
-      if (m.message) row.append(el('p', null, m.message));
-      row.append(el('span', 'muted small', new Date(m.created_at).toLocaleDateString('de-DE')));
-      const open = el('button', 'btn', 'Profil ansehen');
-      open.type = 'button';
-      open.onclick = () => { $('settingsDialog').close(); location.hash = '#/u/' + m.from; };
-      row.append(open);
+      const row = el('button', 'inbox-item thread-row' + (m.unread ? ' unread' : ''));
+      row.type = 'button';
+      const subject = m.kind === 'interest'
+        ? (m.mine ? 'Interesse an „' : 'Interesse an deinem „') + (m.record_name || 'Teil') + '“'
+        : (m.mine ? 'Zu „' : 'Zu deinem Wunsch „') + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
+      const top = el('span', 'thread-top');
+      top.append(el('b', null, m.other), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
+      row.append(el('span', 'avatar sm', (m.other[0] || '?').toUpperCase()), top, el('span', 'muted small thread-sub', subject));
+      if (m.last_text) row.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
+      row.onclick = () => openThread(m, subject);
       box.append(row);
     }
+  }
+
+  /* ---------- Unterhaltung ---------- */
+  let thread = null, threadTimer = 0;
+  function leaveThread() {
+    clearInterval(threadTimer);
+    thread = null;
+    $('threadPane').hidden = true;
+    $('inboxList').hidden = false;
+    document.querySelector('#view-messages .page-title').hidden = false;
+  }
+  function closeThread() { leaveThread(); loadInbox(true); }
+  async function refreshThread(scroll) {
+    const sb = Cloud.client();
+    if (!thread || !sb) return;
+    const id = thread.id;
+    let msgs;
+    try {
+      const { data, error } = await sb.rpc('thread_messages', { p_interest: id });
+      if (error) throw error;
+      msgs = data || [];
+    } catch (e) { console.error(e); return; }
+    if (!thread || thread.id !== id) return;
+    const box = $('threadMsgs');
+    const atEnd = scroll || box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    box.replaceChildren();
+    for (const m of msgs) {
+      const b = el('div', 'bubble' + (m.mine ? ' mine' : ''));
+      b.append(el('span', null, m.text), el('time', 'muted small', new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })));
+      box.append(b);
+    }
+    if (atEnd) box.scrollTop = box.scrollHeight;
+  }
+  function openThread(m, subject) {
+    thread = { id: m.id, other: m.other };
+    $('inboxList').hidden = true;
+    $('inboxEmpty').hidden = true;
+    document.querySelector('#view-messages .page-title').hidden = true;
+    $('threadPane').hidden = false;
+    $('threadWho').textContent = m.other;
+    $('threadAbout').textContent = subject;
+    $('threadErr').hidden = true;
+    $('threadInput').value = '';
+    $('threadMsgs').replaceChildren();
+    refreshThread(true);
+    clearInterval(threadTimer);
+    threadTimer = setInterval(() => { if (document.hidden || !$('threadPane').offsetParent) return; refreshThread(false); }, 10000);
+  }
+  async function sendReply(e) {
+    e.preventDefault();
+    const text = $('threadInput').value.trim();
+    const sb = Cloud.client();
+    if (!text || !thread || !sb) return;
+    const err = $('threadErr');
+    err.hidden = true;
+    if (!navigator.onLine) { err.textContent = 'Dafür brauchst du eine Internetverbindung.'; err.hidden = false; return; }
+    const btn = $('threadForm').querySelector('button');
+    btn.disabled = true;
+    try {
+      const { error } = await sb.rpc('send_reply', { p_interest: thread.id, p_body: text });
+      if (error) throw error;
+      $('threadInput').value = '';
+      await refreshThread(true);
+    } catch (x) {
+      console.error(x);
+      err.textContent = (x && x.message) || 'Senden hat nicht geklappt.';
+      err.hidden = false;
+    }
+    btn.disabled = false;
+  }
+  function wireThread() {
+    $('threadBack').onclick = closeThread;
+    $('threadWho').onclick = () => { if (thread) location.hash = '#/u/' + thread.other; };
+    $('threadForm').onsubmit = sendReply;
   }
 
   // Zu einem Wunsch passende öffentliche Teile anderer suchen
@@ -389,7 +461,7 @@ const Profile = (() => {
 
   // Wird vom Konto-Code nach dem Start (Gast oder angemeldet) aufgerufen
   async function start() {
-    if (!started) { started = true; wire(); }
+    if (!started) { started = true; wire(); wireThread(); }
     if (Cloud.user()) { loadOwn(); loadInbox(false); }
     await route();
   }
@@ -469,5 +541,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, kind));
   }
 
-  return { start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox };
+  return { start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
 })();
