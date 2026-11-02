@@ -318,6 +318,7 @@ const Profile = (() => {
     clearInterval(threadTimer);
     thread = null;
     $('threadPane').hidden = true;
+    document.body.classList.remove('in-thread');
     $('inboxList').hidden = false;
     document.querySelector('#view-messages .page-title').hidden = false;
   }
@@ -335,10 +336,25 @@ const Profile = (() => {
     if (!thread || thread.id !== id) return;
     const box = $('threadMsgs');
     const atEnd = scroll || box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    const paths = msgs.filter((m) => m.image).map((m) => m.image);
+    let urls = {};
+    if (paths.length) {
+      const { data } = await sb.storage.from('chat').createSignedUrls(paths, 3600);
+      for (const r of data || []) if (r.signedUrl) urls[r.path] = r.signedUrl;
+      if (!thread || thread.id !== id) return;
+    }
     box.replaceChildren();
     for (const m of msgs) {
       const b = el('div', 'bubble' + (m.mine ? ' mine' : ''));
-      b.append(el('span', null, m.text), el('time', 'muted small', new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })));
+      if (m.image) {
+        const a = el('a', 'bubble-img');
+        a.href = urls[m.image] || '#'; a.target = '_blank'; a.rel = 'noopener';
+        const im = el('img'); im.alt = 'Foto'; im.loading = 'lazy'; im.src = urls[m.image] || '';
+        im.onload = () => { if (atEnd) box.scrollTop = box.scrollHeight; };
+        a.append(im); b.append(a);
+      }
+      if (m.text) b.append(el('span', null, m.text));
+      b.append( el('time', 'muted small', new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })));
       box.append(b);
     }
     if (atEnd) box.scrollTop = box.scrollHeight;
@@ -349,6 +365,7 @@ const Profile = (() => {
     $('inboxEmpty').hidden = true;
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
+    document.body.classList.add('in-thread');
     $('threadWho').textContent = m.other;
     $('threadAbout').textContent = subject;
     $('threadErr').hidden = true;
@@ -358,18 +375,42 @@ const Profile = (() => {
     clearInterval(threadTimer);
     threadTimer = setInterval(() => { if (document.hidden || !$('threadPane').offsetParent) return; refreshThread(false); }, 10000);
   }
-  async function sendReply(e) {
-    e.preventDefault();
+  // Foto verkleinern (längste Seite 1280 px) und als JPEG ablegen
+  function shrinkPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob((b) => (b ? resolve(b) : reject(new Error('Foto'))), 'image/jpeg', 0.82);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Foto')); };
+      img.src = url;
+    });
+  }
+  async function sendReply(e, file) {
+    if (e) e.preventDefault();
     const text = $('threadInput').value.trim();
     const sb = Cloud.client();
-    if (!text || !thread || !sb) return;
+    if ((!text && !file) || !thread || !sb) return;
     const err = $('threadErr');
     err.hidden = true;
     if (!navigator.onLine) { err.textContent = 'Dafür brauchst du eine Internetverbindung.'; err.hidden = false; return; }
     const btn = $('threadForm').querySelector('button');
     btn.disabled = true;
     try {
-      const { error } = await sb.rpc('send_reply', { p_interest: thread.id, p_body: text });
+      let path = null;
+      if (file) {
+        const blob = await shrinkPhoto(file);
+        path = thread.id + '/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)) + '.jpg';
+        const up = await sb.storage.from('chat').upload(path, blob, { contentType: 'image/jpeg' });
+        if (up.error) throw up.error;
+      }
+      const { error } = await sb.rpc('send_reply', { p_interest: thread.id, p_body: text, p_image: path });
       if (error) throw error;
       $('threadInput').value = '';
       await refreshThread(true);
@@ -383,7 +424,8 @@ const Profile = (() => {
   function wireThread() {
     $('threadBack').onclick = closeThread;
     $('threadWho').onclick = () => { if (thread) location.hash = '#/u/' + thread.other; };
-    $('threadForm').onsubmit = sendReply;
+    $('threadForm').onsubmit = (e) => sendReply(e);
+    $('threadPhoto').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) sendReply(null, f); };
   }
 
   // Zu einem Wunsch passende öffentliche Teile anderer suchen

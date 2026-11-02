@@ -103,11 +103,15 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       </div>
       <p class="muted small" id="threadAbout"></p>
       <div class="thread-msgs" id="threadMsgs"></div>
+      <p class="muted small" id="threadErr" hidden></p>
       <form class="thread-form" id="threadForm">
+        <label class="thread-photo" title="Foto senden" aria-label="Foto senden">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <input type="file" id="threadPhoto" accept="image/*" hidden>
+        </label>
         <input id="threadInput" type="text" maxlength="500" placeholder="Nachricht schreiben …" autocomplete="off" aria-label="Nachricht">
         <button class="btn primary" type="submit">Senden</button>
       </form>
-      <p class="muted small" id="threadErr" hidden></p>
     </div>
   </section>
 

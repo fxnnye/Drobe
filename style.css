@@ -557,12 +557,24 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .thread-sub { grid-column: 2; }
 .thread-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .thread-who { border: 0; background: none; font: inherit; font-weight: 700; font-size: 17px; cursor: pointer; padding: 0; color: inherit; }
-.thread-msgs { display: flex; flex-direction: column; gap: 8px; max-height: 55vh; overflow-y: auto; padding: 8px 0 12px; }
+.thread-msgs { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding: 8px 0 12px; }
 .bubble { align-self: flex-start; max-width: 80%; background: var(--gray); border-radius: 16px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .bubble.mine { align-self: flex-end; background: var(--text); color: var(--on-text); }
 .bubble.mine .muted { color: inherit; opacity: .7; }
-.thread-form { display: flex; gap: 8px; }
-.thread-form input { flex: 1; min-width: 0; }
+.thread-form { display: flex; gap: 8px; align-items: stretch; }
+.thread-form input[type=text] { flex: 1; min-width: 0; height: 46px; }
+.thread-form .btn { height: 46px; padding-top: 0; padding-bottom: 0; }
+.thread-photo { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--gray); display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.thread-photo:hover { background: var(--gray-hover); }
+.bubble-img img { display: block; width: 100%; max-width: 240px; max-height: 280px; object-fit: cover; border-radius: 12px; margin: 0; padding: 0; background: none; }
+/* Chat füllt die Seite, die Eingabeleiste sitzt unten am Bildschirmrand */
+#threadPane:not([hidden]) { display: flex; flex-direction: column; height: calc(100dvh - 150px); min-height: 360px; }
+.thread-form { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); background: var(--bg); padding-top: 8px; }
+@media (max-width: 700px) {
+  body.in-thread .tabs { display: none; }
+  body.in-thread main { padding-bottom: 8px; }
+  #threadPane:not([hidden]) { height: calc(100dvh - 110px); }
+}
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .row2 .field { min-width: 0; }
 
