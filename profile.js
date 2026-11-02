@@ -543,10 +543,10 @@ const Profile = (() => {
   }
 
   /* ---------- Feed ---------- */
-  async function feed(kind, before) {
+  async function feed(kind, before, color) {
     const sb = Cloud.client();
     if (!sb || !navigator.onLine) throw new Error('offline');
-    const { data, error } = await sb.rpc('feed_public', { p_kind: kind, p_before: before || null });
+    const { data, error } = await sb.rpc('feed_public', { p_kind: kind, p_before: before || null, p_color: color || null });
     if (error) throw error;
     return Array.isArray(data) ? data : [];
   }
@@ -569,6 +569,7 @@ const Profile = (() => {
       const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
       if (sub) meta.append(el('span', 'muted small', sub));
       if (rec.cond) meta.append(el('span', 'muted small', rec.cond));
+      if (rec.color) meta.append(el('span', 'muted small', rec.color));
       if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
       else if (rec.vis === 'trade') meta.append(el('b', 'feed-price', 'Tausch'));
     } else {

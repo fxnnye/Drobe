@@ -118,6 +118,7 @@ function cleanDetails(src, kind) {
   if (kind === 'items') {
     if (CONDS.includes(src.cond)) out.cond = src.cond;
     if (RARITIES.includes(src.rarity)) out.rarity = src.rarity;
+    if (COLORS.includes(src.color)) { out.color = src.color; if (/^#[0-9a-f]{6}$/.test(src.hex || '')) out.hex = src.hex; }
   }
   if (src.vis && src.vis !== 'private' && VIS[kind][src.vis]) out.vis = src.vis;
   if (kind === 'items' && out.vis === 'sale' && num(src.price) && src.price >= 0 && src.price <= PRICE_MAX) out.price = src.price;
@@ -125,7 +126,7 @@ function cleanDetails(src, kind) {
   return out;
 }
 
-const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'vis', 'price', 'swap'];
+const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'color', 'hex', 'vis', 'price', 'swap'];
 const setDetails = (rec, clean) => { for (const k of DETAIL_KEYS) delete rec[k]; Object.assign(rec, clean); };
 
 // Baut die ausklappbaren Detailfelder in einen Dialog (p = Präfix der Feld-IDs)
@@ -137,6 +138,7 @@ function buildDetails(box, p, kind) {
   const extra = kind === 'items'
     ? sel('cond', 'Zustand', '<option value="">–</option>' + CONDS.map((c) => `<option>${c}</option>`).join(''))
       + sel('rarity', 'Seltenheit', '<option value="">–</option>' + RARITIES.map((c) => `<option>${c}</option>`).join(''))
+      + sel('color', 'Farbe (automatisch)', '<option value="">–</option>' + COLORS.map((c) => `<option>${c}</option>`).join(''))
     : '';
   const sale = kind === 'items'
     ? `<label class="field" id="${p}priceRow" hidden>Preis (€)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
@@ -158,7 +160,7 @@ function syncVisRows(p) {
 }
 function fillDetails(p, rec) {
   for (const k of Object.keys(DETAIL_TEXT)) $(p + k).value = rec[k] || '';
-  if ($(p + 'cond')) { $(p + 'cond').value = rec.cond || ''; $(p + 'rarity').value = rec.rarity || ''; }
+  if ($(p + 'cond')) { $(p + 'cond').value = rec.cond || ''; $(p + 'rarity').value = rec.rarity || ''; $(p + 'color').value = rec.color || ''; }
   $(p + 'vis').value = visOf(rec);
   if ($(p + 'price')) {
     $(p + 'price').value = rec.price != null ? String(rec.price).replace('.', ',') : ''; $(p + 'swap').value = rec.swap || '';
@@ -173,7 +175,7 @@ function readDetails(p, kind, rec) {
   const src = { vis: $(p + 'vis').value };
   for (const k of Object.keys(DETAIL_TEXT)) src[k] = $(p + k).value;
   if (kind === 'items') {
-    src.cond = $(p + 'cond').value; src.rarity = $(p + 'rarity').value;
+    src.cond = $(p + 'cond').value; src.rarity = $(p + 'rarity').value; src.color = $(p + 'color').value; src.hex = src.color && src.color === rec.color ? rec.hex : '';
     const raw = $(p + 'price').value.trim().replace(',', '.');
     if (src.vis === 'sale' && raw) {
       const n = Number(raw);
@@ -225,6 +227,57 @@ function loadImage(src) {
 function canvasBlob(canvas, type, q) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, q));
 }
+
+/* ---------- Farbe automatisch aus dem freigestellten Bild ---------- */
+const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Blau', 'Lila', 'Rosa'];
+function colorName(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60;
+  if (l < 0.16) return 'Schwarz';
+  if (l > 0.9 && s < 0.4) return 'Weiß';
+  if (s < 0.12) return l > 0.82 ? 'Weiß' : 'Grau';
+  if (h >= 15 && h < 50 && s < 0.45 && l >= 0.55) return 'Beige';
+  if (h >= 10 && h < 50 && l < 0.42) return 'Braun';
+  if (h < 15 || h >= 345) return l > 0.7 ? 'Rosa' : 'Rot';
+  if (h < 45) return 'Orange';
+  if (h < 70) return 'Gelb';
+  if (h < 165) return 'Grün';
+  if (h < 255) return 'Blau';
+  if (h < 295) return 'Lila';
+  return 'Rosa';
+}
+// Häufigste Farbe der sichtbaren Pixel; nur bei freigestellten Bildern (mit durchsichtigem Hintergrund), sonst null
+async function detectColor(blob) {
+  try {
+    const url = URL.createObjectURL(blob);
+    let img;
+    try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
+    const k = Math.min(1, 120 / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, w, h);
+    const px = g.getImageData(0, 0, w, h).data;
+    const sum = {}; let seen = 0, clear = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] < 40) { clear++; continue; }
+      if (px[i + 3] < 200) continue;
+      seen++;
+      const n = colorName(px[i], px[i + 1], px[i + 2]);
+      const s = sum[n] || (sum[n] = { n: 0, r: 0, g: 0, b: 0 });
+      s.n++; s.r += px[i]; s.g += px[i + 1]; s.b += px[i + 2];
+    }
+    if (seen < 30 || clear < w * h * 0.03) return null;
+    const [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
+    const hex = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('');
+    return { color: name, hex };
+  } catch (e) { return null; }
+}
+const applyColor = (rec, c) => { if (c) { rec.color = c.color; rec.hex = c.hex; } };
 // Stellt Teile frei: Hintergrund wird vom Rand aus entfernt, wenn er einfarbig ist (z. B. weißer
 // Produktfoto-Hintergrund). Danach auf den sichtbaren Bereich zugeschnitten. Sonst bleibt das Bild unverändert.
 function cutOut(canvas, tol = 30) {
@@ -337,7 +390,7 @@ function renderMeHead() {
 }
 
 /* ---------- Feed: öffentliche Teile oder Outfits anderer, neueste zuerst ---------- */
-const feed = { kind: 'items', before: null, loading: false };
+const feed = { kind: 'items', before: null, loading: false, color: '' };
 async function loadFeed(reset) {
   if (feed.loading) return;
   const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore');
@@ -345,7 +398,7 @@ async function loadFeed(reset) {
   feed.loading = true;
   const kind = feed.kind;
   try {
-    const list = await Profile.feed(kind, feed.before);
+    const list = await Profile.feed(kind, feed.before, feed.color);
     if (kind !== feed.kind) return; // inzwischen umgeschaltet
     await Profile.showFeed(list, grid, kind);
     if (list.length) feed.before = list[list.length - 1].ts;
@@ -362,11 +415,26 @@ async function loadFeed(reset) {
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
   c.onclick = () => {
     feed.kind = c.dataset.kind;
+    $('feedColors').hidden = feed.kind !== 'items';
     document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
     loadFeed(true);
   };
 });
 $('feedMore').onclick = () => loadFeed(false);
+// Farbfilter: Farben stammen automatisch aus den freigestellten Bildern
+function renderFeedColors() {
+  const box = $('feedColors');
+  box.replaceChildren();
+  for (const name of ['', ...COLORS]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (feed.color === name ? ' active' : '');
+    b.textContent = name || 'Alle Farben';
+    b.onclick = () => { feed.color = name; renderFeedColors(); loadFeed(true); };
+    box.append(b);
+  }
+}
+renderFeedColors();
 
 /* ---------- Filter-Chips ---------- */
 // Filterwert ist eine Hauptkategorie, eine Unterkategorie oder „Alle“
@@ -1114,6 +1182,7 @@ $('upAdd').addEventListener('click', async () => {
   if (upTarget === 'wish' && note) rec.note = note;
   if (link) rec.link = link;
   Object.assign(rec, det);
+  if (upTarget !== 'wish') applyColor(rec, await detectColor(res.blob));
   await dbPut(coll.store, rec);
   coll.list.push(rec);
   upAdded++;
@@ -1145,6 +1214,7 @@ $('upAll').addEventListener('click', async () => {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
       const rec = { id: uid(), name: j.name, category, blob, created: Date.now(), ...det };
+      if (upTarget !== 'wish') applyColor(rec, await detectColor(blob));
       if (j.res && j.res.source) { rec.source = j.res.source; rec.srcBox = j.res.srcBox; }
       const coll = upColl();
       await dbPut(coll.store, rec);
@@ -1223,6 +1293,7 @@ function openItemDialog(it) {
 $('itemForm').addEventListener('submit', async (e) => {
   if (e.submitter && e.submitter.value === 'save') {
     const it = state.editingItem;
+    const prevColor = it.color;
     if (!readDetails('itd', 'items', it)) return e.preventDefault(); // Preis falsch: Dialog bleibt offen
     if (typeof Profile !== 'undefined') Profile.setPinned(it.id, visOf(it) !== 'private' && $('itdpin').checked);
     it.name = $('itemName').value.trim() || it.name;
@@ -1235,6 +1306,7 @@ $('itemForm').addEventListener('submit', async (e) => {
     if (u && upEdited(u)) { // bearbeitetes Bild dauerhaft übernehmen
       const res = await upResult(u);
       it.blob = res.blob;
+      if (it.color === prevColor) { const c = await detectColor(res.blob); if (c) applyColor(it, c); else { delete it.color; delete it.hex; } } // Farbe nur neu, wenn sie nicht von Hand geändert wurde
       if (res.source) { it.source = res.source; it.srcBox = res.srcBox; } else { delete it.source; delete it.srcBox; }
       if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
       aspects.delete(it.id);
@@ -2004,6 +2076,21 @@ async function migrateCategories() {
   }
 }
 
+// Teile ohne Farbe einmalig nachträglich auswerten (nur freigestellte; die anderen werden als geprüft markiert)
+let colorBusy = false;
+async function backfillColors() {
+  if (colorBusy) return;
+  colorBusy = true;
+  try {
+    for (const it of items.filter((i) => !i.color && !i.colorChecked && i.blob)) {
+      const c = await detectColor(it.blob);
+      if (c) applyColor(it, c);
+      it.colorChecked = true;
+      await dbPut('items', it);
+    }
+  } finally { colorBusy = false; }
+}
+
 // Alles aus dem lokalen Speicher neu einlesen und anzeigen (nach dem Abgleich mit dem Konto)
 async function reloadAll() {
   [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
@@ -2014,6 +2101,7 @@ async function reloadAll() {
   wishlist.sort((a, b) => a.created - b.created);
   outfits.sort((a, b) => a.created - b.created);
   renderCloset(); renderWishlist(); renderOutfits(); renderPicker();
+  backfillColors();
 }
 
 // Daten aus der Zeit vor dem Login (gleicher Browser, alte Datenbank) lesen
