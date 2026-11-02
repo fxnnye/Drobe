@@ -80,7 +80,7 @@ const urls = new Map(); // id -> Object-URL
 const state = {
   view: 'closet',
   search: '',
-  searchMode: 'mine',
+  searchMode: 'items',
   closetFilter: 'Alle',
   wishFilter: 'Alle',
   pickerFilter: 'Alle',
@@ -378,28 +378,33 @@ function renderCloset() {
     : (q ? 'Nichts gefunden.' : 'Keine Teile in dieser Kategorie.');
 }
 
-/* Suche: eigene Teile nach Marke, Name usw. oder Mitglieder nach Benutzername */
+/* Suche wie bei Vinted: öffentliche Teile anderer nach Marke oder Name, oder Mitglieder nach Benutzername */
 let searchTimer = null;
 function setSearchMode(mode) {
   state.searchMode = mode;
   document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
   $('searchInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
-  $('view-closet').classList.toggle('members-mode', mode === 'members');
   runSearch();
 }
 async function runSearch() {
-  const q = $('searchInput').value;
-  if (state.searchMode === 'mine') { state.search = q; $('memberResults').hidden = true; renderCloset(); return; }
-  state.search = '';
-  renderCloset();
+  const q = $('searchInput').value, mode = state.searchMode, t = q.trim();
   const box = $('memberResults');
+  // Mit Suchbegriff (oder im Mitglieder-Modus) ersetzen die Treffer die eigene Liste
+  $('view-closet').classList.toggle('members-mode', mode === 'members' || t.length > 0);
+  if (mode === 'items' && !t) { box.hidden = true; box.replaceChildren(); return; }
   box.hidden = false;
   box.replaceChildren();
-  const note = (t) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = t; box.append(p); };
-  if (q.trim().length < 2) return note('Gib mindestens 2 Zeichen eines Benutzernamens ein.');
+  const note = (m) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = m; box.append(p); };
+  const stale = () => $('searchInput').value !== q || state.searchMode !== mode; // inzwischen weitergetippt
+  if (mode === 'items') {
+    if (t.length < 2) return note('Gib mindestens 2 Zeichen ein.');
+    try { await Profile.searchItems(t, box, stale); } catch (e) { console.error(e); if (!stale()) { box.replaceChildren(); note('Die Suche ist gerade nicht verfügbar.'); } }
+    return;
+  }
+  if (t.length < 2) return note('Gib mindestens 2 Zeichen eines Benutzernamens ein.');
   let names;
-  try { names = await Profile.search(q.trim()); } catch (e) { console.error(e); return note('Die Mitgliedersuche ist gerade nicht verfügbar.'); }
-  if ($('searchInput').value !== q || state.searchMode !== 'members') return; // inzwischen weitergetippt
+  try { names = await Profile.search(t); } catch (e) { console.error(e); return note('Die Mitgliedersuche ist gerade nicht verfügbar.'); }
+  if (stale()) return;
   if (!names.length) return note('Keine Mitglieder gefunden. Gefunden werden nur Profile mit öffentlichen Teilen.');
   for (const n of names) {
     const b = document.createElement('button');
@@ -410,7 +415,7 @@ async function runSearch() {
     box.append(b);
   }
 }
-$('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, state.searchMode === 'members' ? 300 : 0); });
+$('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 
 /* Upload-Dialog: pro Foto Vorschau, Name, Kategorie und optional „Hintergrund entfernen“ */
@@ -1430,7 +1435,7 @@ function renderOutfits() {
   add.type = 'button';
   add.className = 'card add-card';
   add.setAttribute('aria-label', 'Neues Outfit bauen');
-  add.innerHTML = '<div class="img"><span class="plus" aria-hidden="true">+</span></div><div class="meta"><b>Neues Outfit</b></div>';
+  add.innerHTML = '<div class="img"><svg class="plus" viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></div><div class="meta"><b>Neues Outfit</b></div>';
   add.onclick = async () => {
     const unsaved = state.outfit.layers.length && !state.outfit.id;
     if (!unsaved || (await askConfirm('Du hast ein nicht gespeichertes Outfit. Neu beginnen?', 'Neu beginnen'))) {
