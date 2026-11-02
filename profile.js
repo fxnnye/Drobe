@@ -152,6 +152,7 @@ const Profile = (() => {
     if (!data) return message(box, 'Dieses Profil gibt es nicht.');
 
     const me = Cloud.user();
+    const own = !!me && me.name === data.username;
     if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
     box.append(el('h2', 'pub-name', data.username));
     if (me && !own) {
@@ -179,7 +180,6 @@ const Profile = (() => {
     }
 
     // Bei fremden Profilen: „Interesse“ an Teilen, „Hab ich“ bei Wünschen und Treffer mit der eigenen Liste
-    const own = !!me && me.name === data.username;
     const askLogin = () => Cloud.showAuth(false);
     const rep = (rec) => ({ label: 'Melden', fn: me ? () => askReport(data.username, rec) : askLogin });
     const wishMatch = (it) => mine('wishlist').find((w) => matches(w, it));
