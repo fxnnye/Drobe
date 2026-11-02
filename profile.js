@@ -451,12 +451,12 @@ const Profile = (() => {
     img.onclick = open;
     const meta = el('div', 'meta');
     if (kind === 'items') {
-      if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
-      else if (rec.vis === 'trade') meta.append(el('b', 'feed-price', 'Tausch'));
-      meta.append(el('span', null, rec.name || ''));
+      meta.append(el('span', 'feed-name', rec.name || ''));
       const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
       if (sub) meta.append(el('span', 'muted small', sub));
       if (rec.cond) meta.append(el('span', 'muted small', rec.cond));
+      if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
+      else if (rec.vis === 'trade') meta.append(el('b', 'feed-price', 'Tausch'));
     } else {
       meta.append(el('b', null, rec.name || 'Outfit'));
     }

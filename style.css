@@ -516,7 +516,8 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .feed-owner span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .feed-img { width: 100%; border: 0; padding: 0; cursor: pointer; }
 .feed-card .meta { display: flex; flex-direction: column; gap: 1px; }
-.feed-card .meta .feed-price { font-size: 15px; }
+.feed-card .meta .feed-name { font-weight: 600; }
+.feed-card .meta .feed-price { font-size: 15px; margin-top: 4px; }
 .feed-card .meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-card .meta span:not(.muted) { color: var(--text); font-size: 13px; }
 .feed-more { display: flex; justify-content: center; padding: 20px 0; }
