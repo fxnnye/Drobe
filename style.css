@@ -569,3 +569,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 /* Dialoge: feste Breite, nur senkrecht scrollen */
 dialog { overflow-x: hidden; overscroll-behavior-x: none; }
 dialog .field input, dialog .field select, dialog .field textarea { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+
+/* Kategorie-Felder oben: alle gleich groß */
+.filter-row .chip, #pickerFilter .chip, .subchips .chip { flex: none; width: 124px; padding-left: 8px; padding-right: 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
