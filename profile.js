@@ -404,14 +404,17 @@ const Profile = (() => {
     return Array.isArray(data) ? data : [];
   }
 
-  // Öffentliche Teile anderer nach Marke oder Name suchen und als Karten in `box` zeigen
-  async function searchItems(q, box, stale) {
+  // Öffentliche Teile anderer nach Marke oder Name suchen (Marke, Name oder Kategorie enthalten jedes Suchwort)
+  async function fetchItems(q) {
     const sb = Cloud.client();
     if (!sb || !navigator.onLine) throw new Error('offline');
     const { data, error } = await sb.rpc('search_public_items', { p_query: q });
     if (error) throw error;
-    const list = Array.isArray(data) ? data : [];
-    if (stale()) return;
+    return Array.isArray(data) ? data : [];
+  }
+  // Treffer als Karten in `box` zeigen
+  async function showItems(list, box, stale) {
+    const sb = Cloud.client();
     box.replaceChildren();
     if (!list.length) return box.append(el('p', 'muted', 'Keine Teile gefunden. Gefunden werden nur Teile, die andere öffentlich gestellt haben.'));
     const urls = await signedUrls(sb, list.map((r) => r.path));
@@ -426,5 +429,5 @@ const Profile = (() => {
     box.append(grid);
   }
 
-  return { start, isPinned, setPinned, search, searchItems, findFor };
+  return { start, isPinned, setPinned, search, fetchItems, showItems, findFor };
 })();
