@@ -271,6 +271,8 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <div id="itSimilarBox"></div>
     <button class="btn full" type="button" id="itEditToggle" aria-expanded="false" aria-controls="itEdit">Bearbeiten</button>
     <div id="itEdit" hidden>
+      <button class="btn full" type="button" id="itReplace">Foto ersetzen</button>
+      <input type="file" id="itReplaceFile" accept="image/*" hidden>
       <p class="muted small">Drehen, wenn das Foto schief ist</p>
       <div class="rotate">
         <button class="icon" type="button" id="itRotL" title="90° nach links" aria-label="90° nach links">⟲</button>
