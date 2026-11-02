@@ -411,7 +411,7 @@ function renderHistory() {
     const m = document.createElement('span');
     m.className = 'muted small'; m.textContent = x.mode === 'members' ? 'Mitglied' : 'Artikel';
     b.append(document.createTextNode(x.q + ' '), m);
-    b.onclick = () => { $('soInput').value = x.q; setSearchMode(x.mode === 'members' ? 'members' : 'items'); };
+    b.onclick = () => { $('soInput').value = x.q; setSearchMode(x.mode === 'members' ? 'members' : 'items', true); };
     const del = document.createElement('button');
     del.type = 'button'; del.className = 'icon so-del'; del.setAttribute('aria-label', 'Eintrag entfernen'); del.textContent = '×';
     del.onclick = () => { const h = readHistory(); h.splice(idx, 1); writeHistory(h); renderHistory(); };
@@ -431,11 +431,41 @@ function closeSearch() {
   $('searchOverlay').hidden = true;
   document.body.classList.remove('searching');
 }
-function setSearchMode(mode) {
+function setSearchMode(mode, showResults = false) {
   state.searchMode = mode;
+  state.showResults = showResults;
   document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
   $('soInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
   runSearch();
+}
+// Vorschläge beim Tippen: passende Marken und Artikelnamen; ein Tipp zeigt alle Teile, bei denen Marke oder Beschreibung passt
+function renderSuggestions(list, t, box) {
+  const words = t.toLowerCase().split(/\s+/).filter(Boolean);
+  const hit = (s) => words.every((w) => String(s || '').toLowerCase().includes(w));
+  const brands = new Map(), names = new Map();
+  for (const it of list) {
+    if (it.brand && hit(it.brand)) { const k = it.brand.toLowerCase(); brands.set(k, { text: it.brand, n: (brands.get(k)?.n || 0) + 1 }); }
+    if (it.name && hit(it.name)) { const k = it.name.toLowerCase(); if (!names.has(k)) names.set(k, { text: it.name }); }
+  }
+  const rows = [
+    { text: t, label: 'Alle Ergebnisse', strong: true },
+    ...[...brands.values()].slice(0, 4).map((b) => ({ text: b.text, label: 'Marke · ' + b.n + (b.n === 1 ? ' Teil' : ' Teile') })),
+    ...[...names.values()].slice(0, 6).map((n) => ({ text: n.text, label: 'Artikel' })),
+  ];
+  box.replaceChildren();
+  for (const r of rows) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'so-suggest';
+    const s = document.createElement('b');
+    s.textContent = r.text;
+    const l = document.createElement('span');
+    l.className = 'muted small';
+    l.textContent = r.label;
+    b.append(s, l);
+    b.onclick = () => { $('soInput').value = r.text; state.showResults = true; rememberSearch(); runSearch(); };
+    box.append(b);
+  }
 }
 async function runSearch() {
   const q = $('soInput').value, mode = state.searchMode, t = q.trim();
@@ -448,7 +478,12 @@ async function runSearch() {
   const stale = () => $('soInput').value !== q || state.searchMode !== mode; // inzwischen weitergetippt
   if (mode === 'items') {
     if (t.length < 2) return note('Gib mindestens 2 Zeichen ein.');
-    try { await Profile.searchItems(t, box, stale); } catch (e) { console.error(e); if (!stale()) { box.replaceChildren(); note('Die Suche ist gerade nicht verfügbar.'); } }
+    try {
+      const list = await Profile.fetchItems(t);
+      if (stale()) return;
+      if (state.showResults) return await Profile.showItems(list, box, stale);
+      renderSuggestions(list, t, box);
+    } catch (e) { console.error(e); if (!stale()) { box.replaceChildren(); note('Die Suche ist gerade nicht verfügbar.'); } }
     return;
   }
   if (t.length < 2) return note('Gib mindestens 2 Zeichen eines Benutzernamens ein.');
@@ -468,8 +503,8 @@ async function runSearch() {
 $('searchOpen').onclick = openSearch;
 $('soClose').onclick = closeSearch;
 $('searchOverlay').addEventListener('click', (e) => { if (e.target === $('searchOverlay')) closeSearch(); });
-$('soInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
-$('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); rememberSearch(); runSearch(); $('soInput').blur(); } });
+$('soInput').addEventListener('input', () => { state.showResults = false; clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
+$('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSearch(); });
 window.addEventListener('hashchange', closeSearch);
