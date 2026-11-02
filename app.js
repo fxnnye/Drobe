@@ -986,7 +986,7 @@ async function trimBlobBox(blob) {
     URL.revokeObjectURL(src);
   }
 }
-const upEdited = (u) => !!((u.history && u.history.length) || u.angle || u.useCut || u.erased);
+const upEdited = (u) => !!((u.history && u.history.length) || u.angle || u.useCut || u.erased || u.replaced);
 async function upResult(u) {
   if (!upEdited(u)) return { blob: u.useCut ? u.cut : u.orig };
   await ensureFull(u);
@@ -1322,6 +1322,26 @@ function setItemEditOpen(open) {
   $('itEditToggle').textContent = open ? 'Bearbeiten schließen' : 'Bearbeiten';
 }
 $('itEditToggle').onclick = () => setItemEditOpen($('itEdit').hidden);
+
+// Foto ersetzen: neues Bild an die Stelle des alten setzen; Name, Kategorie und Angaben bleiben, Werkzeuge starten von vorn
+$('itReplace').onclick = () => $('itReplaceFile').click();
+$('itReplaceFile').onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f || !f.type.startsWith('image/') || !itCur || itCur.busy || itCur.queue > 0) return;
+  try {
+    const orig = await shrink(f);
+    if (!itCur) return; // Dialog wurde inzwischen geschlossen
+    if (itCur.url) URL.revokeObjectURL(itCur.url);
+    itCur = { orig, src: orig, pendingBox: null, hadSource: false, cut: null, useCut: false, busy: false, url: null, angle: 0, history: [], erased: false, replaced: true };
+    $('itAngle').value = 0;
+    stopDraw();
+    activeCtx.refresh();
+  } catch (err) {
+    console.error(err);
+    toast('Konnte das Foto nicht laden');
+  }
+};
 
 // Größenregler im Teil-Dialog: Schuhe dürfen größer eingestellt werden als alles andere
 const scaleMax = (category) => (category === 'Schuhe' ? 200 : 150);
