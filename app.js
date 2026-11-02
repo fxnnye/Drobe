@@ -228,6 +228,69 @@ function canvasBlob(canvas, type, q) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, q));
 }
 
+
+/* ---------- Ähnliche Teile: Bild-Vektor (CLIP) im Browser berechnen ---------- */
+const EMBED_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/+esm';
+const EMBED_MODEL = 'Xenova/clip-vit-base-patch32';
+let embedder = null;
+async function loadEmbedder() {
+  if (!embedder) {
+    embedder = (async () => {
+      const T = await import(EMBED_LIB);
+      const processor = await T.AutoProcessor.from_pretrained(EMBED_MODEL);
+      const model = await T.CLIPVisionModelWithProjection.from_pretrained(EMBED_MODEL, { dtype: 'q8' });
+      return { T, processor, model };
+    })().catch((e) => { embedder = null; throw e; });
+  }
+  return embedder;
+}
+// Vektor (512 Zahlen, normiert) zu einem Teilbild; durchsichtiger Hintergrund wird weiß
+async function embedBlob(blob) {
+  const { T, processor, model } = await loadEmbedder();
+  const url = URL.createObjectURL(blob);
+  let img;
+  try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
+  const c = document.createElement('canvas'); c.width = 224; c.height = 224;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 224, 224);
+  const k = Math.min(224 / img.naturalWidth, 224 / img.naturalHeight);
+  g.drawImage(img, (224 - img.naturalWidth * k) / 2, (224 - img.naturalHeight * k) / 2, img.naturalWidth * k, img.naturalHeight * k);
+  const raw = await T.RawImage.fromBlob(await canvasBlob(c, 'image/jpeg', 0.92));
+  const { image_embeds } = await model(await processor(raw));
+  return Array.from(image_embeds.normalize().data, (v) => Math.round(v * 1e4) / 1e4);
+}
+// Öffentliche Teile ohne Vektor nach und nach berechnen (im Hintergrund, einmalig pro Teil)
+let embedBusy = false;
+async function backfillEmbeddings() {
+  if (embedBusy || !navigator.onLine || !Cloud.user()) return;
+  const todo = items.filter((i) => !i.emb && i.blob && visOf(i) !== 'private');
+  if (!todo.length) return;
+  embedBusy = true;
+  try {
+    for (const it of todo) {
+      it.emb = await embedBlob(it.blob);
+      await dbPut('items', it);
+    }
+  } catch (e) { console.warn('Vektor-Berechnung nicht möglich', e); } finally { embedBusy = false; }
+}
+setTimeout(() => backfillEmbeddings(), 8000);
+
+$('itSimilar').addEventListener('click', async () => {
+  const it = state.editingItem, box = $('itSimilarBox'), btn = $('itSimilar');
+  if (!it || !Cloud.user()) { box.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: 'Dafür musst du angemeldet sein.' })); return; }
+  btn.disabled = true;
+  const note = (t) => box.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: t }));
+  note('Suche ähnliche Teile … (beim ersten Mal wird ein kleines Bildmodell geladen)');
+  try {
+    const emb = it.emb || (it.emb = await embedBlob(it.blob));
+    await dbPut('items', it);
+    const { data, error } = await Cloud.client().rpc('similar_public_items', { p_emb: '[' + emb.join(',') + ']' });
+    if (error) throw error;
+    if (!data || !data.length) return note('Noch keine ähnlichen öffentlichen Teile von anderen.');
+    await Profile.showItems(data, box, () => false);
+  } catch (e) { console.error(e); note('Die Suche nach ähnlichen Teilen hat nicht geklappt.'); } finally { btn.disabled = false; }
+});
+
 /* ---------- Farbe automatisch aus dem freigestellten Bild ---------- */
 const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Blau', 'Lila', 'Rosa'];
 function colorName(r, g, b) {
@@ -1299,6 +1362,7 @@ function openItemDialog(it) {
   $('itemName').value = it.name;
   $('itemNote').value = it.note || '';
   fillDetails('itd', it);
+  $('itSimilarBox').replaceChildren();
   dlg.showModal();
 }
 $('itemForm').addEventListener('submit', async (e) => {
@@ -1317,6 +1381,7 @@ $('itemForm').addEventListener('submit', async (e) => {
     if (u && upEdited(u)) { // bearbeitetes Bild dauerhaft übernehmen
       const res = await upResult(u);
       it.blob = res.blob;
+      delete it.emb; // Bild geändert: Vektor neu berechnen
       if (it.color === prevColor && (prevAuto || !prevColor)) { const c = await detectColor(res.blob); if (c) applyColor(it, c); else { delete it.color; delete it.hex; } } // Farbe nur neu, wenn sie nicht von Hand geändert wurde
       if (res.source) { it.source = res.source; it.srcBox = res.srcBox; } else { delete it.source; delete it.srcBox; }
       if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
