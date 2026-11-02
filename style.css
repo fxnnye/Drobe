@@ -586,10 +586,6 @@ dialog .field input, dialog .field select, dialog .field textarea { width: 100%;
 .filter-row .chip, #pickerFilter .chip, .subchips .chip { flex: none; width: 124px; padding-left: 8px; padding-right: 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Farbfilter im Feed */
-.feed-colors { margin-bottom: 14px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-.feed-colors::-webkit-scrollbar { display: none; }
-.feed-colors .chip { flex: none; }
-.feed-colors[hidden] { display: none; }
 
 /* Filter in der Suche */
 .so-filters { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 8px; margin: 0 0 14px; }
