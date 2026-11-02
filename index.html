@@ -30,10 +30,15 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <input type="password" id="authPass" autocomplete="current-password" required>
     </label>
     <p class="muted small" id="authNote" hidden>Merk dir das Passwort gut. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Eine Backup-Datei hilft im Notfall.</p>
+    <label class="check" id="authConsentRow" hidden>
+      <input type="checkbox" id="authConsent">
+      <span>Ich habe die <a href="#" data-legal="nutzung">Nutzungsbedingungen</a> und die <a href="#" data-legal="datenschutz">Datenschutzerklärung</a> gelesen und bin einverstanden.</span>
+    </label>
     <p class="auth-error" id="authError" role="alert"></p>
     <button class="btn primary full" type="submit" id="authSubmit">Anmelden</button>
     <button class="btn full" type="button" id="authSwitch">Neues Konto erstellen</button>
     <button class="btn full" type="button" id="authCancel" hidden>Abbrechen</button>
+    <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">Nutzungsbedingungen</a></p>
   </form>
 </div>
 
@@ -63,6 +68,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <button class="btn primary" type="submit">Profil ansehen</button>
   </form>
   <p class="auth-error" id="findError" role="alert"></p>
+  <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">Nutzungsbedingungen</a></p>
 </section>
 <section id="publicView" class="public" hidden></section>
 
@@ -72,9 +78,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <div class="chips feed-switch" id="feedSwitch">
       <button class="chip active" type="button" data-kind="items">Teile</button>
       <button class="chip" type="button" data-kind="outfits">Outfits</button>
+      <button class="chip" type="button" data-kind="following">Folge ich</button>
+      <button class="chip" type="button" data-kind="saved">Gemerkt</button>
     </div>
     <div class="grid feed-grid" id="feedGrid"></div>
-    <p class="empty" id="feedEmpty" hidden></p>
+    <div class="empty" id="feedEmpty" hidden><p id="feedEmptyText"></p><button class="btn" type="button" id="feedEmptyCta" hidden></button></div>
     <div class="feed-more"><button class="btn" type="button" id="feedMore" hidden>Mehr laden</button><button class="btn" type="button" id="feedRetry" hidden>Nochmal versuchen</button></div>
   </section>
 
@@ -495,6 +503,8 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
       <button class="set-row" type="button" id="backupOpen">Backup</button>
+      <button class="set-row" type="button" data-open="legal">Rechtliches</button>
+      <button class="set-row" type="button" data-open="moderation" id="modRow" hidden>Moderation</button>
     </div>
 
     <div class="set-panel" data-panel="account" data-title="Konto" hidden>
@@ -503,10 +513,40 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       </div>
       <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
       <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
+      <button class="btn full danger" type="button" data-open="delete">Konto löschen</button>
+    </div>
+
+    <div class="set-panel" data-panel="delete" data-title="Konto löschen" hidden>
+      <p>Dein Konto mit allen Teilen, Outfits, Wünschen, Nachrichten und Fotos wird endgültig gelöscht. Das lässt sich nicht rückgängig machen.</p>
+      <p class="muted small">Die Daten auf diesem Gerät werden ebenfalls entfernt. Speichere vorher ein Backup, wenn du etwas behalten willst.</p>
+      <label class="field">Zur Bestätigung deinen Benutzernamen eintippen
+        <input type="text" id="delName" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      </label>
+      <p class="pw-msg" id="delMsg" role="status"></p>
+      <button class="btn primary full danger" type="button" id="delGo" disabled>Konto endgültig löschen</button>
+    </div>
+
+    <div class="set-panel" data-panel="legal" data-title="Rechtliches" hidden>
+      <button class="set-row" type="button" data-legal="impressum">Impressum</button>
+      <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
+      <button class="set-row" type="button" data-legal="nutzung">Nutzungsbedingungen</button>
+    </div>
+
+    <div class="set-panel" data-panel="moderation" data-title="Moderation" hidden>
+      <p class="muted small">Offene Meldungen. „Erledigt“ blendet sie aus.</p>
+      <div id="modList"></div>
     </div>
 
     <div class="set-panel" data-panel="profile" data-title="Öffentliches Profil" hidden>
       <p class="muted small">Öffentlich ist nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst. Notizen und Shop-Links bleiben immer privat.</p>
+      <label class="field">Über mich
+        <textarea id="profBio" rows="3" maxlength="160" placeholder="z. B. Streetwear, Vintage, Größe M"></textarea>
+      </label>
+      <label class="field">Stadt
+        <input type="text" id="profCity" maxlength="40" placeholder="z. B. Hamburg" autocomplete="off">
+      </label>
+      <p class="pw-msg" id="profMsg" role="status"></p>
+      <button class="btn full" type="button" id="profTextSave">Text speichern</button>
       <label class="field">Dein Profil-Link
         <input type="text" id="profLink" readonly>
       </label>
@@ -537,6 +577,88 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <div class="row">
       <span class="spacer"></span>
       <button class="btn" type="button" id="settingsClose">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="legalDialog">
+  <form method="dialog" onsubmit="return false">
+    <div class="chips" id="legalTabs">
+      <button class="chip" type="button" data-legal-tab="impressum">Impressum</button>
+      <button class="chip" type="button" data-legal-tab="datenschutz">Datenschutz</button>
+      <button class="chip" type="button" data-legal-tab="nutzung">Nutzung</button>
+    </div>
+    <p class="legal-warn" id="legalWarn">Entwurf: Die gelb markierten Stellen müssen vom Betreiber mit echten Angaben ersetzt werden, bevor Drobe öffentlich genutzt wird. Dies ersetzt keine Rechtsberatung.</p>
+    <div class="legal-body" id="legalBody">
+      <div data-legal-page="impressum">
+        <h2>Impressum</h2>
+        <p>Angaben gemäß § 5 DDG</p>
+        <p><mark class="todo">[Vor- und Nachname des Betreibers]</mark><br><mark class="todo">[Straße und Hausnummer]</mark><br><mark class="todo">[PLZ und Ort]</mark></p>
+        <h3>Kontakt</h3>
+        <p>E-Mail: <mark class="todo">[E-Mail-Adresse]</mark></p>
+        <h3>Verantwortlich für den Inhalt</h3>
+        <p><mark class="todo">[Name und Anschrift, falls abweichend]</mark></p>
+        <h3>Inhalte der Nutzer</h3>
+        <p>Teile, Fotos, Texte und Nachrichten stammen von den Nutzern. Hinweise auf Verstöße gehen über „Melden“ in der App oder per E-Mail an die Adresse oben.</p>
+      </div>
+      <div data-legal-page="datenschutz" hidden>
+        <h2>Datenschutzerklärung</h2>
+        <h3>Verantwortlicher</h3>
+        <p><mark class="todo">[Name, Anschrift und E-Mail wie im Impressum]</mark></p>
+        <h3>Welche Daten verarbeitet werden</h3>
+        <ul>
+          <li><b>Konto:</b> Benutzername und Passwort. Das Passwort wird nur als Hash gespeichert. Es wird keine echte E-Mail-Adresse verlangt.</li>
+          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen, Outfits und Wünschen sowie dein Profiltext (Über mich, Stadt). Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst.</li>
+          <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
+          <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
+        </ul>
+        <h3>Zwecke und Rechtsgrundlagen</h3>
+        <p>Bereitstellung der App und deines Kontos (Art. 6 Abs. 1 lit. b DSGVO), Sicherheit und Missbrauchsschutz (Art. 6 Abs. 1 lit. f DSGVO).</p>
+        <h3>Empfänger und Dienstleister</h3>
+        <ul>
+          <li><b>Supabase</b> (Datenbank, Anmeldung, Dateispeicher): <mark class="todo">[Region und Anbieter-Anschrift eintragen, im Supabase-Dashboard unter den Projekteinstellungen prüfen; Auftragsverarbeitungsvertrag abschließen]</mark></li>
+          <li><b>GitHub Pages</b> (Auslieferung der App-Dateien): Beim Aufruf wird technisch bedingt deine IP-Adresse an GitHub übertragen.</li>
+          <li><b>jsDelivr und IMG.LY</b> (Programmbibliotheken und Modelle für Freistellen und Ähnlichkeit): Sie werden beim ersten Gebrauch geladen, dabei sieht der Anbieter deine IP-Adresse. Deine Fotos werden dafür nicht hochgeladen, die Verarbeitung läuft auf deinem Gerät.</li>
+        </ul>
+        <h3>Speicherdauer</h3>
+        <p>Deine Daten bleiben, bis du sie oder dein Konto löschst. „Konto löschen“ in den Einstellungen entfernt dein Konto und die zugehörigen Datensätze. Dateien in Unterhaltungen können kurzzeitig bis zur nächsten Bereinigung gespeichert bleiben. <mark class="todo">[Ablauf der Bereinigung prüfen und eintragen]</mark></p>
+        <h3>Lokaler Speicher</h3>
+        <p>Die App speichert Daten in deinem Browser (IndexedDB, Local Storage, Cache), damit sie schnell ist und offline läuft. Es gibt keine Werbung und keine Tracker.</p>
+        <h3>Deine Rechte</h3>
+        <p>Du kannst Auskunft, Berichtigung, Löschung, Einschränkung, Übertragbarkeit und Widerspruch verlangen (Art. 15 bis 21 DSGVO) und dich bei einer Aufsichtsbehörde beschweren. Wende dich an die Adresse im Impressum.</p>
+      </div>
+      <div data-legal-page="nutzung" hidden>
+        <h2>Nutzungsbedingungen</h2>
+        <ol>
+          <li><b>Was Drobe ist.</b> Drobe ist ein digitaler Kleiderschrank mit einem Bereich, in dem du Teile zeigen und anfragen kannst. Drobe wickelt keine Zahlungen ab und ist nicht Vertragspartner von Käufen oder Tauschgeschäften zwischen Nutzern.</li>
+          <li><b>Dein Konto.</b> Du bist für dein Passwort verantwortlich. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Du darfst nur Inhalte hochladen, an denen du die nötigen Rechte hast.</li>
+          <li><b>Erlaubte Inhalte.</b> Keine Fälschungen, keine rechtswidrigen, beleidigenden, pornografischen oder diskriminierenden Inhalte, keine Fotos anderer Personen ohne deren Einwilligung, kein Spam und keine Betrugsversuche.</li>
+          <li><b>Moderation.</b> Gemeldete oder offensichtlich regelwidrige Inhalte können entfernt, Konten können gesperrt werden.</li>
+          <li><b>Geschäfte zwischen Nutzern.</b> Absprachen, Zahlung und Versand laufen allein zwischen euch. Sei vorsichtig mit Vorkasse und teile keine Zahlungsdaten in Nachrichten.</li>
+          <li><b>Haftung.</b> Drobe wird ohne Gewähr bereitgestellt. Die gesetzliche Haftung bleibt unberührt. <mark class="todo">[Haftungsregelung rechtlich prüfen lassen]</mark></li>
+          <li><b>Beenden.</b> Du kannst dein Konto jederzeit in den Einstellungen löschen.</li>
+        </ol>
+        <p class="muted small">Stand: <mark class="todo">[Datum eintragen]</mark></p>
+      </div>
+    </div>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="legalClose">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="welcomeDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2>Willkommen bei Drobe</h2>
+    <ol class="welcome-steps">
+      <li><b>Teile hinzufügen.</b> Fotografiere Klamotten, Drobe schneidet sie frei. Alles ist zuerst privat.</li>
+      <li><b>Öffentlich stellen.</b> Teile auf „Öffentlich“, „Tausch“ oder „Verkauf“ erscheinen im Feed anderer.</li>
+      <li><b>Entdecken.</b> Folge Profilen, merke dir Teile und schreib Nachrichten, wenn dir etwas gefällt.</li>
+    </ol>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn primary" type="button" id="welcomeGo">Los geht's</button>
     </div>
   </form>
 </dialog>

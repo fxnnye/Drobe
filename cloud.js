@@ -199,6 +199,7 @@ const Cloud = (() => {
     $('authSubmit').textContent = reg ? 'Konto erstellen' : 'Anmelden';
     $('authSwitch').textContent = reg ? 'Ich habe schon ein Konto' : 'Neues Konto erstellen';
     $('authNote').hidden = !reg;
+    $('authConsentRow').hidden = !reg;
     $('authPass').autocomplete = reg ? 'new-password' : 'current-password';
     $('authError').textContent = '';
   }
@@ -216,6 +217,7 @@ const Cloud = (() => {
       err.textContent = '';
       if (!NAME_OK.test(name)) { err.textContent = 'Benutzername: 3 bis 20 Zeichen, nur Buchstaben, Zahlen, Punkt, Strich und Unterstrich.'; return; }
       if (registering && pass.length < 8) { err.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
+      if (registering && !$('authConsent').checked) { err.textContent = 'Bitte stimme den Nutzungsbedingungen und der Datenschutzerklärung zu.'; return; }
       if (!sb) { err.textContent = 'Anmeldung gerade nicht erreichbar. Prüfe dein Internet.'; return; }
       $('authSubmit').disabled = true;
       try {
@@ -256,6 +258,29 @@ const Cloud = (() => {
       try { localStorage.removeItem('drobe-last-user'); } catch (e) { /* egal */ }
       location.reload();
     };
+  }
+
+  // Konto endgültig löschen: erst die eigenen Bilder, dann das Konto samt Datenbank-Einträgen, zuletzt der lokale Speicher
+  async function deleteAccount() {
+    if (!sb || !user) throw new Error('Nicht angemeldet.');
+    if (!navigator.onLine) throw new Error('Dafür brauchst du eine Internetverbindung.');
+    const store = sb.storage.from('images');
+    for (let guard = 0; guard < 50; guard++) {
+      const { data, error } = await store.list(user.id, { limit: 100 });
+      if (error) throw error;
+      if (!data || !data.length) break;
+      const { error: rmErr } = await store.remove(data.map((f) => `${user.id}/${f.name}`));
+      if (rmErr) throw rmErr;
+    }
+    const { error } = await sb.rpc('delete_my_account');
+    if (error) throw error;
+    const id = user.id;
+    try { await sb.auth.signOut(); } catch (e) { /* Konto ist ohnehin weg */ }
+    try { if (typeof db !== 'undefined' && db) db.close(); indexedDB.deleteDatabase('kleiderschrank-u-' + id); } catch (e) { /* egal */ }
+    try {
+      for (const k of ['drobe-last-user', 'drobe-pending-' + id, 'drobe-showcase-' + id]) localStorage.removeItem(k);
+    } catch (e) { /* egal */ }
+    location.reload();
   }
 
   async function enter(u) {
@@ -301,5 +326,5 @@ const Cloud = (() => {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
   window.addEventListener('online', syncSoon);
 
-  return { boot, queue, client: () => sb, user: () => user, sync, showAuth };
+  return { boot, queue, client: () => sb, user: () => user, sync, showAuth, deleteAccount };
 })();

@@ -164,8 +164,18 @@ const Profile = (() => {
     const own = !!me && me.name === data.username;
     if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
     box.append(el('h2', 'pub-name', data.username));
+    const about = [data.city, data.followers ? data.followers + ' Follower' : ''].filter(Boolean).join(' · ');
+    if (data.bio || about) {
+      const a = el('div', 'pub-about');
+      if (data.bio) a.append(el('p', null, data.bio));
+      if (about) a.append(el('p', 'muted small', about));
+      box.append(a);
+    }
     if (me && !own) {
       const bar = el('div', 'pub-tools');
+      const fb = toggle(el('button', 'btn'), 'toggle_follow', { p_username: data.username }, follows, data.username, ['Folgen', 'Du folgst']);
+      fb.type = 'button';
+      bar.append(fb);
       const rb = el('button', 'btn', 'Melden');
       rb.type = 'button';
       rb.onclick = () => askReport(data.username, null);
@@ -285,6 +295,11 @@ const Profile = (() => {
       go.type = 'button';
       go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
       info.append(go);
+      if (me) {
+        const sv = toggle(el('button', 'btn full save-btn'), 'toggle_save', { p_username: data.username, p_item: it.id }, saved, data.username + '/' + it.id, ['♡ Merken', '♥ Gemerkt']);
+        sv.type = 'button';
+        info.append(sv);
+      }
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
       rp.onclick = me ? () => askReport(data.username, it) : askLogin;
@@ -298,6 +313,37 @@ const Profile = (() => {
       const open = (x) => () => { location.hash = itemLink(data.username, x.id); };
       box.append(section('Mehr von ' + data.username, more.map((x) => card(x, urls, itemTags(x), null, open(x)))));
     }
+  }
+
+  /* ---------- Folgen und Merken ---------- */
+  const follows = new Set(); // Benutzernamen, denen ich folge
+  const saved = new Set();   // „benutzername/teil-id“ der gemerkten Teile
+  async function loadSocial() {
+    const sb = Cloud.client();
+    if (!sb || !Cloud.user() || !navigator.onLine) return;
+    try {
+      const [f, v] = await Promise.all([sb.rpc('my_follows'), sb.rpc('my_save_ids')]);
+      if (!f.error) { follows.clear(); (f.data || []).forEach((n) => follows.add(n)); }
+      if (!v.error) { saved.clear(); (v.data || []).forEach((n) => saved.add(n)); }
+    } catch (e) { console.error(e); /* Funktionen fehlen noch oder kein Netz: dann gilt der letzte Stand */ }
+  }
+  // Schalter für Folgen oder Merken; `rpcName` liefert den neuen Zustand zurück
+  function toggle(btn, rpcName, args, set, key, labels) {
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        const { data, error } = await Cloud.client().rpc(rpcName, args);
+        if (error) throw error;
+        data ? set.add(key) : set.delete(key);
+        btn.textContent = data ? labels[1] : labels[0];
+        btn.classList.toggle('on', !!data);
+      } catch (e) { console.error(e); toast((e && e.message) || 'Das hat nicht geklappt.'); }
+      btn.disabled = false;
+    };
+    const on = set.has(key);
+    btn.textContent = on ? labels[1] : labels[0];
+    btn.classList.toggle('on', on);
+    return btn;
   }
 
   /* ---------- Melden und Sperren ---------- */
@@ -565,6 +611,74 @@ const Profile = (() => {
     }
   }
 
+  /* ---------- Eigener Profiltext ---------- */
+  async function loadOwnText() {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return;
+    try {
+      const { data, error } = await sb.rpc('my_profile_text');
+      if (error) throw error;
+      $('profBio').value = (data && data.bio) || '';
+      $('profCity').value = (data && data.city) || '';
+    } catch (e) { console.error(e); }
+  }
+  async function saveOwnText() {
+    const msg = $('profMsg');
+    msg.className = 'pw-msg err';
+    if (!Cloud.client() || !navigator.onLine) { msg.textContent = 'Dafür brauchst du eine Internetverbindung.'; return; }
+    $('profTextSave').disabled = true;
+    try {
+      const { error } = await Cloud.client().rpc('update_my_profile', { p_bio: $('profBio').value, p_city: $('profCity').value });
+      if (error) throw error;
+      msg.className = 'pw-msg';
+      msg.textContent = 'Gespeichert.';
+    } catch (e) { console.error(e); msg.textContent = 'Das hat nicht geklappt. Läuft die neueste Datenbank-Version?'; }
+    $('profTextSave').disabled = false;
+  }
+
+  /* ---------- Moderation (nur für Admins) ---------- */
+  const REASONS = { betrug: 'Betrugsverdacht', faelschung: 'Fälschung', belaestigung: 'Belästigung', spam: 'Spam', sonstiges: 'Sonstiges' };
+  async function initAdmin() {
+    const sb = Cloud.client();
+    $('modRow').hidden = true;
+    if (!sb || !navigator.onLine) return;
+    try {
+      const { data, error } = await sb.rpc('is_admin');
+      if (!error && data === true) $('modRow').hidden = false;
+    } catch (e) { /* kein Admin oder Funktion fehlt noch */ }
+  }
+  async function loadReports() {
+    const box = $('modList');
+    message(box, 'Lade …', { loading: true });
+    try {
+      const { data, error } = await Cloud.client().rpc('admin_reports');
+      if (error) throw error;
+      box.replaceChildren();
+      if (!data.length) return box.append(el('p', 'muted', 'Keine offenen Meldungen.'));
+      for (const r of data) {
+        const row = el('div', 'mod-item');
+        row.append(el('b', null, (REASONS[r.reason] || r.reason) + ' · ' + (r.target || '?')));
+        row.append(el('div', 'muted small', 'gemeldet von ' + (r.reporter || '?') + ' · ' + new Date(r.created_at).toLocaleDateString('de-DE')));
+        if (r.note) row.append(el('p', null, r.note));
+        const act = el('div', 'row');
+        const view = el('button', 'btn', 'Profil');
+        view.type = 'button';
+        view.onclick = () => { $('settingsDialog').close(); location.hash = '#/u/' + r.target; };
+        const done = el('button', 'btn primary', 'Erledigt');
+        done.type = 'button';
+        done.onclick = async () => {
+          done.disabled = true;
+          const { error: e2 } = await Cloud.client().rpc('admin_resolve_report', { p_id: r.id });
+          if (e2) { done.disabled = false; return toast('Das hat nicht geklappt.'); }
+          row.remove();
+        };
+        act.append(view, done);
+        row.append(act);
+        box.append(row);
+      }
+    } catch (e) { console.error(e); message(box, 'Die Meldungen konnten nicht geladen werden.', { retry: loadReports }); }
+  }
+
   /* ---------- Navigation ---------- */
   async function route() {
     const name = parseHash(), itm = parseItemHash();
@@ -595,6 +709,8 @@ const Profile = (() => {
       const u = Cloud.user();
       $('profLink').value = u ? profileLink(u.name) : '';
     });
+    $('profTextSave').onclick = saveOwnText;
+    document.querySelector('[data-open=moderation]').addEventListener('click', loadReports);
     $('intCancel').onclick = () => $('interestDialog').close();
     $('repCancel').onclick = () => $('reportDialog').close();
     $('repSend').onclick = sendReport;
@@ -618,7 +734,7 @@ const Profile = (() => {
   // Wird vom Konto-Code nach dem Start (Gast oder angemeldet) aufgerufen
   async function start() {
     if (!started) { started = true; wire(); wireThread(); }
-    if (Cloud.user()) { loadOwn(); loadInbox(false); }
+    if (Cloud.user()) { loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); initAdmin(); }
     await route();
   }
 
@@ -658,10 +774,19 @@ const Profile = (() => {
   }
 
   /* ---------- Feed ---------- */
+  // kind: items, outfits, following (Teile von Profilen, denen ich folge) oder saved (gemerkte Teile, ohne Nachladen)
   async function feed(kind, before, color) {
     const sb = Cloud.client();
     if (!sb || !navigator.onLine) throw new Error('offline');
-    const { data, error } = await sb.rpc('feed_public', { p_kind: kind, p_before: before || null, p_color: color || null });
+    if (kind === 'saved') {
+      if (before) return [];
+      const { data, error } = await sb.rpc('my_saves');
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    }
+    const args = { p_kind: kind === 'outfits' ? 'outfits' : 'items', p_before: before || null, p_color: color || null };
+    if (kind === 'following') args.p_mode = 'following';
+    const { data, error } = await sb.rpc('feed_public', args);
     if (error) throw error;
     return Array.isArray(data) ? data : [];
   }
@@ -696,7 +821,8 @@ const Profile = (() => {
   async function showFeed(list, grid, kind) {
     const sb = Cloud.client();
     const urls = list.length ? await signedUrls(sb, list.map((r) => r.path)) : {};
-    for (const rec of list) grid.append(feedCard(rec, urls, kind));
+    const shape = kind === 'outfits' ? 'outfits' : 'items';
+    for (const rec of list) grid.append(feedCard(rec, urls, shape));
   }
 
   return { start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };

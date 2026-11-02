@@ -504,14 +504,32 @@ async function loadFeed(reset) {
     if (list.length) feed.before = list[list.length - 1].ts;
     more.hidden = list.length < 30;
     empty.hidden = grid.children.length > 0;
-    empty.textContent = kind === 'items' ? 'Noch keine öffentlichen Teile von anderen. Sobald jemand etwas freigibt, erscheint es hier.' : 'Noch keine öffentlichen Outfits von anderen.';
+    feedEmptyState(kind);
   } catch (e) {
     console.error(e);
     more.hidden = true;
     empty.hidden = false;
-    empty.textContent = navigator.onLine ? 'Der Feed ist gerade nicht verfügbar.' : 'Für den Feed brauchst du eine Internetverbindung.';
+    $('feedEmptyText').textContent = navigator.onLine ? 'Der Feed ist gerade nicht verfügbar.' : 'Für den Feed brauchst du eine Internetverbindung.';
+    $('feedEmptyCta').hidden = true;
     retry.hidden = false;
   } finally { done(); feed.loading = false; }
+}
+// Leerer Feed: sagt, warum, und bietet den nächsten Schritt an
+function feedEmptyState(kind) {
+  const cta = $('feedEmptyCta');
+  const go = (label, fn) => { cta.textContent = label; cta.onclick = fn; cta.hidden = false; };
+  cta.hidden = true;
+  if (kind === 'following') {
+    $('feedEmptyText').textContent = 'Hier erscheinen die Teile von Profilen, denen du folgst. Du folgst noch niemandem oder sie haben nichts öffentlich.';
+    go('Mitglieder suchen', () => { setSearchMode('members'); showView('search'); });
+  } else if (kind === 'saved') {
+    $('feedEmptyText').textContent = 'Noch nichts gemerkt. Auf der Seite eines Teils kannst du es mit „Merken“ speichern.';
+  } else if (kind === 'outfits') {
+    $('feedEmptyText').textContent = 'Noch keine öffentlichen Outfits von anderen.';
+  } else {
+    $('feedEmptyText').textContent = 'Noch keine öffentlichen Teile von anderen. Sobald jemand etwas freigibt, erscheint es hier.';
+    go('Eigenes Teil hinzufügen', () => showView('add'));
+  }
 }
 $('feedRetry').onclick = () => loadFeed(false);
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
@@ -2048,6 +2066,53 @@ $('backupOpen').onclick = () => {
   backupDlg.showModal();
 };
 
+/* ---------- Rechtliches ---------- */
+const legalDlg = $('legalDialog');
+function showLegal(page) {
+  document.querySelectorAll('[data-legal-page]').forEach((p) => { p.hidden = p.dataset.legalPage !== page; });
+  document.querySelectorAll('#legalTabs .chip').forEach((c) => c.classList.toggle('active', c.dataset.legalTab === page));
+  $('legalBody').scrollTop = 0;
+  if (!legalDlg.open) legalDlg.showModal();
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-legal]');
+  if (!a) return;
+  e.preventDefault();
+  showLegal(a.dataset.legal);
+});
+document.querySelectorAll('#legalTabs .chip').forEach((c) => { c.onclick = () => showLegal(c.dataset.legalTab); });
+$('legalClose').onclick = () => legalDlg.close();
+
+/* ---------- Konto löschen ---------- */
+$('delName').oninput = () => { $('delGo').disabled = $('delName').value.trim().toLowerCase() !== ((Cloud.user() || {}).name || '\0'); };
+document.querySelector('[data-open=delete]').addEventListener('click', () => { $('delName').value = ''; $('delGo').disabled = true; $('delMsg').textContent = ''; });
+$('delGo').onclick = async () => {
+  const msg = $('delMsg');
+  msg.className = 'pw-msg err';
+  msg.textContent = '';
+  $('delGo').disabled = true;
+  try {
+    await Cloud.deleteAccount();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = (e && e.message) || 'Das hat nicht geklappt. Dein Konto ist unverändert.';
+    $('delGo').disabled = false;
+  }
+};
+
+/* ---------- Willkommen (nur beim ersten Start ohne Inhalte) ---------- */
+function maybeWelcome() {
+  try {
+    if (localStorage.getItem('drobe-welcomed') || items.length || outfits.length || wishlist.length) return;
+    $('welcomeDialog').showModal();
+  } catch (e) { /* ohne Speicher: kein Willkommen */ }
+}
+$('welcomeGo').onclick = () => {
+  try { localStorage.setItem('drobe-welcomed', '1'); } catch (e) { /* dann erscheint es nochmal */ }
+  $('welcomeDialog').close();
+  showView('add');
+};
+
 /* ---------- Erscheinungsbild ---------- */
 function applyTheme(mode) {
   const root = document.documentElement;
@@ -2290,6 +2355,7 @@ async function startApp(userId) {
   renderWishlist();
   renderOutfits();
   showView('feed');
+  maybeWelcome();
 }
 
 Cloud.boot();

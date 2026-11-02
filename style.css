@@ -735,3 +735,31 @@ dialog[open]::backdrop { animation: fade-bg .2s ease; }
 }
 .check[hidden] { display: none; }
 .item-photo { max-height: 60vh; }
+
+/* Rechtliches, Konto löschen, Moderation, Folgen/Merken, Willkommen */
+.btn.primary.danger { background: #c4202e; color: #fff; }
+.btn.primary.danger:disabled { opacity: .45; }
+.legal-links { margin: 16px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.legal-links a, .check a { color: inherit; text-decoration: underline; }
+.check span { line-height: 1.35; }
+.legal-body { max-height: 52vh; overflow-y: auto; padding-right: 4px; font-size: 14px; line-height: 1.5; }
+.legal-body h2 { font-size: 18px; margin: 0 0 10px; }
+.legal-body h3 { font-size: 15px; margin: 14px 0 4px; }
+.legal-body p, .legal-body ul, .legal-body ol { margin: 0 0 10px; }
+.legal-body ul, .legal-body ol { padding-left: 20px; }
+.legal-warn { margin: 0 0 10px; padding: 8px 10px; border-radius: var(--r-ctrl); background: #fff3c4; color: #5c4a00; font-size: 13px; }
+mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 3px; }
+.welcome-steps { padding-left: 20px; line-height: 1.5; }
+.welcome-steps li { margin-bottom: 10px; }
+.mod-item { border: 1px solid var(--gray); border-radius: var(--r-ctrl); padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+.mod-item .row { margin-top: 8px; gap: 8px; }
+.mod-item .btn { padding: 6px 12px; font-size: 13px; }
+.pub-about { margin: -4px 0 12px; }
+.pub-about .muted { margin: 0; }
+.pub-tools .btn.on { background: var(--red); color: #fff; }
+.save-btn.on { color: var(--red); }
+.empty .btn { margin-top: 12px; }
+.feed-switch { flex-wrap: nowrap; gap: 6px; }
+.feed-switch .chip { padding-left: 11px; padding-right: 11px; font-size: 14px; white-space: nowrap; }
+#authConsentRow { align-items: flex-start; }
+#authConsentRow input { margin-top: 2px; flex: none; }
