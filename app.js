@@ -138,7 +138,7 @@ function buildDetails(box, p, kind) {
   const extra = kind === 'items'
     ? sel('cond', 'Zustand', '<option value="">–</option>' + CONDS.map((c) => `<option>${c}</option>`).join(''))
       + sel('rarity', 'Seltenheit', '<option value="">–</option>' + RARITIES.map((c) => `<option>${c}</option>`).join(''))
-      + sel('color', 'Farbe (automatisch)', '<option value="">–</option>' + COLORS.map((c) => `<option>${c}</option>`).join(''))
+      + sel('color', 'Farbe', '<option value="">–</option>' + COLORS.map((c) => `<option>${c}</option>`).join(''))
     : '';
   const sale = kind === 'items'
     ? `<label class="field" id="${p}priceRow" hidden>Preis (€)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
@@ -621,7 +621,7 @@ $('soInput').addEventListener('input', () => { state.showResults = false; clearT
 $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
-for (const c of COLORS) $('fColor').append(new Option(c, c));
+for (const c of COLORS) { $('fColor').append(new Option(c, c)); $('upColor').append(new Option(c, c)); }
 for (const id of ['fColor', 'fSize', 'fBrand']) {
   $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 }
@@ -717,7 +717,7 @@ async function nextUpload() {
     $('upCategory').value = (upTarget === 'wish' ? $('wishUploadCategory') : $('uploadCategory')).value;
     $('upWish').hidden = upTarget !== 'wish';
     $('upItem').hidden = upTarget === 'wish';
-    $('upBrand').value = ''; $('upSize').value = ''; $('upCond').value = '';
+    $('upBrand').value = ''; $('upSize').value = ''; $('upCond').value = ''; $('upColor').value = '';
     $('upNote').value = '';
     $('upLink').value = '';
     upDone++;
@@ -1173,7 +1173,7 @@ function upItemDetails() {
   if (upTarget === 'wish') return {};
   const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
   if (need) { toast('Bitte gib ' + need[1] + ' an'); $(need[0]).focus(); return null; }
-  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, vis: $('upVis').value }, 'items');
+  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, color: $('upColor').value, vis: $('upVis').value }, 'items');
 }
 $('upAdd').addEventListener('click', async () => {
   const u = upCur;
@@ -1193,7 +1193,7 @@ $('upAdd').addEventListener('click', async () => {
   if (upTarget === 'wish' && note) rec.note = note;
   if (link) rec.link = link;
   Object.assign(rec, det);
-  if (upTarget !== 'wish') applyColor(rec, await detectColor(res.blob));
+  if (upTarget !== 'wish' && !rec.color) applyColor(rec, await detectColor(res.blob)); // von Hand gewählte Farbe hat Vorrang
   await dbPut(coll.store, rec);
   coll.list.push(rec);
   upAdded++;
@@ -1225,7 +1225,7 @@ $('upAll').addEventListener('click', async () => {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
       const rec = { id: uid(), name: j.name, category, blob, created: Date.now(), ...det };
-      if (upTarget !== 'wish') applyColor(rec, await detectColor(blob));
+      if (upTarget !== 'wish' && !rec.color) applyColor(rec, await detectColor(blob));
       if (j.res && j.res.source) { rec.source = j.res.source; rec.srcBox = j.res.srcBox; }
       const coll = upColl();
       await dbPut(coll.store, rec);
@@ -1304,7 +1304,7 @@ function openItemDialog(it) {
 $('itemForm').addEventListener('submit', async (e) => {
   if (e.submitter && e.submitter.value === 'save') {
     const it = state.editingItem;
-    const prevColor = it.color;
+    const prevColor = it.color, prevAuto = !!it.hex; // hex gibt es nur bei automatisch erkannter Farbe
     if (!readDetails('itd', 'items', it)) return e.preventDefault(); // Preis falsch: Dialog bleibt offen
     if (typeof Profile !== 'undefined') Profile.setPinned(it.id, visOf(it) !== 'private' && $('itdpin').checked);
     it.name = $('itemName').value.trim() || it.name;
@@ -1317,7 +1317,7 @@ $('itemForm').addEventListener('submit', async (e) => {
     if (u && upEdited(u)) { // bearbeitetes Bild dauerhaft übernehmen
       const res = await upResult(u);
       it.blob = res.blob;
-      if (it.color === prevColor) { const c = await detectColor(res.blob); if (c) applyColor(it, c); else { delete it.color; delete it.hex; } } // Farbe nur neu, wenn sie nicht von Hand geändert wurde
+      if (it.color === prevColor && (prevAuto || !prevColor)) { const c = await detectColor(res.blob); if (c) applyColor(it, c); else { delete it.color; delete it.hex; } } // Farbe nur neu, wenn sie nicht von Hand geändert wurde
       if (res.source) { it.source = res.source; it.srcBox = res.srcBox; } else { delete it.source; delete it.srcBox; }
       if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
       aspects.delete(it.id);
