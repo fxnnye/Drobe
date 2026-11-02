@@ -40,9 +40,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <header class="top">
   <h1>Drobe</h1>
   <nav class="tabs" role="tablist">
-    <button class="tab active" data-view="closet" role="tab">Schrank</button>
-    <button class="tab" data-view="outfits" role="tab">Outfits <span id="outfitCount" class="badge">0</span></button>
-    <button class="tab" data-view="wishlist" role="tab">Wunschliste</button>
+    <button class="tab active" data-view="feed" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span class="tab-label">Feed</span></button>
+    <button class="tab" data-view="search" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="tab-label">Suche</span></button>
+    <button class="tab tab-add" data-view="add" role="tab" aria-label="Hinzufügen"><span class="tab-plus"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="tab-label">Hinzufügen</span></button>
+    <button class="tab" data-view="messages" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/></svg><span class="tab-label">Nachrichten</span><span class="badge tab-badge" id="inboxBadge"></span></button>
+    <button class="tab" data-view="me" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="tab-label">Profil</span></button>
   </nav>
   <div class="guest-actions" id="guestActions" hidden>
     <button class="btn" type="button" id="guestLogin">Einloggen</button>
@@ -66,25 +68,67 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <section id="publicView" class="public" hidden></section>
 
 <main>
+  <!-- FEED -->
+  <section id="view-feed" class="view active">
+    <div class="chips feed-switch" id="feedSwitch">
+      <button class="chip active" type="button" data-kind="items">Teile</button>
+      <button class="chip" type="button" data-kind="outfits">Outfits</button>
+    </div>
+    <div class="grid feed-grid" id="feedGrid"></div>
+    <p class="empty" id="feedEmpty" hidden></p>
+    <div class="feed-more"><button class="btn" type="button" id="feedMore" hidden>Mehr laden</button></div>
+  </section>
+
+  <!-- SUCHE -->
+  <section id="view-search" class="view">
+    <div class="so-head">
+      <input type="text" id="soInput" placeholder="Marke oder Teil suchen" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Suche">
+    </div>
+    <div class="chips search-mode" id="searchMode">
+      <button class="chip active" type="button" data-mode="items">Artikel</button>
+      <button class="chip" type="button" data-mode="members">Mitglieder</button>
+    </div>
+    <div class="so-history" id="soHistory" hidden></div>
+    <div class="member-results" id="memberResults" hidden></div>
+  </section>
+
+  <!-- NACHRICHTEN -->
+  <section id="view-messages" class="view">
+    <h2 class="page-title">Nachrichten</h2>
+    <p class="muted small" id="inboxEmpty">Noch keine Nachrichten.</p>
+    <div id="inboxList"></div>
+  </section>
+
+  <!-- MEIN PROFIL: Kopf mit Reitern für Schrank, Outfits und Wunschliste -->
+  <div class="me-bar" id="meBar" hidden>
+    <div class="me-head">
+      <span class="avatar" id="meAvatar" aria-hidden="true"></span>
+      <div class="me-info">
+        <strong id="meName"></strong>
+        <span class="muted small" id="meCounts"></span>
+      </div>
+      <button class="btn" type="button" id="meProfile">Ansehen</button>
+    </div>
+    <div class="subtabs" role="tablist">
+      <button class="subtab active" type="button" data-sub="closet">Schrank</button>
+      <button class="subtab" type="button" data-sub="outfits">Outfits <span id="outfitCount" class="badge">0</span></button>
+      <button class="subtab" type="button" data-sub="wishlist">Wunschliste</button>
+    </div>
+  </div>
+
   <!-- SCHRANK -->
-  <section id="view-closet" class="view active">
-    <button class="search search-open" type="button" id="searchOpen" aria-label="Suche öffnen">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-      <span>Marke oder Teil suchen</span>
-    </button>
+  <section id="view-closet" class="view">
     <div class="filter-row">
       <div class="chips" id="closetFilter"></div>
-      <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="grid" id="closetGrid"></div>
-    <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Tippe auf +, um das erste Teil hinzuzufügen.</p>
+    <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Tippe unten auf +, um das erste Teil hinzuzufügen.</p>
   </section>
 
   <!-- WUNSCHLISTE -->
   <section id="view-wishlist" class="view">
     <div class="filter-row">
       <div class="chips" id="wishFilter"></div>
-      <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="grid" id="wishGrid"></div>
     <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
@@ -273,23 +317,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
-<div id="searchOverlay" class="search-overlay" hidden>
-  <div class="so-panel" role="dialog" aria-modal="true" aria-label="Suche">
-    <div class="so-head">
-      <button class="icon" type="button" id="soClose" aria-label="Schließen">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-      </button>
-      <input type="text" id="soInput" placeholder="Marke oder Teil suchen" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Suche">
-    </div>
-    <div class="chips search-mode" id="searchMode">
-      <button class="chip active" type="button" data-mode="items">Artikel</button>
-      <button class="chip" type="button" data-mode="members">Mitglieder</button>
-    </div>
-    <div class="so-history" id="soHistory" hidden></div>
-    <div class="member-results" id="memberResults" hidden></div>
-  </div>
-</div>
-
 <dialog id="uploadDialog">
   <form method="dialog" onsubmit="return false">
     <p class="muted small" id="upProgress"></p>
@@ -418,7 +445,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
     <div class="set-panel" data-panel="main">
       <button class="set-row" type="button" data-open="account">Konto</button>
-      <button class="set-row" type="button" data-open="inbox">Mitteilungen <span class="badge" id="inboxBadge"></span></button>
       <button class="set-row" type="button" data-open="profile">Öffentliches Profil</button>
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
@@ -431,11 +457,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       </div>
       <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
       <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
-    </div>
-
-    <div class="set-panel" data-panel="inbox" data-title="Mitteilungen" hidden>
-      <p class="muted small" id="inboxEmpty">Noch keine Mitteilungen.</p>
-      <div id="inboxList"></div>
     </div>
 
     <div class="set-panel" data-panel="profile" data-title="Öffentliches Profil" hidden>

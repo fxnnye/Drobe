@@ -78,7 +78,7 @@ let outfits = [];
 let wishlist = [];
 const urls = new Map(); // id -> Object-URL
 const state = {
-  view: 'closet',
+  view: 'feed',
   search: '',
   searchMode: 'items',
   closetFilter: 'Alle',
@@ -301,18 +301,71 @@ function setAddTarget(t) {
 }
 document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () => setAddTarget(c.dataset.target); });
 $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
-document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien (Computer)
-
+// Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Wunschliste sind Unterseiten von „Profil“.
+const ME_VIEWS = ['closet', 'outfits', 'wishlist'];
+const topTab = (name) => (name === 'builder' || ME_VIEWS.includes(name) ? 'me' : name);
 function showView(name) {
+  if (name === 'me') name = state.lastMe || 'closet';
   const prev = state.view;
   state.view = name;
-  const tab = name === 'builder' ? 'outfits' : name; // der Outfit-Bereich gehört zum Reiter „Outfits“
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === tab));
+  if (ME_VIEWS.includes(name)) state.lastMe = name;
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
+  document.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('active', t.dataset.sub === (name === 'builder' ? 'outfits' : name)));
+  $('meBar').hidden = !ME_VIEWS.includes(name);
   if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; setAddTarget(prev === 'wishlist' ? 'wish' : 'closet'); }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
+  if (name === 'feed') loadFeed(true);
+  if (name === 'messages') Profile.loadInbox(true);
+  if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
+  if (ME_VIEWS.includes(name)) renderMeHead();
+  window.scrollTo(0, 0);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
+document.querySelectorAll('.subtab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.sub)));
+$('meProfile').onclick = () => { const u = Cloud.user(); if (u) location.hash = '#/u/' + u.name; };
+
+function renderMeHead() {
+  const u = Cloud.user();
+  const name = u ? u.name : '';
+  $('meName').textContent = name;
+  $('meAvatar').textContent = (name[0] || '?').toUpperCase();
+  const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
+  $('meCounts').textContent = [n(items.length, 'Teil', 'Teile'), n(outfits.length, 'Outfit', 'Outfits'), n(wishlist.length, 'Wunsch', 'Wünsche')].join(' · ');
+  $('meProfile').hidden = !u;
+}
+
+/* ---------- Feed: öffentliche Teile oder Outfits anderer, neueste zuerst ---------- */
+const feed = { kind: 'items', before: null, loading: false };
+async function loadFeed(reset) {
+  if (feed.loading) return;
+  const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore');
+  if (reset) { feed.before = null; grid.replaceChildren(); }
+  feed.loading = true;
+  const kind = feed.kind;
+  try {
+    const list = await Profile.feed(kind, feed.before);
+    if (kind !== feed.kind) return; // inzwischen umgeschaltet
+    await Profile.showFeed(list, grid, kind);
+    if (list.length) feed.before = list[list.length - 1].ts;
+    more.hidden = list.length < 30;
+    empty.hidden = grid.children.length > 0;
+    empty.textContent = kind === 'items' ? 'Noch keine öffentlichen Teile von anderen. Sobald jemand etwas freigibt, erscheint es hier.' : 'Noch keine öffentlichen Outfits von anderen.';
+  } catch (e) {
+    console.error(e);
+    more.hidden = true;
+    empty.hidden = false;
+    empty.textContent = navigator.onLine ? 'Der Feed ist gerade nicht verfügbar.' : 'Für den Feed brauchst du eine Internetverbindung.';
+  } finally { feed.loading = false; }
+}
+document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
+  c.onclick = () => {
+    feed.kind = c.dataset.kind;
+    document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
+    loadFeed(true);
+  };
+});
+$('feedMore').onclick = () => loadFeed(false);
 
 /* ---------- Filter-Chips ---------- */
 // Filterwert ist eine Hauptkategorie, eine Unterkategorie oder „Alle“
@@ -374,7 +427,7 @@ function renderCloset() {
   });
   $('closetEmpty').classList.toggle('show', list.length === 0);
   $('closetEmpty').textContent = items.length === 0
-    ? 'Dein Schrank ist noch leer. Tippe auf +, um das erste Teil hinzuzufügen.'
+    ? 'Dein Schrank ist noch leer. Tippe unten auf +, um das erste Teil hinzuzufügen.'
     : (q ? 'Nichts gefunden.' : 'Keine Teile in dieser Kategorie.');
 }
 
@@ -418,18 +471,6 @@ function renderHistory() {
     row.append(b, del);
     box.append(row);
   });
-}
-function openSearch() {
-  $('searchOverlay').hidden = false;
-  document.body.classList.add('searching');
-  renderHistory();
-  runSearch();
-  $('soInput').focus();
-}
-function closeSearch() {
-  if ($('searchOverlay').hidden) return;
-  $('searchOverlay').hidden = true;
-  document.body.classList.remove('searching');
 }
 function setSearchMode(mode, showResults = false) {
   state.searchMode = mode;
@@ -500,14 +541,9 @@ async function runSearch() {
     box.append(b);
   }
 }
-$('searchOpen').onclick = openSearch;
-$('soClose').onclick = closeSearch;
-$('searchOverlay').addEventListener('click', (e) => { if (e.target === $('searchOverlay')) closeSearch(); });
 $('soInput').addEventListener('input', () => { state.showResults = false; clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSearch(); });
-window.addEventListener('hashchange', closeSearch);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 
 /* Upload-Dialog: pro Foto Vorschau, Name, Kategorie und optional „Hintergrund entfernen“ */
@@ -1520,6 +1556,7 @@ $('saveOutfit').onclick = async () => {
 
 function renderOutfits() {
   $('outfitCount').textContent = outfits.length;
+  if (!$('meBar').hidden) renderMeHead();
   const grid = $('outfitGrid');
   grid.innerHTML = '';
   // Erste Kachel: neues Outfit bauen
@@ -1669,7 +1706,7 @@ function renderWishlist() {
   });
   $('wishEmpty').classList.toggle('show', list.length === 0);
   $('wishEmpty').textContent = wishlist.length === 0
-    ? 'Deine Wunschliste ist noch leer. Tippe auf +, um ein Teil hinzuzufügen, das du kaufen willst.'
+    ? 'Deine Wunschliste ist noch leer. Tippe unten auf +, um ein Teil hinzuzufügen, das du kaufen willst.'
     : 'Keine Teile in dieser Kategorie.';
 }
 
@@ -2027,6 +2064,7 @@ async function startApp(userId) {
   renderCloset();
   renderWishlist();
   renderOutfits();
+  showView('feed');
 }
 
 Cloud.boot();

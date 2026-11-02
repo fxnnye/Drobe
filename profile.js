@@ -371,7 +371,6 @@ const Profile = (() => {
     $('repCancel').onclick = () => $('reportDialog').close();
     $('repSend').onclick = sendReport;
     $('intSend').onclick = sendInterest;
-    document.querySelector('[data-open=inbox]').addEventListener('click', () => loadInbox(true));
     $('profCopy').onclick = async () => {
       const text = $('profLink').value;
       try { await navigator.clipboard.writeText(text); toast('Link kopiert'); }
@@ -429,5 +428,46 @@ const Profile = (() => {
     box.append(grid);
   }
 
-  return { start, isPinned, setPinned, search, fetchItems, showItems, findFor };
+  /* ---------- Feed ---------- */
+  async function feed(kind, before) {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) throw new Error('offline');
+    const { data, error } = await sb.rpc('feed_public', { p_kind: kind, p_before: before || null });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  }
+  // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
+  function feedCard(rec, urls, kind) {
+    const c = el('div', 'card feed-card');
+    const open = () => { location.hash = '#/u/' + rec.username; };
+    const owner = el('button', 'feed-owner');
+    owner.type = 'button';
+    owner.append(el('span', 'avatar sm', (rec.username[0] || '?').toUpperCase()), el('span', null, rec.username));
+    owner.onclick = open;
+    const img = el('button', 'img feed-img');
+    img.type = 'button';
+    img.setAttribute('aria-label', (rec.name || 'Eintrag') + ' von ' + rec.username + ' ansehen');
+    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.src = urls[rec.path]; img.append(i); }
+    img.onclick = open;
+    const meta = el('div', 'meta');
+    if (kind === 'items') {
+      if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
+      else if (rec.vis === 'trade') meta.append(el('b', 'feed-price', 'Tausch'));
+      meta.append(el('span', null, rec.name || ''));
+      const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
+      if (sub) meta.append(el('span', 'muted small', sub));
+      if (rec.cond) meta.append(el('span', 'muted small', rec.cond));
+    } else {
+      meta.append(el('b', null, rec.name || 'Outfit'));
+    }
+    c.append(owner, img, meta);
+    return c;
+  }
+  async function showFeed(list, grid, kind) {
+    const sb = Cloud.client();
+    const urls = list.length ? await signedUrls(sb, list.map((r) => r.path)) : {};
+    for (const rec of list) grid.append(feedCard(rec, urls, kind));
+  }
+
+  return { start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox };
 })();

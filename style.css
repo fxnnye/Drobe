@@ -468,30 +468,15 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
   #uploadDialog .up-preview { height: 46vh; max-height: 420px; }
 }
 
-/* Suchfenster: Rest wird abgedunkelt, die Suche öffnet sich in einem eigenen Fenster */
-.search-open { display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 2px solid var(--field); border-radius: 999px; background: var(--bg); color: var(--muted); font: inherit; text-align: left; cursor: pointer; }
-.search-open span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-body.searching { overflow: hidden; }
-.search-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; justify-content: center; align-items: flex-start; }
-.search-overlay[hidden] { display: none; }
-.so-panel { width: 100%; max-width: 640px; height: 100%; overflow-y: auto; overflow-x: hidden; background: var(--bg); padding: calc(12px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom)); }
-.so-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.so-head input { flex: 1; min-width: 0; }
+.so-head { margin-bottom: 12px; }
+.so-head input { width: 100%; }
 .so-history { margin-bottom: 16px; }
 .so-history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .so-link { background: none; border: 0; padding: 4px; font-size: 13px; color: var(--muted); text-decoration: underline; cursor: pointer; }
 .so-history-row { display: flex; align-items: center; gap: 4px; }
 .so-history-item { flex: 1; min-width: 0; text-align: left; padding: 12px 4px; border: 0; background: none; font-weight: 600; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.so-del { font-size: 22px; color: var(--muted); }
-@media (min-width: 701px) {
-  .search-overlay { align-items: center; }
-  .so-panel { height: min(86vh, 760px); border-radius: 28px; padding: 20px; }
-}
-.so-del { background: none; width: 36px; height: 36px; flex: none; }
+.so-del { background: none; width: 36px; height: 36px; flex: none; font-size: 22px; color: var(--muted); }
 .so-del:hover { background: var(--gray); }
-@media (max-width: 700px) {
-  .so-panel { height: calc(100% - 44px); margin-top: 44px; border-radius: 24px 24px 0 0; padding-top: 14px; }
-}
 
 .so-suggest { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--gray); background: none; text-align: left; cursor: pointer; }
 .so-suggest:hover { background: var(--gray); }
@@ -502,4 +487,63 @@ body.searching { overflow: hidden; }
 @media (max-width: 700px) {
   #uploadDialog { max-height: 94dvh; }
   #uploadDialog .up-preview { height: 38dvh; max-height: 360px; }
+}
+
+/* ---------- Aufbau wie bei Vinted: Feed, Suche, Hinzufügen, Nachrichten, Profil ---------- */
+.tab { display: inline-flex; align-items: center; gap: 8px; position: relative; }
+.tab-ic { display: none; }
+.tab-plus { display: inline-flex; }
+.tab-add .tab-plus { display: none; }
+.tab-add { background: var(--gray); }
+.tab-badge { margin-left: 2px; }
+.tab-badge:empty { display: none; }
+
+.me-bar { margin: 0 0 16px; }
+.me-head { display: flex; align-items: center; gap: 14px; padding: 4px 0 14px; }
+.me-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.me-info strong { font-size: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avatar { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--gray); font-weight: 700; font-size: 22px; flex: none; }
+.avatar.sm { width: 24px; height: 24px; font-size: 12px; }
+.me-bar[hidden] { display: none; }
+.subtabs { display: flex; border-bottom: 1px solid var(--gray-hover); }
+.subtab { flex: 1; border: 0; background: none; padding: 12px 8px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+.subtab.active { color: var(--text); border-bottom-color: var(--text); }
+.subtab .badge { font-weight: 600; }
+
+.feed-switch { margin-bottom: 14px; }
+.feed-card { cursor: default; }
+.feed-owner { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; padding: 0 0 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; }
+.feed-owner span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-img { width: 100%; border: 0; padding: 0; cursor: pointer; }
+.feed-card .meta { display: flex; flex-direction: column; gap: 1px; }
+.feed-card .meta .feed-price { font-size: 15px; }
+.feed-card .meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feed-card .meta span:not(.muted) { color: var(--text); font-size: 13px; }
+.feed-more { display: flex; justify-content: center; padding: 20px 0; }
+.feed-more .btn[hidden] { display: none; }
+#feedEmpty:not([hidden]) { display: block; }
+#feedEmpty[hidden] { display: none; }
+.outfits-feed .card .img { aspect-ratio: 9 / 16; }
+
+.guest .tabs { display: none; }
+
+@media (max-width: 700px) {
+  /* Untere Leiste: fünf gleich breite Felder, Symbol über der Beschriftung, Hinzufügen groß in der Mitte */
+  .tabs { align-items: stretch; padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); }
+  .tab { flex: 1 1 0; flex-direction: column; justify-content: center; gap: 2px; padding: 6px 2px; font-size: 11px; border-radius: 0; background: none; color: var(--muted); }
+  .tab:hover { background: none; }
+  .tab.active { background: none; color: var(--text); }
+  .tab-ic { display: block; }
+  .tab-label { font-size: 11px; line-height: 1.2; }
+  .tab-add { background: none; }
+  .tab-add .tab-plus { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--text); color: var(--on-text); margin-top: -14px; box-shadow: 0 0 0 4px var(--bg); }
+  .tab-add .tab-label { display: none; }
+  .tab-add.active { color: var(--text); }
+  .tab-badge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--red); color: #fff; font-size: 10px; line-height: 16px; text-align: center; }
+  .subtab { font-size: 14px; }
+  .me-head .avatar { width: 48px; height: 48px; }
+}
+@media (min-width: 701px) {
+  .feed-grid, .grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .me-bar, .so-head, .search-mode, .so-history, #view-search .member-results { max-width: 760px; }
 }
