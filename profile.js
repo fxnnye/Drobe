@@ -404,5 +404,27 @@ const Profile = (() => {
     return Array.isArray(data) ? data : [];
   }
 
-  return { start, isPinned, setPinned, search, findFor };
+  // Öffentliche Teile anderer nach Marke oder Name suchen und als Karten in `box` zeigen
+  async function searchItems(q, box, stale) {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) throw new Error('offline');
+    const { data, error } = await sb.rpc('search_public_items', { p_query: q });
+    if (error) throw error;
+    const list = Array.isArray(data) ? data : [];
+    if (stale()) return;
+    box.replaceChildren();
+    if (!list.length) return box.append(el('p', 'muted', 'Keine Teile gefunden. Gefunden werden nur Teile, die andere öffentlich gestellt haben.'));
+    const urls = await signedUrls(sb, list.map((r) => r.path));
+    if (stale()) return;
+    box.replaceChildren();
+    const grid = el('div', 'grid');
+    for (const it of list) {
+      const tags = itemTags(it);
+      tags.push(['von ' + it.username, '']);
+      grid.append(card(it, urls, tags, { label: 'Profil ansehen', fn: () => { location.hash = '#/u/' + it.username; } }));
+    }
+    box.append(grid);
+  }
+
+  return { start, isPinned, setPinned, search, searchItems, findFor };
 })();

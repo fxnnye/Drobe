@@ -455,3 +455,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .pub-tools .btn { padding: 7px 12px; font-size: 13px; }
 .pub-report { display: block; margin-top: 6px; background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--muted, #888); text-decoration: underline; cursor: pointer; }
 .pay-hint { background: var(--gray); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; margin: 0 0 12px; }
+
+/* Artikelsuche */
+.member-results .grid { width: 100%; }
+.member-results:has(.grid) { display: block; }
