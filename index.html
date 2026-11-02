@@ -358,11 +358,38 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <input type="text" id="intMsg" maxlength="200">
     </label>
     <p class="muted small">Dein Benutzername und die Nachricht gehen an die Person. Bezahlt wird nicht über Drobe.</p>
+    <p class="pay-hint" id="intPayHint" hidden><b>Zahlung direkt zwischen euch.</b> Drobe ist nur Vermittler, es läuft kein Geld über Drobe. Ohne Käuferschutz gibt es bei Betrug kein Geld zurück. Empfohlen: PayPal „Waren und Dienstleistungen“.</p>
     <p class="auth-error" id="intError" role="alert"></p>
     <div class="row">
       <span class="spacer"></span>
       <button class="btn" type="button" id="intCancel">Abbrechen</button>
       <button class="btn primary" type="button" id="intSend">Senden</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="reportDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2>Melden</h2>
+    <p class="muted" id="repWhat"></p>
+    <label class="field">Grund
+      <select id="repReason">
+        <option value="betrug">Betrugsverdacht</option>
+        <option value="faelschung">Fälschung</option>
+        <option value="belaestigung">Belästigung</option>
+        <option value="spam">Spam</option>
+        <option value="sonstiges">Sonstiges</option>
+      </select>
+    </label>
+    <label class="field">Details (optional)
+      <input type="text" id="repNote" maxlength="300">
+    </label>
+    <p class="muted small">Die Meldung sieht nur das Drobe-Team. Willst du keine Nachrichten mehr bekommen, sperre die Person auf ihrem Profil.</p>
+    <p class="auth-error" id="repError" role="alert"></p>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="repCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="repSend">Melden</button>
     </div>
   </form>
 </dialog>
