@@ -545,6 +545,7 @@ function setSearchMode(mode, showResults = false) {
   state.searchMode = mode;
   state.showResults = showResults;
   document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
+  $('soFilters').hidden = mode === 'members';
   $('soInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
   runSearch();
 }
@@ -577,21 +578,27 @@ function renderSuggestions(list, t, box) {
     box.append(b);
   }
 }
+// Filter für Artikel: Farbe (automatisch erkannt), Größe, Marke
+const searchFilters = () => ({ color: $('fColor').value, size: $('fSize').value.trim(), brand: $('fBrand').value.trim() });
+const filtersActive = () => state.searchMode === 'items' && Object.values(searchFilters()).some(Boolean);
 async function runSearch() {
   const q = $('soInput').value, mode = state.searchMode, t = q.trim();
   const box = $('memberResults');
   renderHistory();
-  if (!t) { box.hidden = true; box.replaceChildren(); return; }
+  if (!t && !filtersActive()) { box.hidden = true; box.replaceChildren(); return; }
   box.hidden = false;
   box.replaceChildren();
   const note = (m) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = m; box.append(p); };
-  const stale = () => $('soInput').value !== q || state.searchMode !== mode; // inzwischen weitergetippt
+  const fkey = JSON.stringify(searchFilters());
+  const stale = () => $('soInput').value !== q || state.searchMode !== mode || JSON.stringify(searchFilters()) !== fkey; // inzwischen weitergetippt
   if (mode === 'items') {
-    if (t.length < 2) return note('Gib mindestens 2 Zeichen ein.');
+    const filters = searchFilters();
+    const hasFilter = Object.values(filters).some(Boolean);
+    if (t.length < 2 && !hasFilter) return note('Gib mindestens 2 Zeichen ein.');
     try {
-      const list = await Profile.fetchItems(t);
+      const list = await Profile.fetchItems(t.length >= 2 ? t : '', filters);
       if (stale()) return;
-      if (state.showResults) return await Profile.showItems(list, box, stale);
+      if (state.showResults || hasFilter) return await Profile.showItems(list, box, stale);
       renderSuggestions(list, t, box);
     } catch (e) { console.error(e); if (!stale()) { box.replaceChildren(); note('Die Suche ist gerade nicht verfügbar.'); } }
     return;
@@ -614,6 +621,10 @@ $('soInput').addEventListener('input', () => { state.showResults = false; clearT
 $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
+for (const c of COLORS) $('fColor').append(new Option(c, c));
+for (const id of ['fColor', 'fSize', 'fBrand']) {
+  $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
+}
 
 /* Upload-Dialog: pro Foto Vorschau, Name, Kategorie und optional „Hintergrund entfernen“ */
 const upDlg = $('uploadDialog');

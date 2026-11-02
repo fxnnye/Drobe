@@ -518,10 +518,10 @@ const Profile = (() => {
   }
 
   // Öffentliche Teile anderer nach Marke oder Name suchen (Marke, Name oder Kategorie enthalten jedes Suchwort)
-  async function fetchItems(q) {
+  async function fetchItems(q, f) {
     const sb = Cloud.client();
     if (!sb || !navigator.onLine) throw new Error('offline');
-    const { data, error } = await sb.rpc('search_public_items', { p_query: q });
+    const { data, error } = await sb.rpc('search_public_items', { p_query: q, p_color: (f && f.color) || null, p_size: (f && f.size) || null, p_brand: (f && f.brand) || null });
     if (error) throw error;
     return Array.isArray(data) ? data : [];
   }

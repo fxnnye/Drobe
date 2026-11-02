@@ -88,6 +88,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="chip active" type="button" data-mode="items">Artikel</button>
       <button class="chip" type="button" data-mode="members">Mitglieder</button>
     </div>
+    <div class="so-filters" id="soFilters">
+      <select id="fColor" aria-label="Farbe"><option value="">Farbe</option></select>
+      <input type="text" id="fSize" maxlength="20" placeholder="Größe" autocomplete="off" aria-label="Größe">
+      <input type="text" id="fBrand" maxlength="40" placeholder="Marke" autocomplete="off" aria-label="Marke">
+    </div>
     <div class="so-history" id="soHistory" hidden></div>
     <div class="member-results" id="memberResults" hidden></div>
   </section>

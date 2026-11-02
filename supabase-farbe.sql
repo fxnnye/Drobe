@@ -3,6 +3,7 @@
 -- Es kommt nur ein weiteres freigegebenes Feld („color“) zu öffentlichen Teilen dazu.
 
 drop function if exists public.feed_public(text, timestamptz);
+drop function if exists public.search_public_items(text);
 
 create or replace function public.feed_public(p_kind text, p_before timestamptz default null, p_color text default null) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
@@ -42,7 +43,7 @@ end $$;
 revoke all on function public.feed_public(text, timestamptz, text) from public;
 grant execute on function public.feed_public(text, timestamptz, text) to anon, authenticated;
 
-create or replace function public.search_public_items(p_query text) returns jsonb
+create or replace function public.search_public_items(p_query text, p_color text default null, p_size text default null, p_brand text default null) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
   res jsonb;
@@ -52,7 +53,7 @@ declare
     limit 5
   );
 begin
-  if cardinality(tokens) = 0 then return '[]'::jsonb; end if;
+  if cardinality(tokens) = 0 and coalesce(p_color, '') = '' and coalesce(p_size, '') = '' and coalesce(p_brand, '') = '' then return '[]'::jsonb; end if;
 
   select coalesce(jsonb_agg(x.j), '[]'::jsonb) into res from (
     select jsonb_build_object(
@@ -76,6 +77,9 @@ begin
       and not exists (
             select 1 from unnest(tokens) t
             where strpos(lower(coalesce(r.data->>'brand', '') || ' ' || coalesce(r.data->>'name', '') || ' ' || coalesce(r.data->>'category', '') || ' ' || coalesce(r.data->>'color', '')), t) = 0)
+      and (coalesce(p_color, '') = '' or r.data->>'color' = p_color)
+      and (coalesce(trim(p_size), '') = '' or lower(coalesce(r.data->>'size', '')) = lower(trim(p_size)))
+      and (coalesce(trim(p_brand), '') = '' or strpos(lower(coalesce(r.data->>'brand', '')), lower(trim(p_brand))) > 0)
     order by r.updated_at desc
     limit 60
   ) x;
@@ -83,8 +87,8 @@ begin
   return res;
 end $$;
 
-revoke all on function public.search_public_items(text) from public;
-grant execute on function public.search_public_items(text) to anon, authenticated;
+revoke all on function public.search_public_items(text, text, text, text) from public;
+grant execute on function public.search_public_items(text, text, text, text) to anon, authenticated;
 
 create or replace function public.public_profile(p_username text) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
