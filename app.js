@@ -300,6 +300,7 @@ function setAddTarget(t) {
   document.querySelectorAll('#addTarget .chip').forEach((c) => c.classList.toggle('active', c.dataset.target === t));
 }
 document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () => setAddTarget(c.dataset.target); });
+document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien
 $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
 // Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Wunschliste sind Unterseiten von „Profil“.
 const ME_VIEWS = ['closet', 'outfits', 'wishlist'];
