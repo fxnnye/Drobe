@@ -378,24 +378,74 @@ function renderCloset() {
     : (q ? 'Nichts gefunden.' : 'Keine Teile in dieser Kategorie.');
 }
 
-/* Suche wie bei Vinted: öffentliche Teile anderer nach Marke oder Name, oder Mitglieder nach Benutzername */
+/* Suche wie bei Vinted: Antippen öffnet ein eigenes Fenster (Rest ausgeblendet) mit Artikel/Mitglieder und Suchverlauf */
 let searchTimer = null;
+const HISTORY_KEY = 'drobe-search-history', HISTORY_MAX = 10;
+const readHistory = () => { try { const h = JSON.parse(localStorage.getItem(HISTORY_KEY)); return Array.isArray(h) ? h.filter((x) => x && typeof x.q === 'string') : []; } catch { return []; } };
+const writeHistory = (h) => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, HISTORY_MAX))); } catch {} };
+function rememberSearch() {
+  const q = $('soInput').value.trim();
+  if (q.length < 2) return;
+  const mode = state.searchMode;
+  writeHistory([{ q, mode }, ...readHistory().filter((x) => !(x.q.toLowerCase() === q.toLowerCase() && x.mode === mode))]);
+}
+function renderHistory() {
+  const box = $('soHistory'), list = readHistory();
+  box.replaceChildren();
+  box.hidden = !list.length || $('soInput').value.trim() !== '';
+  if (box.hidden) return;
+  const head = document.createElement('div');
+  head.className = 'so-history-head';
+  const t = document.createElement('b');
+  t.textContent = 'Zuletzt gesucht';
+  const clear = document.createElement('button');
+  clear.type = 'button'; clear.className = 'so-link'; clear.textContent = 'Löschen';
+  clear.onclick = () => { writeHistory([]); renderHistory(); };
+  head.append(t, clear);
+  box.append(head);
+  list.forEach((x, idx) => {
+    const row = document.createElement('div');
+    row.className = 'so-history-row';
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'so-history-item';
+    const m = document.createElement('span');
+    m.className = 'muted small'; m.textContent = x.mode === 'members' ? 'Mitglied' : 'Artikel';
+    b.append(document.createTextNode(x.q + ' '), m);
+    b.onclick = () => { $('soInput').value = x.q; setSearchMode(x.mode === 'members' ? 'members' : 'items'); };
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'icon so-del'; del.setAttribute('aria-label', 'Eintrag entfernen'); del.textContent = '×';
+    del.onclick = () => { const h = readHistory(); h.splice(idx, 1); writeHistory(h); renderHistory(); };
+    row.append(b, del);
+    box.append(row);
+  });
+}
+function openSearch() {
+  $('searchOverlay').hidden = false;
+  document.body.classList.add('searching');
+  renderHistory();
+  runSearch();
+  $('soInput').focus();
+}
+function closeSearch() {
+  if ($('searchOverlay').hidden) return;
+  $('searchOverlay').hidden = true;
+  document.body.classList.remove('searching');
+}
 function setSearchMode(mode) {
   state.searchMode = mode;
   document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
-  $('searchInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
+  $('soInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
   runSearch();
 }
 async function runSearch() {
-  const q = $('searchInput').value, mode = state.searchMode, t = q.trim();
+  const q = $('soInput').value, mode = state.searchMode, t = q.trim();
   const box = $('memberResults');
-  // Mit Suchbegriff (oder im Mitglieder-Modus) ersetzen die Treffer die eigene Liste
-  $('view-closet').classList.toggle('members-mode', mode === 'members' || t.length > 0);
-  if (mode === 'items' && !t) { box.hidden = true; box.replaceChildren(); return; }
+  renderHistory();
+  if (!t) { box.hidden = true; box.replaceChildren(); return; }
   box.hidden = false;
   box.replaceChildren();
   const note = (m) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = m; box.append(p); };
-  const stale = () => $('searchInput').value !== q || state.searchMode !== mode; // inzwischen weitergetippt
+  const stale = () => $('soInput').value !== q || state.searchMode !== mode; // inzwischen weitergetippt
   if (mode === 'items') {
     if (t.length < 2) return note('Gib mindestens 2 Zeichen ein.');
     try { await Profile.searchItems(t, box, stale); } catch (e) { console.error(e); if (!stale()) { box.replaceChildren(); note('Die Suche ist gerade nicht verfügbar.'); } }
@@ -411,11 +461,18 @@ async function runSearch() {
     b.type = 'button';
     b.className = 'member';
     b.textContent = n;
-    b.onclick = () => { location.hash = '#/u/' + n; };
+    b.onclick = () => { rememberSearch(); location.hash = '#/u/' + n; };
     box.append(b);
   }
 }
-$('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
+$('searchOpen').onclick = openSearch;
+$('soClose').onclick = closeSearch;
+$('searchOverlay').addEventListener('click', (e) => { if (e.target === $('searchOverlay')) closeSearch(); });
+$('soInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
+$('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); rememberSearch(); runSearch(); $('soInput').blur(); } });
+$('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSearch(); });
+window.addEventListener('hashchange', closeSearch);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 
 /* Upload-Dialog: pro Foto Vorschau, Name, Kategorie und optional „Hintergrund entfernen“ */
