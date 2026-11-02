@@ -2083,3 +2083,12 @@ async function startApp(userId) {
 }
 
 Cloud.boot();
+
+// Tipp auf den abgedunkelten Bereich neben einem Fenster schließt es (außer beim Hochladen, damit nichts verloren geht)
+document.querySelectorAll('dialog').forEach((d) => {
+  if (d.id === 'uploadDialog' || d.id === 'confirmDialog') return;
+  const outside = (e) => { const r = d.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; };
+  let down = false;
+  d.addEventListener('pointerdown', (e) => { down = e.target === d && outside(e); });
+  d.addEventListener('click', (e) => { if (down && e.target === d && outside(e)) d.close(); down = false; });
+});

@@ -117,7 +117,7 @@ input[type=text]:focus, input[type=password]:focus, select:focus { outline: 0; b
 /* Details und Sichtbarkeit in den Bearbeiten-Dialogen */
 .more { margin-bottom: 14px; }
 .more summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 6px 0 12px; }
-.more-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.more-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 12px; }
 @media (max-width: 420px) { .more-grid { grid-template-columns: 1fr; } }
 
 /* Upload */
@@ -565,3 +565,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .thread-form input { flex: 1; min-width: 0; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .row2 .field { min-width: 0; }
+
+/* Dialoge: feste Breite, nur senkrecht scrollen */
+dialog { overflow-x: hidden; overscroll-behavior-x: none; }
+dialog .field input, dialog .field select, dialog .field textarea { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
