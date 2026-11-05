@@ -723,7 +723,7 @@ async function runSearch() {
   let names;
   try { names = await Profile.search(t); } catch (e) { console.error(e); if (!stale()) fail('Die Mitgliedersuche ist gerade nicht verfügbar.'); return; }
   if (stale()) return;
-  if (!names.length) return note('Keine Mitglieder gefunden. Gefunden werden nur Profile mit öffentlichen Teilen.');
+  if (!names.length) return note('Keine Mitglieder gefunden. Prüfe die Schreibweise des Benutzernamens.');
   for (const n of names) {
     const b = document.createElement('button');
     b.type = 'button';
