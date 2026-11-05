@@ -346,6 +346,27 @@ const Profile = (() => {
     return btn;
   }
 
+  // Listen unter „Profil“: wer mir folgt und wem ich folge
+  async function loadPeople(which, box) {
+    const sb = Cloud.client();
+    if (!sb || !Cloud.user() || !navigator.onLine) return message(box, 'Dafür brauchst du eine Internetverbindung.', { retry: () => loadPeople(which, box) });
+    message(box, 'Lade …', { loading: true });
+    try {
+      const { data, error } = await sb.rpc(which === 'followers' ? 'my_followers' : 'my_follows');
+      if (error) throw error;
+      const names = data || [];
+      if (which === 'following') { follows.clear(); names.forEach((n) => follows.add(n)); }
+      box.replaceChildren();
+      if (!names.length) return message(box, which === 'followers' ? 'Dir folgt noch niemand.' : 'Du folgst noch niemandem. Über „Suche“ findest du Mitglieder.');
+      for (const n of names) {
+        const b = el('button', 'member', n);
+        b.type = 'button';
+        b.onclick = () => { location.hash = '#/u/' + n; };
+        box.append(b);
+      }
+    } catch (e) { console.error(e); message(box, 'Die Liste konnte nicht geladen werden.', { retry: () => loadPeople(which, box) }); }
+  }
+
   /* ---------- Melden und Sperren ---------- */
   const blocked = new Set();
   async function loadBlocks(sb) {
@@ -825,5 +846,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, shape));
   }
 
-  return { start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
+  return { loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
 })();

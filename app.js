@@ -461,7 +461,7 @@ document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () =>
 document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien
 $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
 // Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Wunschliste sind Unterseiten von „Profil“.
-const ME_VIEWS = ['closet', 'outfits', 'wishlist'];
+const ME_VIEWS = ['closet', 'outfits', 'wishlist', 'followers', 'following'];
 const topTab = (name) => (name === 'builder' || ME_VIEWS.includes(name) ? 'me' : name);
 function showView(name) {
   if (name === 'me') name = state.lastMe || 'closet';
@@ -477,6 +477,7 @@ function showView(name) {
   if (name === 'feed') loadFeed(true);
   if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
   if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
+  if (name === 'followers' || name === 'following') Profile.loadPeople(name, $(name === 'followers' ? 'followersList' : 'followingList'));
   if (ME_VIEWS.includes(name)) renderMeHead();
   window.scrollTo(0, 0);
 }
@@ -528,10 +529,7 @@ function feedEmptyState(kind) {
   const cta = $('feedEmptyCta');
   const go = (label, fn) => { cta.textContent = label; cta.onclick = fn; cta.hidden = false; };
   cta.hidden = true;
-  if (kind === 'following') {
-    $('feedEmptyText').textContent = 'Hier erscheinen die Teile von Profilen, denen du folgst. Du folgst noch niemandem oder sie haben nichts öffentlich.';
-    go('Mitglieder suchen', () => { setSearchMode('members'); showView('search'); });
-  } else if (kind === 'saved') {
+  if (kind === 'saved') {
     $('feedEmptyText').textContent = 'Noch nichts gemerkt. Auf der Seite eines Teils kannst du es mit „Merken“ speichern.';
   } else if (kind === 'outfits') {
     $('feedEmptyText').textContent = 'Noch keine öffentlichen Outfits von anderen.';

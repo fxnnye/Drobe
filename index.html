@@ -78,7 +78,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <div class="chips feed-switch" id="feedSwitch">
       <button class="chip active" type="button" data-kind="items">Teile</button>
       <button class="chip" type="button" data-kind="outfits">Outfits</button>
-      <button class="chip" type="button" data-kind="following">Folge ich</button>
       <button class="chip" type="button" data-kind="saved">Gemerkt</button>
     </div>
     <div class="grid feed-grid" id="feedGrid"></div>
@@ -142,6 +141,8 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="subtab active" type="button" data-sub="closet">Schrank</button>
       <button class="subtab" type="button" data-sub="outfits">Outfits <span id="outfitCount" class="badge">0</span></button>
       <button class="subtab" type="button" data-sub="wishlist">Wunschliste</button>
+      <button class="subtab" type="button" data-sub="followers">Follower</button>
+      <button class="subtab" type="button" data-sub="following">Folge ich</button>
     </div>
   </div>
 
@@ -163,6 +164,14 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     </div>
     <div class="grid" id="wishGrid"></div>
     <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
+  </section>
+
+  <!-- FOLLOWER UND FOLGE ICH -->
+  <section id="view-followers" class="view">
+    <div class="member-results people" id="followersList"></div>
+  </section>
+  <section id="view-following" class="view">
+    <div class="member-results people" id="followingList"></div>
   </section>
 
   <!-- HINZUFÜGEN -->

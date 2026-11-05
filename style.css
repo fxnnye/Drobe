@@ -765,3 +765,4 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 
 #authConsentRow input { margin-top: 2px; flex: none; }
 .card .img { width: 100%; border: 0; padding: 0; cursor: pointer; }
 .outfits .card .img { border: 1px solid var(--gray-hover); }
+.subtab { white-space: nowrap; padding-left: 4px; padding-right: 4px; font-size: 13.5px; }
