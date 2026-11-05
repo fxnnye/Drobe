@@ -467,7 +467,7 @@ function showView(name) {
   if (name === 'me') name = state.lastMe || 'closet';
   const prev = state.view;
   state.view = name;
-  if (ME_VIEWS.includes(name)) state.lastMe = name;
+  if (['closet', 'outfits', 'wishlist'].includes(name)) state.lastMe = name;
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
   document.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('active', t.dataset.sub === (name === 'builder' ? 'outfits' : name)));
   $('meBar').hidden = !ME_VIEWS.includes(name);
@@ -483,6 +483,9 @@ function showView(name) {
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
 document.querySelectorAll('.subtab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.sub)));
+$('meFollowers').onclick = () => showView('followers');
+$('meFollowing').onclick = () => showView('following');
+document.querySelectorAll('[data-back-me]').forEach((b) => { b.onclick = () => showView('me'); });
 $('meProfile').onclick = () => { const u = Cloud.user(); if (u) location.hash = '#/u/' + u.name; };
 
 function renderMeHead() {

@@ -318,13 +318,20 @@ const Profile = (() => {
   /* ---------- Folgen und Merken ---------- */
   const follows = new Set(); // Benutzernamen, denen ich folge
   const saved = new Set();   // „benutzername/teil-id“ der gemerkten Teile
+  let followerCount = 0;
+  function showCounts() {
+    $('meFollowers').textContent = followerCount + ' Follower';
+    $('meFollowing').textContent = follows.size + ' Folge ich';
+  }
   async function loadSocial() {
     const sb = Cloud.client();
     if (!sb || !Cloud.user() || !navigator.onLine) return;
     try {
-      const [f, v] = await Promise.all([sb.rpc('my_follows'), sb.rpc('my_save_ids')]);
+      const [f, v, fr] = await Promise.all([sb.rpc('my_follows'), sb.rpc('my_save_ids'), sb.rpc('my_followers')]);
       if (!f.error) { follows.clear(); (f.data || []).forEach((n) => follows.add(n)); }
       if (!v.error) { saved.clear(); (v.data || []).forEach((n) => saved.add(n)); }
+      if (!fr.error) followerCount = (fr.data || []).length;
+      showCounts();
     } catch (e) { console.error(e); /* Funktionen fehlen noch oder kein Netz: dann gilt der letzte Stand */ }
   }
   // Schalter für Folgen oder Merken; `rpcName` liefert den neuen Zustand zurück
@@ -335,6 +342,7 @@ const Profile = (() => {
         const { data, error } = await Cloud.client().rpc(rpcName, args);
         if (error) throw error;
         data ? set.add(key) : set.delete(key);
+        showCounts();
         btn.textContent = data ? labels[1] : labels[0];
         btn.classList.toggle('on', !!data);
       } catch (e) { console.error(e); toast((e && e.message) || 'Das hat nicht geklappt.'); }
@@ -355,7 +363,8 @@ const Profile = (() => {
       const { data, error } = await sb.rpc(which === 'followers' ? 'my_followers' : 'my_follows');
       if (error) throw error;
       const names = data || [];
-      if (which === 'following') { follows.clear(); names.forEach((n) => follows.add(n)); }
+      if (which === 'following') { follows.clear(); names.forEach((n) => follows.add(n)); } else followerCount = names.length;
+      showCounts();
       box.replaceChildren();
       if (!names.length) return message(box, which === 'followers' ? 'Dir folgt noch niemand.' : 'Du folgst noch niemandem. Über „Suche“ findest du Mitglieder.');
       for (const n of names) {

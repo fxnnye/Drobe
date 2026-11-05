@@ -766,3 +766,5 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 
 .card .img { width: 100%; border: 0; padding: 0; cursor: pointer; }
 .outfits .card .img { border: 1px solid var(--gray-hover); }
 .subtab { white-space: nowrap; padding-left: 4px; padding-right: 4px; font-size: 13.5px; }
+.me-social { display: block; }
+.linkish { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }

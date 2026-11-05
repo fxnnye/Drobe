@@ -134,6 +134,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <div class="me-info">
         <strong id="meName"></strong>
         <span class="muted small" id="meCounts"></span>
+        <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button></span>
       </div>
       <button class="btn" type="button" id="meProfile">Ansehen</button>
     </div>
@@ -141,8 +142,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="subtab active" type="button" data-sub="closet">Schrank</button>
       <button class="subtab" type="button" data-sub="outfits">Outfits <span id="outfitCount" class="badge">0</span></button>
       <button class="subtab" type="button" data-sub="wishlist">Wunschliste</button>
-      <button class="subtab" type="button" data-sub="followers">Follower</button>
-      <button class="subtab" type="button" data-sub="following">Folge ich</button>
+
     </div>
   </div>
 
@@ -168,9 +168,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
   <!-- FOLLOWER UND FOLGE ICH -->
   <section id="view-followers" class="view">
+    <button class="btn builder-back" type="button" data-back-me>← Zurück</button>
     <div class="member-results people" id="followersList"></div>
   </section>
   <section id="view-following" class="view">
+    <button class="btn builder-back" type="button" data-back-me>← Zurück</button>
     <div class="member-results people" id="followingList"></div>
   </section>
 
