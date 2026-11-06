@@ -195,6 +195,7 @@ const Cloud = (() => {
     $('auth').hidden = true;
     $('guestActions').hidden = false;
     Profile.start();
+    if (linkBad) { toast('Der Link ist abgelaufen oder schon benutzt. Fordere unter „Passwort vergessen?“ einen neuen an.'); showAuth(false); }
   }
 
   const APP_URL = 'https://fxnnye.github.io/Drobe/';
@@ -354,6 +355,9 @@ const Cloud = (() => {
     location.reload();
   }
 
+  // Abgelaufener oder schon benutzter Mail-Link: Supabase hängt den Fehler an die Adresse
+  const linkBad = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
+  if (linkBad) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* egal */ } }
   let recovering = /type=recovery/.test(location.hash);
   let confirmedNow = /type=(signup|email_change)/.test(location.hash);
   async function enter(u) {
@@ -370,6 +374,7 @@ const Cloud = (() => {
     await startApp(user.id);
     Profile.start();
     sync();
+    if (linkBad) toast('Der Link ist abgelaufen oder schon benutzt. Fordere unter „Passwort vergessen?“ einen neuen an.');
     if (recovering) { recovering = false; $('resetDialog').showModal(); }
     if (confirmedNow) { confirmedNow = false; toast('E-Mail-Adresse bestätigt'); }
   }
