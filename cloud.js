@@ -170,7 +170,7 @@ const Cloud = (() => {
 
   function authError(e) {
     const m = String((e && e.message) || e);
-    if (/invalid login/i.test(m)) return 'E-Mail, Benutzername oder Passwort stimmt nicht.';
+    if (/invalid login/i.test(m)) return 'E-Mail-Adresse oder Passwort stimmt nicht.';
     if (/Benutzername vergeben|Database error saving/i.test(m)) return 'Dieser Benutzername ist schon vergeben.';
     if (/already registered|already been registered/i.test(m)) return 'Diese E-Mail-Adresse ist schon registriert.';
     if (/not confirmed/i.test(m)) return 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir dazu eine Mail geschickt.';
@@ -220,7 +220,7 @@ const Cloud = (() => {
     $('authNote').hidden = !reg;
     $('authMailRow').hidden = !reg;
     $('authMail').required = reg;
-    $('authNameLabel').textContent = reg ? 'Benutzername' : 'E-Mail oder Benutzername';
+    $('authNameLabel').textContent = reg ? 'Benutzername' : 'E-Mail-Adresse';
     $('authName').maxLength = reg ? 20 : 120;
     $('authConsentRow').hidden = !reg;
     $('authPass').autocomplete = reg ? 'new-password' : 'current-password';
@@ -261,10 +261,10 @@ const Cloud = (() => {
         } finally { $('authSubmit').disabled = false; }
         return;
       }
-      // Anmelden: mit E-Mail oder (alte Konten) mit Benutzername
+      // Anmelden: mit E-Mail; ein Name ohne @ gilt nur für alte Konten mit Pseudo-Adresse
       const login = typed.toLowerCase();
       const email = login.includes('@') ? login : (NAME_OK.test(login) ? toMail(login) : '');
-      if (!email) { err.textContent = 'Gib deine E-Mail-Adresse oder deinen Benutzernamen ein.'; return; }
+      if (!email) { err.textContent = 'Gib deine E-Mail-Adresse ein.'; return; }
       $('authSubmit').disabled = true;
       try {
         const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
