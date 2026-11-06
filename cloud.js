@@ -219,6 +219,7 @@ const Cloud = (() => {
     $('authNote').hidden = !reg;
     $('authMailRow').hidden = !reg;
     $('authMail').required = reg;
+    $('authForgot').hidden = reg;
     $('authNameLabel').textContent = reg ? 'Benutzername' : 'E-Mail-Adresse';
     $('authName').maxLength = reg ? 20 : 120;
     $('authConsentRow').hidden = !reg;
@@ -228,6 +229,33 @@ const Cloud = (() => {
 
   function bindAuthUi() {
     $('authSwitch').onclick = () => setMode(!registering);
+    $('authForgot').onclick = async () => {
+      const err = $('authError');
+      const mail = $('authName').value.trim().toLowerCase();
+      if (!MAIL_OK.test(mail)) { err.textContent = 'Trag oben deine E-Mail-Adresse ein, dann schicken wir dir einen Link.'; return; }
+      if (!sb) { err.textContent = 'Gerade nicht erreichbar. Prüfe dein Internet.'; return; }
+      try {
+        const { error } = await sb.auth.resetPasswordForEmail(mail, { redirectTo: APP_URL });
+        if (error) throw error;
+        err.textContent = '';
+        toast('Falls es ein Konto gibt, ist eine Mail unterwegs.');
+      } catch (ex) { err.textContent = authError(ex); }
+    };
+    $('resetSave').onclick = async () => {
+      const err = $('resetErr');
+      const a = $('resetNew').value, b = $('resetNew2').value;
+      err.textContent = '';
+      if (a.length < 8) { err.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
+      if (a !== b) { err.textContent = 'Die beiden Passwörter sind nicht gleich.'; return; }
+      $('resetSave').disabled = true;
+      try {
+        const { error } = await sb.auth.updateUser({ password: a });
+        if (error) throw error;
+        $('resetNew').value = ''; $('resetNew2').value = '';
+        $('resetDialog').close();
+        toast('Passwort geändert.');
+      } catch (ex) { err.textContent = authError(ex); } finally { $('resetSave').disabled = false; }
+    };
     $('authCancel').onclick = () => { $('auth').hidden = true; document.body.classList.remove('locked'); };
     $('guestLogin').onclick = () => showAuth(false);
     $('guestRegister').onclick = () => showAuth(true);
@@ -326,6 +354,7 @@ const Cloud = (() => {
     location.reload();
   }
 
+  let recovering = /type=recovery/.test(location.hash);
   let confirmedNow = /type=(signup|email_change)/.test(location.hash);
   async function enter(u) {
     let name = (u.user_metadata && u.user_metadata.username) || u.name;
@@ -341,6 +370,7 @@ const Cloud = (() => {
     await startApp(user.id);
     Profile.start();
     sync();
+    if (recovering) { recovering = false; $('resetDialog').showModal(); }
     if (confirmedNow) { confirmedNow = false; toast('E-Mail-Adresse bestätigt'); }
   }
 
