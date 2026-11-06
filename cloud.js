@@ -1,9 +1,11 @@
-// Konto und Sync: Anmeldung mit Benutzername + Passwort (Supabase), Abgleich mit dem lokalen Speicher.
+// Konto und Sync: Anmeldung mit E-Mail + Benutzername + Passwort (Supabase), Abgleich mit dem lokalen Speicher.
 // Lokal bleibt alles in IndexedDB, damit die App schnell ist und offline läuft; Änderungen gehen im Hintergrund ins Konto.
 const Cloud = (() => {
   const SUPABASE_URL = 'https://elffmxtoxvygziiztjhd.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_3goVqjFm8wKraIugwDH5pw_QZGH23tM'; // öffentlicher Schlüssel, der Schutz liegt in den Zugriffsregeln der Datenbank
-  const MAIL_DOMAIN = 'drobe.example.com'; // es wird nie eine Mail verschickt, der Benutzername wird nur zu einer Pseudo-Adresse
+  const MAIL_DOMAIN = 'drobe.example.com'; // alte Konten haben noch eine Pseudo-Adresse name@drobe.example.com
+  const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const isPseudo = (m) => String(m || '').toLowerCase().endsWith('@' + MAIL_DOMAIN);
   const KINDS = ['items', 'outfits', 'wishlist'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
   const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp'];
@@ -168,8 +170,12 @@ const Cloud = (() => {
 
   function authError(e) {
     const m = String((e && e.message) || e);
-    if (/invalid login/i.test(m)) return 'Benutzername oder Passwort stimmt nicht.';
-    if (/already registered|already been registered/i.test(m)) return 'Dieser Benutzername ist schon vergeben.';
+    if (/invalid login/i.test(m)) return 'E-Mail, Benutzername oder Passwort stimmt nicht.';
+    if (/Benutzername vergeben|Database error saving/i.test(m)) return 'Dieser Benutzername ist schon vergeben.';
+    if (/already registered|already been registered/i.test(m)) return 'Diese E-Mail-Adresse ist schon registriert.';
+    if (/not confirmed/i.test(m)) return 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir dazu eine Mail geschickt.';
+    if (/invalid.*email|email.*invalid/i.test(m)) return 'Diese E-Mail-Adresse sieht nicht richtig aus.';
+    if (/Ungültiger Benutzername/i.test(m)) return 'Benutzername: 3 bis 20 Zeichen, nur Buchstaben, Zahlen, Punkt, Strich und Unterstrich.';
     if (/password/i.test(m)) return 'Das Passwort ist zu schwach. Nimm mindestens 8 Zeichen.';
     if (/rate limit|too many/i.test(m)) return 'Zu viele Versuche. Bitte warte kurz.';
     if (/fetch|network/i.test(m)) return 'Keine Verbindung. Prüfe dein Internet.';
@@ -192,6 +198,19 @@ const Cloud = (() => {
     Profile.start();
   }
 
+  const APP_URL = 'https://fxnnye.github.io/Drobe/';
+  // Nach der Registrierung: Hinweis, dass die Mail unterwegs ist
+  function showSent(name, mail) {
+    const f = $('authForm');
+    f.replaceChildren();
+    const h = document.createElement('h1'); h.textContent = 'Drobe';
+    const h2 = document.createElement('h2'); h2.textContent = 'Fast geschafft';
+    const p = document.createElement('p'); p.textContent = `Hallo ${name}, wir haben dir eine Mail an ${mail} geschickt. Tippe darin auf „E-Mail bestätigen“, dann bist du drin. Schau auch im Spam-Ordner nach.`;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary full'; b.textContent = 'Zur Anmeldung';
+    b.onclick = () => location.reload();
+    f.append(h, h2, p, b);
+  }
+
   let registering = false;
   function setMode(reg) {
     registering = reg;
@@ -199,6 +218,10 @@ const Cloud = (() => {
     $('authSubmit').textContent = reg ? 'Konto erstellen' : 'Anmelden';
     $('authSwitch').textContent = reg ? 'Ich habe schon ein Konto' : 'Neues Konto erstellen';
     $('authNote').hidden = !reg;
+    $('authMailRow').hidden = !reg;
+    $('authMail').required = reg;
+    $('authNameLabel').textContent = reg ? 'Benutzername' : 'E-Mail oder Benutzername';
+    $('authName').maxLength = reg ? 20 : 120;
     $('authConsentRow').hidden = !reg;
     $('authPass').autocomplete = reg ? 'new-password' : 'current-password';
     $('authError').textContent = '';
@@ -211,18 +234,40 @@ const Cloud = (() => {
     $('guestRegister').onclick = () => showAuth(true);
     $('authForm').onsubmit = async (e) => {
       e.preventDefault();
-      const name = cleanName($('authName').value);
+      const typed = $('authName').value.trim();
       const pass = $('authPass').value;
       const err = $('authError');
       err.textContent = '';
-      if (!NAME_OK.test(name)) { err.textContent = 'Benutzername: 3 bis 20 Zeichen, nur Buchstaben, Zahlen, Punkt, Strich und Unterstrich.'; return; }
-      if (registering && pass.length < 8) { err.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
-      if (registering && !$('authConsent').checked) { err.textContent = 'Bitte stimme den Nutzungsbedingungen und der Datenschutzerklärung zu.'; return; }
       if (!sb) { err.textContent = 'Anmeldung gerade nicht erreichbar. Prüfe dein Internet.'; return; }
+      if (registering) {
+        const name = cleanName(typed);
+        const mail = $('authMail').value.trim().toLowerCase();
+        if (!MAIL_OK.test(mail) || isPseudo(mail)) { err.textContent = 'Bitte gib eine echte E-Mail-Adresse ein.'; return; }
+        if (!NAME_OK.test(name)) { err.textContent = 'Benutzername: 3 bis 20 Zeichen, nur Buchstaben, Zahlen, Punkt, Strich und Unterstrich.'; return; }
+        if (pass.length < 8) { err.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
+        if (!$('authConsent').checked) { err.textContent = 'Bitte stimme den Nutzungsbedingungen und der Datenschutzerklärung zu.'; return; }
+        $('authSubmit').disabled = true;
+        try {
+          const free = await sb.rpc('username_free', { p_name: name });
+          if (free.error) throw free.error;
+          if (free.data === false) { err.textContent = 'Dieser Benutzername ist schon vergeben.'; return; }
+          const { data, error } = await sb.auth.signUp({ email: mail, password: pass, options: { data: { username: name }, emailRedirectTo: APP_URL } });
+          if (error) throw error;
+          $('authPass').value = '';
+          if (data.session) return enter(data.session.user); // falls die Bestätigung in Supabase ausgeschaltet ist
+          showSent(name, mail);
+        } catch (ex) {
+          err.textContent = authError(ex);
+        } finally { $('authSubmit').disabled = false; }
+        return;
+      }
+      // Anmelden: mit E-Mail oder (alte Konten) mit Benutzername
+      const login = typed.toLowerCase();
+      const email = login.includes('@') ? login : (NAME_OK.test(login) ? toMail(login) : '');
+      if (!email) { err.textContent = 'Gib deine E-Mail-Adresse oder deinen Benutzernamen ein.'; return; }
       $('authSubmit').disabled = true;
       try {
-        const args = { email: toMail(name), password: pass };
-        const { data, error } = registering ? await sb.auth.signUp(args) : await sb.auth.signInWithPassword(args);
+        const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
         if (!data.session) throw new Error('Anmeldung nicht abgeschlossen. Bitte versuche es erneut.');
         $('authPass').value = '';
@@ -283,9 +328,37 @@ const Cloud = (() => {
     location.reload();
   }
 
+  // Alte Konten: echte Adresse nachtragen
+  function askMail() {
+    const dlg = $('mailDialog');
+    if (dlg.open) return;
+    $('mailErr').textContent = '';
+    dlg.showModal();
+  }
+  function bindMailUi() {
+    $('mailLater').onclick = () => $('mailDialog').close();
+    $('mailSave').onclick = async () => {
+      const mail = $('mailNew').value.trim().toLowerCase();
+      const err = $('mailErr');
+      err.textContent = '';
+      if (!MAIL_OK.test(mail) || isPseudo(mail)) { err.textContent = 'Bitte gib eine echte E-Mail-Adresse ein.'; return; }
+      $('mailSave').disabled = true;
+      try {
+        const { error } = await sb.auth.updateUser({ email: mail }, { emailRedirectTo: APP_URL });
+        if (error) throw error;
+        $('mailDialog').close();
+        toast('Mail geschickt. Tippe darin auf den Link.');
+      } catch (ex) { err.textContent = authError(ex); } finally { $('mailSave').disabled = false; }
+    };
+  }
+
+  let confirmedNow = /type=(signup|email_change)/.test(location.hash);
   async function enter(u) {
-    const name = (u.email || '').split('@')[0] || u.name || '';
-    user = { id: u.id, name };
+    let name = (u.user_metadata && u.user_metadata.username) || u.name || (isPseudo(u.email) ? u.email.split('@')[0] : '');
+    if (sb && navigator.onLine && u.email) {
+      try { const r = await sb.rpc('my_username'); if (r.data) name = r.data; } catch (e) { /* offline: gemerkter Name */ }
+    }
+    user = { id: u.id, name, email: u.email || '', pseudo: isPseudo(u.email) };
     try { localStorage.setItem('drobe-last-user', JSON.stringify(user)); } catch (e) { /* egal */ }
     $('auth').hidden = true;
     document.body.classList.remove('locked', 'guest');
@@ -294,6 +367,8 @@ const Cloud = (() => {
     await startApp(user.id);
     Profile.start();
     sync();
+    if (user.pseudo) setTimeout(askMail, 1500);
+    if (confirmedNow) { confirmedNow = false; toast('E-Mail-Adresse bestätigt'); }
   }
 
   function loadLib() {
@@ -308,6 +383,7 @@ const Cloud = (() => {
 
   async function boot() {
     bindAuthUi();
+    bindMailUi();
     setMode(false);
     try {
       await loadLib();

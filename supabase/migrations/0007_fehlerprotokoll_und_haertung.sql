@@ -65,6 +65,14 @@ grant execute on function public.admin_clear_errors() to authenticated;
 alter default privileges for role postgres in schema public revoke execute on functions from anon;
 alter default privileges for role postgres in schema public revoke execute on functions from public;
 
+-- Hilfsfunktionen, die Gäste nicht direkt aufrufen müssen (Trigger brauchen kein Ausführungsrecht beim Auslösen).
+-- is_public_object bleibt für Gäste frei, weil die Speicher-Regel „öffentliche Bilder lesen“ sie mit deren Rechten aufruft.
+revoke all on function public.handle_new_user() from public, anon, authenticated;
+revoke all on function public.limit_records() from public, anon, authenticated;
+revoke all on function public.is_public_record(text, jsonb) from public, anon, authenticated;
+revoke all on function public.is_thread_object(text) from public, anon;
+grant execute on function public.is_thread_object(text) to authenticated;
+
 -- 3. Foto-Speicher: nur Bilder, höchstens 10 MB pro Datei
 update storage.buckets set file_size_limit = 10485760, allowed_mime_types = array['image/png', 'image/jpeg', 'image/webp']
 where id = 'images';

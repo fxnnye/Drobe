@@ -1,0 +1,7 @@
+<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1c1b1a">
+  <h1 style="font-size:22px;margin:0 0 16px">Drobe</h1>
+  <p style="font-size:16px;line-height:1.5">Hallo {{ if .Data.username }}{{ .Data.username }}{{ else }}du{{ end }},</p>
+  <p style="font-size:16px;line-height:1.5">hiermit bestätigst du, dass dies deine E-Mail-Adresse für dein Drobe-Konto ist.</p>
+  <p style="margin:28px 0"><a href="{{ .ConfirmationURL }}" style="background:#1c1b1a;color:#fff;text-decoration:none;padding:14px 22px;border-radius:12px;font-size:16px;display:inline-block">E-Mail bestätigen</a></p>
+  <p style="font-size:13px;color:#777;line-height:1.5">Wenn du dich nicht bei Drobe registriert hast, kannst du diese Mail einfach ignorieren.</p>
+</div>

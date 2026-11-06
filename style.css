@@ -109,10 +109,10 @@ dialog h2 { margin: 0 0 8px; font-size: 22px; }
 
 .field, .field-inline { display: flex; flex-direction: column; gap: 6px; font-size: 13px; margin-bottom: 14px; }
 .field-inline { margin: 0; }
-input[type=text], input[type=password], select {
+input[type=text], input[type=email], input[type=password], select {
   background: var(--surface); border: 2px solid var(--field); border-radius: 16px; padding: 11px 14px; width: 100%; font-size: 16px;
 }
-input[type=text]:focus, input[type=password]:focus, select:focus { outline: 0; border-color: #0074e8; }
+input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, select:focus { outline: 0; border-color: #0074e8; }
 
 /* Details und Sichtbarkeit in den Bearbeiten-Dialogen */
 .more { margin-bottom: 14px; }
@@ -626,11 +626,11 @@ dialog .field input, dialog .field select, dialog .field textarea { width: 100%;
 .filter-row { margin-bottom: var(--gap); }
 
 /* Eingabefelder und Auswahl: gleiche Höhe, gleiche Ecken, gleiche Füllung */
-input[type=text], input[type=password], select {
+input[type=text], input[type=email], input[type=password], select {
   min-height: var(--h-ctrl); padding: 0 16px; border: 0; border-radius: var(--r-ctrl); background-color: var(--gray); font-size: 16px;
 }
 select { padding-right: 44px; min-width: 0; font-weight: 600; }
-input[type=text]:focus, input[type=password]:focus, select:focus { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
+input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, select:focus { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 .panel input[type=text], .panel select, .upload input[type=text], .upload select, .account input { background-color: var(--surface); }
 .upload select { min-width: 190px; }
 .field, .field-inline { gap: 6px; }

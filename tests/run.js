@@ -140,7 +140,7 @@ const rpc = async (name, args = {}) => {
 };
 const denied = (r) => r.status === 401 || r.status === 403 || r.status === 404 || (r.body && (r.body.code === '42501' || r.body.code === 'PGRST202'));
 for (const [fn, args] of [
-  ['my_threads', {}], ['my_follows', {}], ['my_followers', {}], ['my_saves', {}], ['my_save_ids', {}], ['my_blocks', {}], ['my_interests', {}],
+  ['my_threads', {}], ['my_follows', {}], ['my_followers', {}], ['my_username', {}], ['my_saves', {}], ['my_save_ids', {}], ['my_blocks', {}], ['my_interests', {}],
   ['is_admin', {}], ['admin_reports', {}], ['admin_errors', {}], ['delete_my_account', {}], ['my_profile_text', {}],
   ['update_my_profile', { p_bio: 'x', p_city: 'y' }], ['toggle_follow', { p_username: 'fxnnye' }], ['toggle_save', { p_username: 'fxnnye', p_item: 'x' }],
   ['send_interest', { p_to: 'fxnnye', p_kind: 'interest', p_record_id: 'x' }], ['report_user', { p_username: 'fxnnye', p_reason: 'spam' }],

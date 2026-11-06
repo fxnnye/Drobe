@@ -19,17 +19,32 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="locked">
+<dialog id="mailDialog">
+  <form method="dialog" id="mailForm">
+    <h2>E-Mail-Adresse hinzufügen</h2>
+    <p class="muted small">Dein Konto hat noch keine echte E-Mail-Adresse. Trag sie ein, wir schicken dir eine Mail zur Bestätigung. Danach kannst du dich auch damit anmelden.</p>
+    <label class="field">E-Mail-Adresse
+      <input type="email" id="mailNew" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120">
+    </label>
+    <p class="auth-error" id="mailErr" role="alert"></p>
+    <button class="btn primary full" type="button" id="mailSave">Bestätigungs-Mail senden</button>
+    <button class="btn full" type="button" id="mailLater">Später</button>
+  </form>
+</dialog>
 <div class="auth" id="auth" hidden>
   <form class="auth-card" id="authForm" autocomplete="on">
     <h1>Drobe</h1>
     <h2 id="authTitle">Anmelden</h2>
-    <label class="field">Benutzername
-      <input type="text" id="authName" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20" required>
+    <label class="field" id="authMailRow" hidden>E-Mail-Adresse
+      <input type="email" id="authMail" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120">
+    </label>
+    <label class="field"><span id="authNameLabel">Benutzername</span>
+      <input type="text" id="authName" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120" required>
     </label>
     <label class="field">Passwort
       <input type="password" id="authPass" autocomplete="current-password" required>
     </label>
-    <p class="muted small" id="authNote" hidden>Merk dir das Passwort gut. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Eine Backup-Datei hilft im Notfall.</p>
+    <p class="muted small" id="authNote" hidden>Wir schicken dir eine Mail, mit der du die Adresse bestätigst. Erst danach kannst du dich anmelden. Der Benutzername ist später für andere sichtbar, die E-Mail-Adresse nicht.</p>
     <label class="check" id="authConsentRow" hidden>
       <input type="checkbox" id="authConsent">
       <span>Ich habe die <a href="#" data-legal="nutzung">Nutzungsbedingungen</a> und die <a href="#" data-legal="datenschutz">Datenschutzerklärung</a> gelesen und bin einverstanden.</span>
