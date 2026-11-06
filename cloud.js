@@ -356,8 +356,11 @@ const Cloud = (() => {
   }
 
   // Abgelaufener oder schon benutzter Mail-Link: Supabase hängt den Fehler an die Adresse
-  const linkBad = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
+  let linkBad = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
   if (linkBad) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* egal */ } }
+  // Passwort-Link: die Mail führt direkt auf die App, erst die App löst ihn ein (Vorschau-Programme verbrauchen ihn so nicht)
+  const resetToken = (() => { const p = new URLSearchParams(location.search); return p.get('type') === 'recovery' ? p.get('token_hash') : null; })();
+  if (resetToken) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* egal */ } }
   let recovering = /type=recovery/.test(location.hash);
   let confirmedNow = /type=(signup|email_change)/.test(location.hash);
   async function enter(u) {
@@ -397,6 +400,12 @@ const Cloud = (() => {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
     } catch (e) { sb = null; }
     let session = null;
+    if (sb && resetToken) {
+      try {
+        const r = await sb.auth.verifyOtp({ token_hash: resetToken, type: 'recovery' });
+        if (r.error) linkBad = true; else recovering = true;
+      } catch (e) { linkBad = true; }
+    }
     if (sb) { try { session = (await sb.auth.getSession()).data.session; } catch (e) { /* offline */ } }
     if (session) return enter(session.user);
     // Ohne Netz bleibt der zuletzt angemeldete Nutzer mit seinen lokalen Daten nutzbar
