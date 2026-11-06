@@ -19,18 +19,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="locked">
-<dialog id="mailDialog">
-  <form method="dialog" id="mailForm">
-    <h2>E-Mail-Adresse hinzufügen</h2>
-    <p class="muted small">Dein Konto hat noch keine echte E-Mail-Adresse. Trag sie ein, wir schicken dir eine Mail zur Bestätigung. Danach kannst du dich auch damit anmelden.</p>
-    <label class="field">E-Mail-Adresse
-      <input type="email" id="mailNew" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120">
-    </label>
-    <p class="auth-error" id="mailErr" role="alert"></p>
-    <button class="btn primary full" type="button" id="mailSave">Bestätigungs-Mail senden</button>
-    <button class="btn full" type="button" id="mailLater">Später</button>
-  </form>
-</dialog>
 <div class="auth" id="auth" hidden>
   <form class="auth-card" id="authForm" autocomplete="on">
     <h1>Drobe</h1>

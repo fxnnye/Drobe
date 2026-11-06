@@ -3,7 +3,7 @@
 const Cloud = (() => {
   const SUPABASE_URL = 'https://elffmxtoxvygziiztjhd.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_3goVqjFm8wKraIugwDH5pw_QZGH23tM'; // öffentlicher Schlüssel, der Schutz liegt in den Zugriffsregeln der Datenbank
-  const MAIL_DOMAIN = 'drobe.example.com'; // alte Konten haben noch eine Pseudo-Adresse name@drobe.example.com
+  const MAIL_DOMAIN = 'drobe.example.com'; // frühere Pseudo-Adressen, werden bei der Registrierung abgelehnt
   const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const isPseudo = (m) => String(m || '').toLowerCase().endsWith('@' + MAIL_DOMAIN);
   const KINDS = ['items', 'outfits', 'wishlist'];
@@ -164,7 +164,6 @@ const Cloud = (() => {
   }
 
   /* ---------- Anmeldung ---------- */
-  const toMail = (name) => `${name}@${MAIL_DOMAIN}`;
   const cleanName = (s) => s.trim().toLowerCase();
   const NAME_OK = /^[a-z0-9._-]{3,20}$/;
 
@@ -261,10 +260,9 @@ const Cloud = (() => {
         } finally { $('authSubmit').disabled = false; }
         return;
       }
-      // Anmelden: mit E-Mail; ein Name ohne @ gilt nur für alte Konten mit Pseudo-Adresse
-      const login = typed.toLowerCase();
-      const email = login.includes('@') ? login : (NAME_OK.test(login) ? toMail(login) : '');
-      if (!email) { err.textContent = 'Gib deine E-Mail-Adresse ein.'; return; }
+      // Anmelden: nur mit E-Mail-Adresse
+      const email = typed.toLowerCase();
+      if (!MAIL_OK.test(email)) { err.textContent = 'Gib deine E-Mail-Adresse ein.'; return; }
       $('authSubmit').disabled = true;
       try {
         const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
@@ -328,37 +326,13 @@ const Cloud = (() => {
     location.reload();
   }
 
-  // Alte Konten: echte Adresse nachtragen
-  function askMail() {
-    const dlg = $('mailDialog');
-    if (dlg.open) return;
-    $('mailErr').textContent = '';
-    dlg.showModal();
-  }
-  function bindMailUi() {
-    $('mailLater').onclick = () => $('mailDialog').close();
-    $('mailSave').onclick = async () => {
-      const mail = $('mailNew').value.trim().toLowerCase();
-      const err = $('mailErr');
-      err.textContent = '';
-      if (!MAIL_OK.test(mail) || isPseudo(mail)) { err.textContent = 'Bitte gib eine echte E-Mail-Adresse ein.'; return; }
-      $('mailSave').disabled = true;
-      try {
-        const { error } = await sb.auth.updateUser({ email: mail }, { emailRedirectTo: APP_URL });
-        if (error) throw error;
-        $('mailDialog').close();
-        toast('Mail geschickt. Tippe darin auf den Link.');
-      } catch (ex) { err.textContent = authError(ex); } finally { $('mailSave').disabled = false; }
-    };
-  }
-
   let confirmedNow = /type=(signup|email_change)/.test(location.hash);
   async function enter(u) {
-    let name = (u.user_metadata && u.user_metadata.username) || u.name || (isPseudo(u.email) ? u.email.split('@')[0] : '');
+    let name = (u.user_metadata && u.user_metadata.username) || u.name;
     if (sb && navigator.onLine && u.email) {
       try { const r = await sb.rpc('my_username'); if (r.data) name = r.data; } catch (e) { /* offline: gemerkter Name */ }
     }
-    user = { id: u.id, name, email: u.email || '', pseudo: isPseudo(u.email) };
+    user = { id: u.id, name, email: u.email || '' };
     try { localStorage.setItem('drobe-last-user', JSON.stringify(user)); } catch (e) { /* egal */ }
     $('auth').hidden = true;
     document.body.classList.remove('locked', 'guest');
@@ -367,7 +341,6 @@ const Cloud = (() => {
     await startApp(user.id);
     Profile.start();
     sync();
-    if (user.pseudo) setTimeout(askMail, 1500);
     if (confirmedNow) { confirmedNow = false; toast('E-Mail-Adresse bestätigt'); }
   }
 
@@ -383,7 +356,6 @@ const Cloud = (() => {
 
   async function boot() {
     bindAuthUi();
-    bindMailUi();
     setMode(false);
     try {
       await loadLib();
