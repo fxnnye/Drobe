@@ -195,7 +195,7 @@ const Cloud = (() => {
     $('auth').hidden = true;
     $('guestActions').hidden = false;
     Profile.start();
-    if (linkBad) { toast('Der Link ist abgelaufen oder schon benutzt. Fordere unter „Passwort vergessen?“ einen neuen an.'); showAuth(false); }
+    if (linkBad) { toast('Der Link ist abgelaufen oder schon benutzt. Registriere dich erneut oder melde dich an.'); showAuth(false); }
   }
 
   const APP_URL = 'https://fxnnye.github.io/Drobe/';
@@ -230,32 +230,43 @@ const Cloud = (() => {
 
   function bindAuthUi() {
     $('authSwitch').onclick = () => setMode(!registering);
+    let resetMail = '';
     $('authForgot').onclick = async () => {
       const err = $('authError');
       const mail = $('authName').value.trim().toLowerCase();
-      if (!MAIL_OK.test(mail)) { err.textContent = 'Trag oben deine E-Mail-Adresse ein, dann schicken wir dir einen Link.'; return; }
+      if (!MAIL_OK.test(mail)) { err.textContent = 'Trag oben deine E-Mail-Adresse ein, dann schicken wir dir einen Code.'; return; }
       if (!sb) { err.textContent = 'Gerade nicht erreichbar. Prüfe dein Internet.'; return; }
       try {
-        const { error } = await sb.auth.resetPasswordForEmail(mail, { redirectTo: APP_URL });
+        const { error } = await sb.auth.resetPasswordForEmail(mail);
         if (error) throw error;
         err.textContent = '';
-        toast('Falls es ein Konto gibt, ist eine Mail unterwegs.');
+        resetMail = mail;
+        $('resetInfo').textContent = `Falls es ein Konto für ${mail} gibt, haben wir dir einen Code geschickt. Trag ihn hier ein.`;
+        $('resetErr').textContent = '';
+        $('resetDialog').showModal();
       } catch (ex) { err.textContent = authError(ex); }
     };
+    $('resetCancel').onclick = () => $('resetDialog').close();
     $('resetSave').onclick = async () => {
       const err = $('resetErr');
+      const code = $('resetCode').value.replace(/\s/g, '');
       const a = $('resetNew').value, b = $('resetNew2').value;
       err.textContent = '';
+      if (!/^\d{6,8}$/.test(code)) { err.textContent = 'Trag den Code aus der Mail ein.'; return; }
       if (a.length < 8) { err.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
       if (a !== b) { err.textContent = 'Die beiden Passwörter sind nicht gleich.'; return; }
       $('resetSave').disabled = true;
       try {
+        const v = await sb.auth.verifyOtp({ email: resetMail, token: code, type: 'recovery' });
+        if (v.error) throw v.error;
         const { error } = await sb.auth.updateUser({ password: a });
         if (error) throw error;
-        $('resetNew').value = ''; $('resetNew2').value = '';
+        $('resetCode').value = ''; $('resetNew').value = ''; $('resetNew2').value = '';
         $('resetDialog').close();
-        toast('Passwort geändert.');
-      } catch (ex) { err.textContent = authError(ex); } finally { $('resetSave').disabled = false; }
+        location.reload(); // mit der neuen Anmeldung starten
+      } catch (ex) {
+        err.textContent = /expired|invalid/i.test(String(ex && ex.message)) ? 'Der Code stimmt nicht oder ist abgelaufen. Fordere einen neuen an.' : authError(ex);
+      } finally { $('resetSave').disabled = false; }
     };
     $('authCancel').onclick = () => { $('auth').hidden = true; document.body.classList.remove('locked'); };
     $('guestLogin').onclick = () => showAuth(false);
@@ -355,13 +366,9 @@ const Cloud = (() => {
     location.reload();
   }
 
-  // Abgelaufener oder schon benutzter Mail-Link: Supabase hängt den Fehler an die Adresse
-  let linkBad = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
+  // Bestätigungs-Link aus der Registrierung: abgelaufen oder schon benutzt hängt Supabase als Fehler an die Adresse
+  const linkBad = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
   if (linkBad) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* egal */ } }
-  // Passwort-Link: die Mail führt direkt auf die App, erst die App löst ihn ein (Vorschau-Programme verbrauchen ihn so nicht)
-  const resetToken = (() => { const p = new URLSearchParams(location.search); return p.get('type') === 'recovery' ? p.get('token_hash') : null; })();
-  if (resetToken) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* egal */ } }
-  let recovering = /type=recovery/.test(location.hash);
   let confirmedNow = /type=(signup|email_change)/.test(location.hash);
   async function enter(u) {
     let name = (u.user_metadata && u.user_metadata.username) || u.name;
@@ -377,8 +384,7 @@ const Cloud = (() => {
     await startApp(user.id);
     Profile.start();
     sync();
-    if (linkBad) toast('Der Link ist abgelaufen oder schon benutzt. Fordere unter „Passwort vergessen?“ einen neuen an.');
-    if (recovering) { recovering = false; $('resetDialog').showModal(); }
+    if (linkBad) toast('Der Link ist abgelaufen oder schon benutzt. Registriere dich erneut oder melde dich an.');
     if (confirmedNow) { confirmedNow = false; toast('E-Mail-Adresse bestätigt'); }
   }
 
@@ -400,12 +406,6 @@ const Cloud = (() => {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
     } catch (e) { sb = null; }
     let session = null;
-    if (sb && resetToken) {
-      try {
-        const r = await sb.auth.verifyOtp({ token_hash: resetToken, type: 'recovery' });
-        if (r.error) linkBad = true; else recovering = true;
-      } catch (e) { linkBad = true; }
-    }
     if (sb) { try { session = (await sb.auth.getSession()).data.session; } catch (e) { /* offline */ } }
     if (session) return enter(session.user);
     // Ohne Netz bleibt der zuletzt angemeldete Nutzer mit seinen lokalen Daten nutzbar

@@ -22,6 +22,10 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 <dialog id="resetDialog">
   <form method="dialog" id="resetForm">
     <h2>Neues Passwort</h2>
+    <p class="muted small" id="resetInfo">Wir haben dir einen Code per Mail geschickt. Trag ihn hier ein.</p>
+    <label class="field">Code aus der Mail
+      <input type="text" id="resetCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+    </label>
     <label class="field">Neues Passwort
       <input type="password" id="resetNew" autocomplete="new-password" minlength="8">
     </label>
@@ -30,6 +34,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     </label>
     <p class="auth-error" id="resetErr" role="alert"></p>
     <button class="btn primary full" type="button" id="resetSave">Passwort speichern</button>
+    <button class="btn full" type="button" id="resetCancel">Abbrechen</button>
   </form>
 </dialog>
 <div class="auth" id="auth" hidden>

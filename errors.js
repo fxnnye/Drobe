@@ -1,7 +1,7 @@
 // Fehlerprotokoll: schickt unerwartete Fehler (Meldung, Fundstelle im Code, Seite ohne Adressteil, App-Version) an die Datenbank,
 // damit der Betreiber sie unter Einstellungen → Fehlerprotokoll sieht. Es werden keine Inhalte von Nutzern mitgeschickt.
 const Errors = (() => {
-  const BUILD = 84; // gleiche Zahl wie in sw.js (drobe-v78); die Tests prüfen das
+  const BUILD = 85; // gleiche Zahl wie in sw.js (drobe-v78); die Tests prüfen das
   const MAX_PER_VISIT = 8;
   const IGNORE = /ResizeObserver|Script error|Load failed|NetworkError|Failed to fetch|AbortError|aborted|cancel|offline|Keine Verbindung/i;
   const seen = new Set();
