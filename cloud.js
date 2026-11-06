@@ -140,8 +140,10 @@ const Cloud = (() => {
     if (changed) await reloadAll();
   }
 
+  let syncing = false;
   async function sync() {
-    if (!sb || !user || !navigator.onLine) return;
+    if (!sb || !user || !navigator.onLine || syncing) return;
+    syncing = true;
     setStatus('Synchronisiere …');
     try {
       await flush();
@@ -152,7 +154,7 @@ const Cloud = (() => {
     } catch (e) {
       console.error(e);
       setStatus('Abgleich fehlgeschlagen. Beim nächsten Öffnen wird es erneut versucht.');
-    }
+    } finally { syncing = false; }
   }
   function setStatus(text) { const el = $('syncStatus'); if (el) el.textContent = text; }
 
@@ -417,6 +419,10 @@ const Cloud = (() => {
 
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
   window.addEventListener('online', syncSoon);
+  window.addEventListener('focus', syncSoon);
+  window.addEventListener('pageshow', syncSoon);
+  // Handy-Browser melden das Zurückkehren nicht immer: solange die App offen ist, regelmäßig nachsehen
+  setInterval(() => { if (document.visibilityState === 'visible') syncSoon(); }, 60000);
 
   return { boot, queue, client: () => sb, user: () => user, sync, showAuth, deleteAccount };
 })();
