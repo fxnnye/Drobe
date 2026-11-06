@@ -52,7 +52,7 @@ const Cloud = (() => {
     data.fp = fp;
     if (sfp) data.sfp = sfp;
     data.updated = rec.updated || rec.created || Date.now();
-    const { error } = await sb.from('records').upsert({ kind, id, data }, { onConflict: 'user_id,kind,id' });
+    const { error } = await sb.rpc('sync_push', { p_kind: kind, p_id: id, p_data: data });
     if (error) throw error;
     if ((blob && rec._fp !== fp) || (sblob && rec._sfp !== sfp) || (!sblob && rec._sfp)) {
       // Merken, was schon oben liegt, ohne eine neuere Bearbeitung zu überschreiben
@@ -72,7 +72,7 @@ const Cloud = (() => {
 
   async function pushDelete(kind, id) {
     // Der Eintrag bleibt als „gelöscht“ stehen, damit andere Geräte das Löschen mitbekommen
-    const { error } = await sb.from('records').upsert({ kind, id, data: { deleted: true, updated: Date.now() } }, { onConflict: 'user_id,kind,id' });
+    const { error } = await sb.rpc('sync_push', { p_kind: kind, p_id: id, p_data: { deleted: true, updated: Date.now() } });
     if (error) throw error;
     await sb.storage.from('images').remove([`${user.id}/${kind}-${id}`, srcPath(kind, id)]);
   }
@@ -98,7 +98,7 @@ const Cloud = (() => {
 
   /* ---------- Holen ---------- */
   async function pull() {
-    const { data: rows, error } = await sb.from('records').select('kind,id,data').range(0, 4999);
+    const { data: rows, error } = await sb.rpc('sync_pull');
     if (error) throw error;
     const pend = readPending();
     const local = {};

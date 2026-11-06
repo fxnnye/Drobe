@@ -1,0 +1,202 @@
+// Bilder laden, Bild-Vektor (CLIP), Farbe aus dem freigestellten Bild (Teil der App, Reihenfolge siehe index.html)
+/* ---------- Bilder ---------- */
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+function canvasBlob(canvas, type, q) {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, q));
+}
+
+
+/* ---------- Ähnliche Teile: Bild-Vektor (CLIP) im Browser berechnen ---------- */
+const EMBED_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/+esm';
+const EMBED_MODEL = 'Xenova/clip-vit-base-patch32';
+let embedder = null;
+async function loadEmbedder() {
+  if (!embedder) {
+    embedder = (async () => {
+      const T = await import(EMBED_LIB);
+      const processor = await T.AutoProcessor.from_pretrained(EMBED_MODEL);
+      const model = await T.CLIPVisionModelWithProjection.from_pretrained(EMBED_MODEL, { dtype: 'q8' });
+      return { T, processor, model };
+    })().catch((e) => { embedder = null; throw e; });
+  }
+  return embedder;
+}
+// Vektor (512 Zahlen, normiert) zu einem Teilbild; durchsichtiger Hintergrund wird weiß
+async function embedBlob(blob) {
+  const { T, processor, model } = await loadEmbedder();
+  const url = URL.createObjectURL(blob);
+  let img;
+  try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
+  const c = document.createElement('canvas'); c.width = 224; c.height = 224;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 224, 224);
+  const k = Math.min(224 / img.naturalWidth, 224 / img.naturalHeight);
+  g.drawImage(img, (224 - img.naturalWidth * k) / 2, (224 - img.naturalHeight * k) / 2, img.naturalWidth * k, img.naturalHeight * k);
+  const raw = await T.RawImage.fromBlob(await canvasBlob(c, 'image/jpeg', 0.92));
+  const { image_embeds } = await model(await processor(raw));
+  return Array.from(image_embeds.normalize().data, (v) => Math.round(v * 1e4) / 1e4);
+}
+// Öffentliche Teile ohne Vektor nach und nach berechnen (im Hintergrund, einmalig pro Teil)
+let embedBusy = false;
+async function backfillEmbeddings() {
+  if (embedBusy || !navigator.onLine || !Cloud.user()) return;
+  const todo = items.filter((i) => !i.emb && i.blob && visOf(i) !== 'private');
+  if (!todo.length) return;
+  embedBusy = true;
+  try {
+    for (const it of todo) {
+      it.emb = await embedBlob(it.blob);
+      await dbPut('items', it);
+    }
+  } catch (e) { console.warn('Vektor-Berechnung nicht möglich', e); } finally { embedBusy = false; }
+}
+setTimeout(() => backfillEmbeddings(), 8000);
+
+$('itSimilar').addEventListener('click', async () => {
+  const it = state.editingItem, box = $('itSimilarBox'), btn = $('itSimilar');
+  if (!it || !Cloud.user()) { box.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: 'Dafür musst du angemeldet sein.' })); return; }
+  btn.disabled = true;
+  const note = (t) => box.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: t }));
+  note('Suche ähnliche Teile … (beim ersten Mal wird ein kleines Bildmodell geladen)');
+  try {
+    const emb = it.emb || (it.emb = await embedBlob(it.blob));
+    await dbPut('items', it);
+    const { data, error } = await Cloud.client().rpc('similar_public_items', { p_emb: '[' + emb.join(',') + ']' });
+    if (error) throw error;
+    if (!data || !data.length) return note('Noch keine ähnlichen öffentlichen Teile von anderen.');
+    await Profile.showItems(data, box, () => false);
+  } catch (e) { console.error(e); note('Die Suche nach ähnlichen Teilen hat nicht geklappt.'); } finally { btn.disabled = false; }
+});
+
+/* ---------- Farbe automatisch aus dem freigestellten Bild ---------- */
+const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Blau', 'Lila', 'Rosa'];
+function colorName(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60;
+  if (l < 0.16) return 'Schwarz';
+  if (l > 0.9 && s < 0.4) return 'Weiß';
+  if (s < 0.12) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
+  if (h >= 15 && h < 65 && s < 0.5 && l >= 0.45) return 'Beige';
+  if (h >= 10 && h < 50 && l < 0.42) return 'Braun';
+  if (h < 15 || h >= 345) return l > 0.7 ? 'Rosa' : 'Rot';
+  if (h < 45) return 'Orange';
+  if (h < 70) return 'Gelb';
+  if (h < 165) return 'Grün';
+  if (h < 255) return 'Blau';
+  if (h < 295) return 'Lila';
+  return 'Rosa';
+}
+// Häufigste Farbe der sichtbaren Pixel; nur bei freigestellten Bildern (mit durchsichtigem Hintergrund), sonst null
+async function detectColor(blob) {
+  try {
+    const url = URL.createObjectURL(blob);
+    let img;
+    try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
+    const k = Math.min(1, 120 / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, w, h);
+    const px = g.getImageData(0, 0, w, h).data;
+    const sum = {}; let seen = 0, clear = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] < 40) { clear++; continue; }
+      if (px[i + 3] < 200) continue;
+      seen++;
+      const n = colorName(px[i], px[i + 1], px[i + 2]);
+      const s = sum[n] || (sum[n] = { n: 0, r: 0, g: 0, b: 0 });
+      s.n++; s.r += px[i]; s.g += px[i + 1]; s.b += px[i + 2];
+    }
+    if (seen < 30 || clear < w * h * 0.03) return null;
+    // Grau und Beige liegen eng beieinander und Schatten mischen sie: erst zusammenfassen, dann nach dem Farbstich entscheiden
+    if (sum.Grau && sum.Beige) {
+      for (const k of ['n', 'r', 'g', 'b']) sum.Grau[k] += sum.Beige[k];
+      delete sum.Beige;
+    }
+    let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
+    if (name === 'Grau' || name === 'Beige') {
+      const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
+      name = warm >= 9 && light >= 0.4 ? 'Beige' : 'Grau';
+    }
+    const hex = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('');
+    return { color: name, hex };
+  } catch (e) { return null; }
+}
+const applyColor = (rec, c) => { if (c) { rec.color = c.color; rec.hex = c.hex; } };
+// Stellt Teile frei: Hintergrund wird vom Rand aus entfernt, wenn er einfarbig ist (z. B. weißer
+// Produktfoto-Hintergrund). Danach auf den sichtbaren Bereich zugeschnitten. Sonst bleibt das Bild unverändert.
+function cutOut(canvas, tol = 30) {
+  const w = canvas.width, h = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  const px = (x, y) => (y * w + x) * 4;
+  const corners = [px(0, 0), px(w - 1, 0), px(0, h - 1), px(w - 1, h - 1)].map((i) => [d[i], d[i + 1], d[i + 2]]);
+  const bg = [0, 1, 2].map((k) => Math.round(corners.reduce((s, c) => s + c[k], 0) / 4));
+  const near = (i) => Math.max(Math.abs(d[i] - bg[0]), Math.abs(d[i + 1] - bg[1]), Math.abs(d[i + 2] - bg[2])) <= tol;
+  if (!corners.every((c) => Math.max(...c.map((v, k) => Math.abs(v - bg[k]))) <= tol)) return canvas; // Hintergrund nicht einfarbig
+
+  const gone = new Uint8Array(w * h);
+  const queue = new Int32Array(w * h);
+  let head = 0, tail = 0;
+  const push = (x, y) => {
+    const p = y * w + x;
+    if (!gone[p] && near(p * 4)) { gone[p] = 1; queue[tail++] = p; }
+  };
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+  while (head < tail) {
+    const p = queue[head++], x = p % w, y = (p - x) / w;
+    if (x > 0) push(x - 1, y);
+    if (x < w - 1) push(x + 1, y);
+    if (y > 0) push(x, y - 1);
+    if (y < h - 1) push(x, y + 1);
+  }
+  if (tail < w * h * 0.05 || tail > w * h * 0.97) return canvas; // nichts oder fast alles erkannt: lieber nicht anfassen
+
+  let minX = w, minY = h, maxX = 0, maxY = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const p = y * w + x;
+      if (gone[p]) { d[p * 4 + 3] = 0; continue; }
+      // Randpixel leicht abschwächen, damit kein heller Saum bleibt
+      const edge = (x > 0 && gone[p - 1]) || (x < w - 1 && gone[p + 1]) || (y > 0 && gone[p - w]) || (y < h - 1 && gone[p + w]);
+      if (edge) d[p * 4 + 3] = 150;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const out = document.createElement('canvas');
+  out.width = maxX - minX + 1; out.height = maxY - minY + 1;
+  out.getContext('2d').drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+// Verkleinert Uploads auf max. 900px, damit der Browser-Speicher nicht vollläuft
+async function shrink(file, removeBg) {
+  const src = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(src);
+    const scale = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+    let c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * scale);
+    c.height = Math.round(img.naturalHeight * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    if (removeBg) c = cutOut(c);
+    return (await canvasBlob(c, 'image/webp', 0.9)) || (await canvasBlob(c, 'image/png'));
+  } finally {
+    URL.revokeObjectURL(src);
+  }
+}

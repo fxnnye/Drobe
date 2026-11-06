@@ -670,11 +670,11 @@ const Profile = (() => {
   const REASONS = { betrug: 'Betrugsverdacht', faelschung: 'Fälschung', belaestigung: 'Belästigung', spam: 'Spam', sonstiges: 'Sonstiges' };
   async function initAdmin() {
     const sb = Cloud.client();
-    $('modRow').hidden = true;
+    $('modRow').hidden = true; $('errRow').hidden = true;
     if (!sb || !navigator.onLine) return;
     try {
       const { data, error } = await sb.rpc('is_admin');
-      if (!error && data === true) $('modRow').hidden = false;
+      if (!error && data === true) { $('modRow').hidden = false; $('errRow').hidden = false; }
     } catch (e) { /* kein Admin oder Funktion fehlt noch */ }
   }
   async function loadReports() {
@@ -709,6 +709,24 @@ const Profile = (() => {
     } catch (e) { console.error(e); message(box, 'Die Meldungen konnten nicht geladen werden.', { retry: loadReports }); }
   }
 
+  async function loadErrors() {
+    const box = $('errList');
+    message(box, 'Lade …', { loading: true });
+    try {
+      const { data, error } = await Cloud.client().rpc('admin_errors');
+      if (error) throw error;
+      box.replaceChildren();
+      if (!data.length) return box.append(el('p', 'muted', 'Keine Fehler gemeldet.'));
+      for (const e of data) {
+        const row = el('div', 'mod-item');
+        row.append(el('b', null, e.message));
+        row.append(el('div', 'muted small', (e.n > 1 ? e.n + '× · ' : '') + 'Version ' + (e.build ?? '?') + ' · ' + new Date(e.last_at).toLocaleString('de-DE')));
+        if (e.stack) { const d = el('details'); d.append(el('summary', 'muted small', 'Fundstelle'), el('pre', 'err-stack', e.stack)); row.append(d); }
+        box.append(row);
+      }
+    } catch (e) { console.error(e); message(box, 'Das Protokoll konnte nicht geladen werden.', { retry: loadErrors }); }
+  }
+
   /* ---------- Navigation ---------- */
   async function route() {
     const name = parseHash(), itm = parseItemHash();
@@ -741,6 +759,13 @@ const Profile = (() => {
     });
     $('profTextSave').onclick = saveOwnText;
     document.querySelector('[data-open=moderation]').addEventListener('click', loadReports);
+    document.querySelector('[data-open=errors]').addEventListener('click', loadErrors);
+    $('errClear').onclick = async () => {
+      if (!confirm('Alle Meldungen im Fehlerprotokoll löschen?')) return;
+      const { error } = await Cloud.client().rpc('admin_clear_errors');
+      if (error) return toast('Das hat nicht geklappt.');
+      loadErrors();
+    };
     $('intCancel').onclick = () => $('interestDialog').close();
     $('repCancel').onclick = () => $('reportDialog').close();
     $('repSend').onclick = sendReport;
@@ -855,5 +880,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, shape));
   }
 
-  return { loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
+  return { matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
 })();

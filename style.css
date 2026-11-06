@@ -768,3 +768,4 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 
 .subtab { white-space: nowrap; padding-left: 4px; padding-right: 4px; font-size: 13.5px; }
 .me-social { display: block; }
 .linkish { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.err-stack { margin: 6px 0 0; padding: 8px; border-radius: 8px; background: var(--gray); font-size: 11px; white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow: auto; }

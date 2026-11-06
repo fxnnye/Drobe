@@ -1,0 +1,135 @@
+// Navigation, Feed und Filter-Chips (Teil der App, Reihenfolge siehe index.html)
+/* ---------- Navigation ---------- */
+// Hinzufügen-Seite: wählt, ob das Foto in den Schrank oder auf die Wunschliste kommt
+function setAddTarget(t) {
+  $('dropzone').hidden = t !== 'closet';
+  $('wishDrop').hidden = t !== 'wish';
+  document.querySelectorAll('#addTarget .chip').forEach((c) => c.classList.toggle('active', c.dataset.target === t));
+}
+document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () => setAddTarget(c.dataset.target); });
+document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien
+$('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
+// Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Wunschliste sind Unterseiten von „Profil“.
+const ME_VIEWS = ['closet', 'outfits', 'wishlist', 'followers', 'following'];
+const topTab = (name) => (name === 'builder' || ME_VIEWS.includes(name) ? 'me' : name);
+function showView(name) {
+  if (name === 'me') name = state.lastMe || 'closet';
+  const prev = state.view;
+  state.view = name;
+  if (['closet', 'outfits', 'wishlist'].includes(name)) state.lastMe = name;
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
+  document.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('active', t.dataset.sub === (name === 'builder' ? 'outfits' : name)));
+  $('meBar').hidden = !ME_VIEWS.includes(name);
+  if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; setAddTarget(prev === 'wishlist' ? 'wish' : 'closet'); }
+  document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
+  if (name === 'builder') { renderPicker(); renderStage(); }
+  if (name === 'feed') loadFeed(true);
+  if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
+  if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
+  if (name === 'followers' || name === 'following') Profile.loadPeople(name, $(name === 'followers' ? 'followersList' : 'followingList'));
+  if (ME_VIEWS.includes(name)) renderMeHead();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
+document.querySelectorAll('.subtab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.sub)));
+$('meFollowers').onclick = () => showView('followers');
+$('meFollowing').onclick = () => showView('following');
+document.querySelectorAll('[data-back-me]').forEach((b) => { b.onclick = () => showView('me'); });
+$('meProfile').onclick = () => { const u = Cloud.user(); if (u) location.hash = '#/u/' + u.name; };
+
+function renderMeHead() {
+  const u = Cloud.user();
+  const name = u ? u.name : '';
+  $('meName').textContent = name;
+  $('meAvatar').textContent = (name[0] || '?').toUpperCase();
+  const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
+  $('meCounts').textContent = [n(items.length, 'Teil', 'Teile'), n(outfits.length, 'Outfit', 'Outfits'), n(wishlist.length, 'Wunsch', 'Wünsche')].join(' · ');
+  $('meProfile').hidden = !u;
+}
+
+/* ---------- Feed: öffentliche Teile oder Outfits anderer, neueste zuerst ---------- */
+const feed = { kind: 'items', before: null, loading: false };
+async function loadFeed(reset) {
+  if (feed.loading) return;
+  const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore'), retry = $('feedRetry');
+  if (reset) { feed.before = null; grid.replaceChildren(); }
+  feed.loading = true;
+  retry.hidden = true;
+  empty.hidden = true;
+  const kind = feed.kind;
+  const done = skeletons(grid, reset ? 8 : 4);
+  try {
+    const list = await Profile.feed(kind, feed.before, feed.color);
+    if (kind !== feed.kind) return; // inzwischen umgeschaltet
+    done();
+    await Profile.showFeed(list, grid, kind);
+    if (list.length) feed.before = list[list.length - 1].ts;
+    more.hidden = list.length < 30;
+    empty.hidden = grid.children.length > 0;
+    feedEmptyState(kind);
+  } catch (e) {
+    console.error(e);
+    more.hidden = true;
+    empty.hidden = false;
+    $('feedEmptyText').textContent = navigator.onLine ? 'Der Feed ist gerade nicht verfügbar.' : 'Für den Feed brauchst du eine Internetverbindung.';
+    $('feedEmptyCta').hidden = true;
+    retry.hidden = false;
+  } finally { done(); feed.loading = false; }
+}
+// Leerer Feed: sagt, warum, und bietet den nächsten Schritt an
+function feedEmptyState(kind) {
+  const cta = $('feedEmptyCta');
+  const go = (label, fn) => { cta.textContent = label; cta.onclick = fn; cta.hidden = false; };
+  cta.hidden = true;
+  if (kind === 'saved') {
+    $('feedEmptyText').textContent = 'Noch nichts gemerkt. Auf der Seite eines Teils kannst du es mit „Merken“ speichern.';
+  } else if (kind === 'outfits') {
+    $('feedEmptyText').textContent = 'Noch keine öffentlichen Outfits von anderen.';
+  } else {
+    $('feedEmptyText').textContent = 'Noch keine öffentlichen Teile von anderen. Sobald jemand etwas freigibt, erscheint es hier.';
+    go('Eigenes Teil hinzufügen', () => showView('add'));
+  }
+}
+$('feedRetry').onclick = () => loadFeed(false);
+document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
+  c.onclick = () => {
+    feed.kind = c.dataset.kind;
+    document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
+    loadFeed(true);
+  };
+});
+$('feedMore').onclick = () => loadFeed(false);
+
+/* ---------- Filter-Chips ---------- */
+// Filterwert ist eine Hauptkategorie, eine Unterkategorie oder „Alle“
+const matchesFilter = (it, f) => f === 'Alle' || it.category === f || !!GROUPS[f]?.includes(it.category);
+const inGroup = (f) => GROUPS[f] ? f : Object.keys(GROUPS).find((g) => GROUPS[g].includes(f));
+
+function renderChips(el, key, onChange) {
+  el.innerHTML = '';
+  const chip = (parent, label, value) => {
+    const b = document.createElement('button');
+    const group = inGroup(state[key]);
+    const active = parent === el ? (state[key] === value || group === value) : state[key] === value;
+    b.className = 'chip' + (active ? ' active' : '');
+    b.textContent = label;
+    b.onclick = () => { state[key] = value; onChange(); };
+    parent.appendChild(b);
+  };
+  ['Alle', ...TOP].forEach((c) => chip(el, c, c));
+  const group = inGroup(state[key]);
+  if (group) { // zweite Reihe mit den Unterkategorien
+    const sub = document.createElement('div');
+    sub.className = 'subchips';
+    chip(sub, 'Alle ' + group, group);
+    GROUPS[group].forEach((c) => chip(sub, c, c));
+    el.appendChild(sub);
+  }
+}
+// Kategorie, die beim Hochladen zum aktuellen Filter passt
+const uploadCategoryFor = (f) => DEFAULT_SUB[f] || f;
+function fillSelect(sel) {
+  const opt = (c) => `<option>${c}</option>`;
+  sel.innerHTML = TOP.map((c) => GROUPS[c]
+    ? `<optgroup label="${c}">${GROUPS[c].map(opt).join('')}</optgroup>` : opt(c)).join('');
+}

@@ -1,8 +1,8 @@
-// Service Worker: legt die App-Dateien im Cache ab, damit Drobe auch offline startet.
-// Bei jeder Änderung an den App-Dateien die Versionsnummer erhöhen.
-const CACHE = 'drobe-v77';
+// Offline-Cache. Bei jeder Änderung die Version erhöhen (Datei bleibt 1500 Byte).
+const CACHE = 'drobe-v78';
+const JS = ['colors', 'profile', 'cloud', 'core', 'details', 'imaging', 'feed', 'closet', 'search', 'upload', 'item', 'outfits', 'wishlist', 'settings', 'start', 'errors'].map((n) => n + '.js');
 const FILES = [
-  './', 'index.html', 'style.css', 'app.js', 'colors.js', 'cloud.js', 'profile.js', 'vendor/supabase.js', 'manifest.webmanifest',
+  './', 'index.html', 'style.css', ...JS, 'vendor/supabase.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png', 'icons/favicon-32.png',
 ];
@@ -19,8 +19,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Eigene Dateien: zuerst Netzwerk (immer die neueste Version), bei Offline aus dem Cache.
-// Alles von fremden Servern (z. B. Hintergrund-Entfernung) läuft unverändert am Cache vorbei.
+// Eigene Dateien: erst Netzwerk, offline Cache. Fremde Server bleiben außen vor.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
@@ -36,3 +35,4 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(req).then((hit) => hit || caches.match('index.html')))
   );
 });
+//-----------------------

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Drobe Tests</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 20px; max-width: 760px; }
+  h1 { font-size: 20px; }
+  .sum { padding: 10px 14px; border-radius: 8px; font-weight: 700; margin-bottom: 16px; }
+  .sum.ok { background: #d8f5dd; color: #11591f; }
+  .sum.bad { background: #fbd9dc; color: #8a1220; }
+  h2 { font-size: 15px; margin: 18px 0 6px; }
+  .t { padding: 2px 0; }
+  .t.pass::before { content: "✓ "; color: #11891f; }
+  .t.fail::before { content: "✗ "; color: #c4202e; font-weight: 700; }
+  .t .why { color: #8a1220; display: block; margin-left: 18px; white-space: pre-wrap; }
+  iframe { position: fixed; left: -9999px; width: 400px; height: 800px; }
+</style>
+</head>
+<body>
+<h1>Drobe Tests</h1>
+<p>Öffnen mit <code>http://localhost:5173/tests/</code> (Dev-Server der App). Die App läuft unsichtbar in einem Rahmen, die Tests prüfen den echten Code. Abschnitt „Live“ fragt die echte Datenbank ohne Anmeldung ab.</p>
+<div id="sum" class="sum">läuft …</div>
+<div id="out"></div>
+<iframe id="app" src="../index.html"></iframe>
+<script src="run.js"></script>
+</body>
+</html>
