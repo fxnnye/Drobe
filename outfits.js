@@ -193,6 +193,7 @@ function updatePanel() {
   $('bgCustom').parentElement.classList.toggle('active', !BG_COLORS.includes(bg.toLowerCase()));
   $('outfitName').value = state.outfit.name;
   $('outfitVis').value = state.outfit.vis || 'private';
+  $('outfitDelete').hidden = !state.outfit.id; // Löschen gibt es nur für gespeicherte Outfits
 }
 $('outfitVis').onchange = () => { state.outfit.vis = $('outfitVis').value; };
 // Hintergrundfarbe des Outfits: feste Farben plus freie Farbwahl
@@ -258,6 +259,23 @@ $('stage').addEventListener('pointerdown', (e) => {
 });
 
 $('builderBack').onclick = () => showView('outfits');
+$('outfitPng').onclick = () => {
+  const o = { ...state.outfit, name: $('outfitName').value.trim() || state.outfit.name };
+  if (!o.layers.some((l) => itemById(l.itemId))) return toast('Füge zuerst Teile hinzu');
+  downloadOutfit(o);
+};
+$('outfitDelete').onclick = async () => {
+  const o = state.outfit;
+  if (!o.id) return;
+  if (!(await askConfirm(`„${o.name || 'Outfit'}" löschen?`))) return;
+  await dbDel('outfits', o.id);
+  outfits = outfits.filter((x) => x.id !== o.id);
+  state.outfit = { id: null, name: '', bg: '#ffffff', layers: [] };
+  state.selected = null;
+  renderStage();
+  renderOutfits();
+  showView('outfits');
+};
 $('newOutfit').onclick = async () => {
   if (state.outfit.layers.length && !(await askConfirm('Aktuelles Outfit verwerfen und neu beginnen?', 'Verwerfen'))) return;
   state.outfit = { id: null, name: '', bg: '#ffffff', layers: [] };
@@ -335,7 +353,7 @@ function renderOutfits() {
     card.className = 'card';
     card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>
       <div class="card-actions"><button class="btn" data-a="edit">Bearbeiten</button>
-      <button class="btn" data-a="dl">PNG</button><button class="btn" data-a="share" hidden>Teilen</button><button class="btn danger" data-a="del">Löschen</button></div>`;
+      <button class="btn" data-a="share" hidden>Teilen</button></div>`;
     const key = 'thumb-' + o.id;
     if (!urls.has(key)) urls.set(key, URL.createObjectURL(o.thumb));
     card.querySelector('img').src = urls.get(key);
@@ -355,19 +373,11 @@ function renderOutfits() {
       card.querySelector('.img').appendChild(w);
     }
     card.querySelector('[data-a=edit]').onclick = () => editOutfit(o);
-    card.querySelector('[data-a=dl]').onclick = () => downloadOutfit(o);
     if (navigator.canShare) { // nur zeigen, wo Bilder geteilt werden können (meist Handy)
       const sb = card.querySelector('[data-a=share]');
       sb.hidden = false;
       sb.onclick = () => shareOutfit(o);
     }
-    card.querySelector('[data-a=del]').onclick = async () => {
-      if (!(await askConfirm(`„${o.name}" löschen?`))) return;
-      await dbDel('outfits', o.id);
-      outfits = outfits.filter((x) => x.id !== o.id);
-      if (state.outfit.id === o.id) state.outfit.id = null;
-      renderOutfits();
-    };
     grid.appendChild(card);
   });
   $('outfitsEmpty').classList.toggle('show', outfits.length === 0);
