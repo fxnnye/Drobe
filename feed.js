@@ -106,7 +106,6 @@ const matchesFilter = (it, f) => f === 'Alle' || it.category === f || !!GROUPS[f
 const inGroup = (f) => GROUPS[f] ? f : Object.keys(GROUPS).find((g) => GROUPS[g].includes(f));
 
 function renderChips(el, key, onChange) {
-  const before = el.scrollLeft; // Wischposition merken, damit die Reihe nicht zurückspringt
   el.innerHTML = '';
   const chip = (parent, label, value) => {
     const b = document.createElement('button');
@@ -117,22 +116,14 @@ function renderChips(el, key, onChange) {
     b.onclick = () => { state[key] = value; onChange(); };
     parent.appendChild(b);
   };
-  const scroller = el.closest('.filter-row') && matchMedia('(max-width: 700px)').matches; // Handy: eine Reihe zum Wischen
-  const tops = {};
-  ['Alle', ...TOP].forEach((c) => { chip(el, c, c); tops[c] = el.lastChild; });
+  ['Alle', ...TOP].forEach((c) => chip(el, c, c));
   const group = inGroup(state[key]);
-  if (group) { // Unterkategorien: am Computer eigene Reihe darunter, am Handy direkt neben der Hauptkategorie
+  if (group) { // zweite Reihe mit den Unterkategorien
     const sub = document.createElement('div');
     sub.className = 'subchips';
     chip(sub, 'Alle ' + group, group);
     GROUPS[group].forEach((c) => chip(sub, c, c));
-    if (scroller) tops[group].after(sub); else el.appendChild(sub);
-  }
-  if (scroller) { // aktive Hauptkategorie an den linken Rand schieben, damit ihre Unterkategorien rechts daneben sichtbar sind
-    el.scrollLeft = before;
-    const t = tops[inGroup(state[key]) || state[key]];
-    const left = state[key] === 'Alle' ? 0 : el.scrollLeft + t.getBoundingClientRect().left - el.getBoundingClientRect().left;
-    el.scrollTo({ left, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    el.appendChild(sub);
   }
 }
 // Kategorie, die beim Hochladen zum aktuellen Filter passt
