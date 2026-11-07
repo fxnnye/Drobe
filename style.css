@@ -1,4 +1,5 @@
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* kräftigeres ease-out für Oberflächen-Bewegung */
   color-scheme: light;
   --bg: #fff;
   --surface: #fff;
@@ -41,7 +42,7 @@ button, input, select { font: inherit; color: inherit; }
 .top h1 { margin: 0 16px 0 0; font-size: 32px; font-weight: 900; -webkit-text-stroke: 1.5px var(--red); color: var(--red); letter-spacing: -.03em; line-height: 1; }
 .tabs { display: flex; gap: 4px; }
 .tab { border: 0; background: none; font-weight: 600; padding: 12px 16px; border-radius: 10px; cursor: pointer; }
-.tab:hover { background: var(--gray); }
+@media (hover: hover) and (pointer: fine) { .tab:hover { background: var(--gray); } }
 .tab.active { background: var(--text); color: var(--on-text); }
 .badge { font-size: 12px; color: var(--muted); margin-left: 2px; }
 .tab.active .badge { color: var(--on-text); opacity: .6; }
@@ -59,10 +60,10 @@ hr { border: 0; border-top: 1px solid var(--gray-hover); margin: 16px 0; }
   border: 0; background: var(--gray); font-weight: 600; padding: 12px 18px; border-radius: 10px; cursor: pointer;
   display: inline-block; text-align: center;
 }
-.btn:hover:not(:disabled) { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .btn:hover:not(:disabled) { background: var(--gray-hover); } }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn.primary { background: var(--red); color: #fff; }
-.btn.primary:hover:not(:disabled) { background: var(--red-hover); }
+@media (hover: hover) and (pointer: fine) { .btn.primary:hover:not(:disabled) { background: var(--red-hover); } }
 .btn.danger { color: var(--red); }
 dialog.wide { width: min(920px, 94vw); max-height: 90vh; overflow: auto; }
 dialog.wide h2 { margin: 0; }
@@ -95,11 +96,11 @@ dialog.wide h2 { margin: 0; }
   font-weight: 600; cursor: pointer;
 }
 .set-row::after { content: "›"; font-size: 22px; line-height: 1; color: var(--muted); }
-.set-row:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .set-row:hover { background: var(--gray-hover); } }
 .set-panel[hidden] { display: none; }
 dialog h2 { margin: 0 0 8px; font-size: 22px; }
 .dropbox { display: block; text-align: center; background: var(--gray); border: 2px dashed transparent; border-radius: 16px; padding: 28px 16px; margin: 8px 0 12px; cursor: pointer; font-weight: 600; }
-.dropbox:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .dropbox:hover { background: var(--gray-hover); } }
 .dropbox.over { border-color: var(--text); }
 .batch { border-top: 1px solid var(--gray-hover); padding-top: 14px; margin-bottom: 14px; }
 .batch[hidden] { display: none; }
@@ -133,7 +134,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 /* Filter */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .chip { border: 0; background: var(--gray); font-weight: 600; font-size: 14px; padding: 9px 14px; border-radius: 10px; cursor: pointer; }
-.chip:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .chip:hover { background: var(--gray-hover); } }
 .chip.active { background: var(--text); color: var(--on-text); }
 .subchips { flex-basis: 100%; display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -141,7 +142,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 22px 16px; align-items: start; }
 .card { margin: 0; display: block; width: 100%; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
 .card .img { --pad: 14px; position: relative; aspect-ratio: 4 / 5; background: var(--gray); border-radius: 16px; display: block; transition: background .15s; }
-.card:hover .img { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .card:hover .img { background: var(--gray-hover); } }
 .card .img img { position: absolute; inset: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); object-fit: contain; }
 .card .meta { padding: 8px 4px 0; }
 .card .meta b { display: block; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -164,7 +165,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 .picker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .picker { min-width: 0; }
 .pick { aspect-ratio: 1; border: 0; border-radius: 16px; background: var(--gray); padding: 8px; cursor: pointer; display: grid; place-items: center; }
-.pick:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .pick:hover { background: var(--gray-hover); } }
 .pick.active { box-shadow: inset 0 0 0 3px var(--text); }
 .pick img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
 
@@ -172,7 +173,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 .layer-tools { display: flex; gap: 8px; }
 .layer-tools[hidden] { display: none; }
 .icon { width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--gray); cursor: pointer; display: grid; place-items: center; }
-.icon:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .icon:hover { background: var(--gray-hover); } }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--field); padding: 0; cursor: pointer; }
 .swatch.active { box-shadow: 0 0 0 2px var(--gray), 0 0 0 4px var(--text); }
@@ -214,7 +215,7 @@ dialog img { display: block; width: 100%; max-height: 260px; object-fit: contain
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
-  background: var(--text); color: var(--on-text); padding: 12px 20px; border-radius: 12px; font-size: 14px; transition: .2s;
+  background: var(--text); color: var(--on-text); padding: 12px 20px; border-radius: 12px; font-size: 14px; transition: transform .2s var(--ease-out), opacity .2s var(--ease-out);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -277,7 +278,7 @@ dialog { max-height: 92vh; overflow: auto; }
   .picker { order: 4; }
   .panel .hint { display: none; }
   .builder .panel .btn:not(.primary) { background: var(--gray); }
-  .builder .panel .btn:not(.primary):hover:not(:disabled) { background: var(--gray-hover); }
+  @media (hover: hover) and (pointer: fine) { .builder .panel .btn:not(.primary):hover:not(:disabled) { background: var(--gray-hover); } }
   .stage { max-width: min(100%, calc(60vh * 9 / 16)); border-radius: 18px; }
   .picker-grid { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 6px; overflow-y: hidden; scroll-snap-type: x proximity; }
   .pick { flex: none; width: 84px; height: 84px; aspect-ratio: auto; scroll-snap-align: start; overflow: hidden; }
@@ -305,7 +306,7 @@ button, .tab, .chip, .pick, .card, label.btn { touch-action: manipulation; -webk
 
 /* Auf dem grauen Panel brauchen Buttons einen hellen Untergrund, sonst sieht man sie nicht */
 .panel .btn:not(.primary) { background: var(--surface); }
-.panel .btn:not(.primary):hover:not(:disabled) { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .panel .btn:not(.primary):hover:not(:disabled) { background: var(--gray-hover); } }
 
 /* Querformat mit wenig Höhe (iPad quer, kleine Laptops): ganzes Bild ohne Scrollen sichtbar */
 @media (min-width: 901px) and (max-height: 900px) {
@@ -325,10 +326,10 @@ select {
   background-repeat: no-repeat; background-position: right 16px center; background-size: 14px;
   border: 0; border-radius: 12px; padding: 13px 44px 13px 16px; font-weight: 600; min-width: 190px;
 }
-select:hover { background-color: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { select:hover { background-color: var(--gray-hover); } }
 select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 .upload select { background-color: var(--surface); }
-.upload select:hover { background-color: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .upload select:hover { background-color: var(--gray-hover); } }
 
 /* Beschriftung „Kategorie“ im Upload-Bereich kräftiger */
 .upload .field-inline { font-size: 14px; font-weight: 700; }
@@ -339,7 +340,7 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
   background: var(--gray); color: var(--text); font-size: 12px; font-weight: 600; text-decoration: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top;
 }
-.card .meta .shop:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .card .meta .shop:hover { background: var(--gray-hover); } }
 @media (max-width: 700px) { .tab { font-size: 13px; padding: 12px 2px; } }
 
 /* Anmeldung */
@@ -413,7 +414,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
   background: color-mix(in srgb, var(--text) 9%, transparent);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-.outfits .add-card:hover .img { background: color-mix(in srgb, var(--text) 14%, transparent); }
+@media (hover: hover) and (pointer: fine) { .outfits .add-card:hover .img { background: color-mix(in srgb, var(--text) 14%, transparent); } }
 .add-card .plus { display: block; color: var(--muted); }
 
 /* ---------- Suche im Schrank ---------- */
@@ -423,7 +424,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .member-results { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 .member-results[hidden] { display: none; }
 .member { text-align: left; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--gray); font-weight: 600; cursor: pointer; }
-.member:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .member:hover { background: var(--gray-hover); } }
 
 /* ---------- Interesse, Treffer, Mitteilungen ---------- */
 .pub-action { margin-top: 8px; padding: 7px 12px; font-size: 13px; }
@@ -442,7 +443,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .filter-row .chips { flex: 1; min-width: 0; margin-bottom: 0; }
 .filter-row { margin-bottom: 16px; }
 .add-btn { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--gray); display: grid; place-items: center; padding: 0; color: var(--text); cursor: pointer; }
-.add-btn:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .add-btn:hover { background: var(--gray-hover); } }
 @media (max-width: 700px) {
   /* Am Handy scrollen die Kategorien seitwärts, damit das Plus rechts daneben Platz hat */
   .filter-row .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
@@ -476,10 +477,10 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .so-history-row { display: flex; align-items: center; gap: 4px; }
 .so-history-item { flex: 1; min-width: 0; text-align: left; padding: 12px 4px; border: 0; background: none; font-weight: 600; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .so-del { background: none; width: 36px; height: 36px; flex: none; font-size: 22px; color: var(--muted); }
-.so-del:hover { background: var(--gray); }
+@media (hover: hover) and (pointer: fine) { .so-del:hover { background: var(--gray); } }
 
 .so-suggest { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--gray); background: none; text-align: left; cursor: pointer; }
-.so-suggest:hover { background: var(--gray); }
+@media (hover: hover) and (pointer: fine) { .so-suggest:hover { background: var(--gray); } }
 .member-results:has(.so-suggest) { gap: 0; }
 
 /* Hinzufügen/Überspringen bleiben immer sichtbar, auch wenn das Fenster scrollt (dvh: ohne Browserleisten gerechnet) */
@@ -532,7 +533,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
   /* Untere Leiste: fünf gleich breite Felder, Symbol über der Beschriftung, Hinzufügen groß in der Mitte */
   .tabs { align-items: stretch; padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); }
   .tab { flex: 1 1 0; flex-direction: column; justify-content: center; gap: 2px; padding: 6px 2px; font-size: 11px; border-radius: 0; background: none; color: var(--muted); }
-  .tab:hover { background: none; }
+  @media (hover: hover) and (pointer: fine) { .tab:hover { background: none; } }
   .tab.active { background: none; color: var(--text); }
   .tab-ic { display: block; }
   .tab-label { font-size: 11px; line-height: 1.2; }
@@ -565,7 +566,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .thread-form input[type=text] { flex: 1; min-width: 0; height: 46px; }
 .thread-form .btn { height: 46px; padding-top: 0; padding-bottom: 0; }
 .thread-photo { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--gray); display: grid; place-items: center; cursor: pointer; color: var(--text); }
-.thread-photo:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .thread-photo:hover { background: var(--gray-hover); } }
 .bubble-img img { display: block; width: 100%; max-width: 240px; max-height: 280px; object-fit: cover; border-radius: 12px; margin: 0; padding: 0; background: none; }
 /* Chat füllt die Seite, die Eingabeleiste sitzt unten am Bildschirmrand */
 #threadPane:not([hidden]) { display: flex; flex-direction: column; height: calc(100dvh - 150px); min-height: 360px; }
@@ -694,7 +695,7 @@ main { padding: 8px var(--pad-page) 48px; }
 .item-fact dt { color: var(--muted); }
 .item-fact dd { margin: 0; font-weight: 600; text-align: right; }
 .seller { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 var(--gap); padding: 12px 16px; border: 0; border-radius: var(--r-card); background: var(--gray); cursor: pointer; text-align: left; font: inherit; color: inherit; }
-.seller:hover { background: var(--gray-hover); }
+@media (hover: hover) and (pointer: fine) { .seller:hover { background: var(--gray-hover); } }
 .seller-name { display: flex; flex-direction: column; }
 .item-info .pub-report { margin-top: 0; }
 @media (min-width: 701px) {
@@ -718,18 +719,18 @@ main { padding: 8px var(--pad-page) 48px; }
 .toast.error { background: var(--red); color: #fff; }
 .toast.error::before { content: '⚠ '; }
 
-.view.active { animation: fade-in .2s ease; }
+.view.active { animation: fade-in .2s var(--ease-out); }
 @keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-dialog[open] { animation: pop-in .2s ease; }
-dialog[open]::backdrop { animation: fade-bg .2s ease; }
+dialog[open] { animation: pop-in .2s var(--ease-out); }
+dialog[open]::backdrop { animation: fade-bg .2s var(--ease-out); }
 @keyframes pop-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade-bg { from { opacity: 0; } to { opacity: 1; } }
-.public > * { animation: fade-in .2s ease; }
-.bubble { animation: fade-in .15s ease; }
-.btn, .chip, .tab, .icon, .set-row, .seller, .member, .card .img { transition: background-color .15s ease, transform .1s ease, opacity .15s ease; }
+.public > * { animation: fade-in .2s var(--ease-out); }
+.bubble { animation: fade-in .15s var(--ease-out); }
+.btn, .chip, .tab, .icon, .set-row, .seller, .member, .card .img { transition: background-color .15s ease, transform .12s var(--ease-out), opacity .15s ease; }
 .btn:active:not(:disabled), .chip:active, .icon:active, .set-row:active, .seller:active { transform: scale(.97); }
 .card:active .img { transform: scale(.98); }
-.card .img img { animation: fade-bg .3s ease; }
+.card .img img { animation: fade-bg .3s var(--ease-out); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
