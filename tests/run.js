@@ -70,6 +70,16 @@ test('ganz anderer Name trifft nicht', () => ok(!m({ brand: 'Nike', name: 'Tech 
 /* ---------- Kleinteile ---------- */
 group('Kleinteile');
 test('wrapAngle', () => { const f = W('wrapAngle'); eq(f(270), -90); eq(f(-270), 90); eq(f(180), -180); eq(f(0), 0); });
+test('Zuschnitt ignoriert verirrte Pünktchen, behält das Teil', () => {
+  const doc = frame.contentDocument, f = W('trimAlphaBox');
+  const mk = (w, h, draw) => { const c = doc.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#000'; draw(x); return c; };
+  const a = f(mk(400, 400, (x) => { x.fillRect(150, 160, 100, 80); x.fillRect(2, 3, 2, 2); }));        // Teil + Pünktchen in der Ecke
+  eq([a.canvas.width, a.canvas.height], [100, 80]);
+  const b = f(mk(300, 200, (x) => { x.fillRect(0, 0, 300, 200); }));                                    // volles Bild bleibt
+  eq([b.canvas.width, b.canvas.height], [300, 200]);
+  const c = f(mk(300, 40, (x) => { x.fillRect(10, 15, 280, 6); }));                                     // dünnes Teil (Gürtel, Schnürsenkel) bleibt
+  eq([c.canvas.width, c.canvas.height], [280, 6]);
+});
 
 /* ---------- Fehlerprotokoll (Client) ---------- */
 group('Fehlerprotokoll');

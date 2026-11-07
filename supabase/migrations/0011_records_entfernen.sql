@@ -2,6 +2,10 @@
 -- Erst ausführen, wenn die neue App-Version (sync_push / sync_pull) eine Weile läuft und
 -- die Prüfung am Ende von 0008 (Zählung und Vergleich) keine Abweichung gezeigt hat.
 
+-- Vorher: letzte Kopie der alten Tabelle im Backup-Schema aufheben
+create table if not exists backup.records_final as select * from public.records;
+revoke all on backup.records_final from public, anon, authenticated;
+
 -- sync_push ohne die Brücke zu records
 create or replace function public.sync_push(p_kind text, p_id text, p_data jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$

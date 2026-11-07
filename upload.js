@@ -9,18 +9,25 @@ let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 function trimAlpha(canvas) {
   return trimAlphaBox(canvas).canvas;
 }
-// Wie trimAlpha, liefert zusätzlich die Position des Zuschnitts im Original
+// Wie trimAlpha, liefert zusätzlich die Position des Zuschnitts im Original.
+// Einzelne verirrte Pünktchen (Reste vom Freistellen) zählen nicht: eine Zeile oder Spalte gehört erst dazu,
+// wenn sie genug sichtbare Punkte hat. Sonst bleibt das Bild riesig und das Teil wirkt winzig.
 function trimAlphaBox(canvas) {
   const { width: w, height: h } = canvas;
   const d = canvas.getContext('2d').getImageData(0, 0, w, h).data;
-  let minX = w, minY = h, maxX = -1, maxY = -1;
+  const rows = new Uint32Array(h), cols = new Uint32Array(w);
+  let any = false;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (d[(y * w + x) * 4 + 3] > 8) {
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
-      if (y < minY) minY = y; if (y > maxY) maxY = y;
-    }
+    if (d[(y * w + x) * 4 + 3] > 24) { rows[y]++; cols[x]++; any = true; }
   }
-  if (maxX < 0) return { canvas, x: 0, y: 0 };
+  if (!any) return { canvas, x: 0, y: 0 };
+  const needRow = Math.max(4, Math.round(w * 0.01)), needCol = Math.max(4, Math.round(h * 0.01));
+  let minY = 0, maxY = h - 1, minX = 0, maxX = w - 1;
+  while (minY < h && rows[minY] < needRow) minY++;
+  while (maxY > minY && rows[maxY] < needRow) maxY--;
+  while (minX < w && cols[minX] < needCol) minX++;
+  while (maxX > minX && cols[maxX] < needCol) maxX--;
+  if (minX >= w || minY >= h) return { canvas, x: 0, y: 0 }; // nur Pünktchen: nichts zuschneiden
   const out = document.createElement('canvas');
   out.width = maxX - minX + 1; out.height = maxY - minY + 1;
   out.getContext('2d').drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
@@ -305,6 +312,21 @@ async function trimBlobBox(blob) {
     c.getContext('2d').drawImage(img, 0, 0);
     const { x, y, canvas } = trimAlphaBox(c);
     return { blob: await canvasBlob(canvas, 'image/webp', 0.9), x, y };
+  } finally {
+    URL.revokeObjectURL(src);
+  }
+}
+// Schon gespeichertes Bild noch einmal sauber zuschneiden; null, wenn sich nichts ändert
+async function retrimBlob(blob) {
+  const src = URL.createObjectURL(blob);
+  try {
+    const img = await loadImage(src);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    const t = trimAlphaBox(c);
+    if (t.canvas.width >= c.width * 0.98 && t.canvas.height >= c.height * 0.98) return null;
+    return { blob: await canvasBlob(t.canvas, 'image/webp', 0.9), x: t.x, y: t.y };
   } finally {
     URL.revokeObjectURL(src);
   }

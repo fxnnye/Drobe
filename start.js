@@ -35,6 +35,36 @@ async function backfillColors() {
   } finally { colorBusy = false; }
 }
 
+// Gespeicherte Freisteller einmalig neu zuschneiden: verirrte Pünktchen am Rand machten manche Teile (z. B. Caps) winzig.
+// `trimV` merkt sich, dass ein Teil geprüft ist; ändert sich der Zuschnitt, hebt eine neue Nummer die Markierung auf.
+const TRIM_V = 1;
+let trimBusy = false;
+async function backfillTrim() {
+  if (trimBusy) return;
+  trimBusy = true;
+  let changed = false;
+  try {
+    for (const [kind, list] of [['items', items], ['wishlist', wishlist]]) {
+      for (const it of list.filter((i) => i.blob && i.trimV !== TRIM_V)) {
+        try {
+          const t = await retrimBlob(it.blob);
+          if (t) {
+            it.blob = t.blob;
+            if (it.srcBox) it.srcBox = { x: it.srcBox.x + t.x, y: it.srcBox.y + t.y };
+            delete it.emb; // Bild geändert: Vektor neu berechnen
+            if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
+            aspects.delete(it.id);
+            changed = true;
+          }
+          it.trimV = TRIM_V;
+          if (t) await dbPut(kind, it); else await rawPut(kind, it); // ohne Änderung kein Abgleich nötig
+        } catch (e) { console.error(e); }
+      }
+    }
+  } finally { trimBusy = false; }
+  if (changed) { renderCloset(); renderWishlist(); renderOutfits(); renderPicker(); }
+}
+
 // Alles aus dem lokalen Speicher neu einlesen und anzeigen (nach dem Abgleich mit dem Konto)
 async function reloadAll() {
   [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
@@ -46,6 +76,7 @@ async function reloadAll() {
   outfits.sort((a, b) => a.created - b.created);
   renderCloset(); renderWishlist(); renderOutfits(); renderPicker();
   backfillColors();
+  backfillTrim();
 }
 
 // Daten aus der Zeit vor dem Login (gleicher Browser, alte Datenbank) lesen
@@ -114,6 +145,7 @@ async function startApp(userId) {
   showView('feed');
   maybeWelcome();
   backfillColors();
+  backfillTrim();
 }
 
 Cloud.boot();
