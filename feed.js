@@ -107,6 +107,8 @@ const inGroup = (f) => GROUPS[f] ? f : Object.keys(GROUPS).find((g) => GROUPS[g]
 
 function renderChips(el, key, onChange) {
   el.innerHTML = '';
+  const host = el.closest('.filter-row');
+  if (host?._sub) { host._sub.remove(); host._sub = null; }
   const chip = (parent, label, value) => {
     const b = document.createElement('button');
     const group = inGroup(state[key]);
@@ -123,7 +125,8 @@ function renderChips(el, key, onChange) {
     sub.className = 'subchips';
     chip(sub, 'Alle ' + group, group);
     GROUPS[group].forEach((c) => chip(sub, c, c));
-    el.appendChild(sub);
+    const row = el.closest('.filter-row'); // dort scrollt die obere Reihe; die Unterkategorien kommen als eigene Reihe darunter, sichtbar ohne Wischen
+    if (row) { row._sub?.remove(); row.after(sub); row._sub = sub; } else el.appendChild(sub);
   }
 }
 // Kategorie, die beim Hochladen zum aktuellen Filter passt
