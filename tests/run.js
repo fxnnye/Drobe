@@ -81,6 +81,26 @@ test('Zuschnitt ignoriert verirrte Pünktchen, behält das Teil', () => {
   eq([c.canvas.width, c.canvas.height], [280, 6]);
 });
 
+test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose darunter, Schuhe links unten', async () => {
+  const doc = frame.contentDocument;
+  const mk = async (name, cat, asp) => { const c = doc.createElement('canvas'); c.width = 300; c.height = Math.round(300 * asp); c.getContext('2d').fillRect(0, 0, c.width, c.height); return { id: 't_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };
+  const st = W('state'), setItems = W('(v) => { items = v; }'), saveItems = W('items'), saveOutfit = st.outfit;
+  try {
+    const mine = [await mk('brille', 'Schmuck', 0.33), await mk('beanie', 'Caps', 1), await mk('jacke', 'Jacken', 1), await mk('hoodie', 'Pullover', 1.22), await mk('jeans', 'Hosen', 1.8), await mk('tasche', 'Taschen', 0.82), await mk('schuhe', 'Schuhe', 0.38)];
+    setItems(mine);
+    st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
+    for (const it of mine) await W('addLayer')(it);
+    const L = (n) => st.outfit.layers.find((l) => l.itemId === 't_' + n);
+    const H = (l) => l.w * W('aspects').get(l.itemId) / W('STAGE_RATIO');
+    ok(L('jacke').x > L('hoodie').x && L('jacke').y < L('hoodie').y, 'Jacke rechts oben hinter dem Oberteil');
+    ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) - 0.01, 'Hose unter dem Oberteil');
+    ok(L('tasche').x > 0.5 && L('tasche').y >= L('jeans').y - 0.01, 'Tasche rechts auf Hosenhöhe');
+    ok(L('schuhe').x < 0.1 && L('schuhe').y > 0.7, 'Schuhe links unten');
+    ok(L('brille').x < 0.3 && L('beanie').y > L('brille').y && L('beanie').x < 0.3, 'Schmuck und Cap links oben, Cap unter dem Schmuck');
+    for (const l of st.outfit.layers) ok(l.x >= 0 && l.y >= 0 && l.x + l.w <= 1.0001 && l.y + H(l) <= 1.0001, 'bleibt in der Fläche: ' + l.itemId);
+  } finally { setItems(saveItems); st.outfit = saveOutfit; }
+});
+
 /* ---------- Fehlerprotokoll (Client) ---------- */
 group('Fehlerprotokoll');
 test('meldet Fehler gekürzt, ohne Adressteil, ohne Doppelte; ignoriert Rauschen', async () => {

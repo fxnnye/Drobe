@@ -70,37 +70,47 @@ async function addLayer(it) {
   renderStage();
 }
 
-// Ordnet die Teile in zwei Spalten mit gleichmäßigem Abstand an: links Cap, Oberteil, Hose; rechts Jacke, Tasche,
-// Schuhe (Gürtel auf dem Hosenbund, Schmuck in einer Reihe darunter). Von Hand verschobene Teile bleiben liegen.
-const GAP = -0.006; // gleicher Abstand zwischen allen Teilen (leicht negativ = sie berühren sich knapp)
-const COL_LEFT = 0.29, COL_RIGHT = 0.71; // Mittellinien der beiden Spalten
+// Ordnet die Teile wie eine Outfit-Collage an: links oben Schmuck und Cap, rechts oben die Jacke, in der Mitte das Oberteil
+// (vor der Jacke), darunter die Hose, rechts davon die Tasche, links unten die Schuhe, der Gürtel auf dem Hosenbund.
+// Fehlt ein Teil, rücken die anderen nach. Von Hand verschobene Teile bleiben liegen.
 async function relayout() {
   const auto = state.outfit.layers.filter((l) => !l.manual && itemById(l.itemId));
   await Promise.all(auto.map((l) => aspectOf(itemById(l.itemId))));
   const of = (cat) => auto.filter((l) => itemById(l.itemId).category === cat);
   const hf = (l) => l.w * aspects.get(l.itemId) / STAGE_RATIO; // Höhe als Anteil der Bühnenhöhe
-  const clampX = (x, l) => Math.max(0, Math.min(1 - l.w, x));
-  const place = (l, cx, y) => { l.x = clampX(cx - l.w / 2, l); l.y = y; return y + hf(l) + GAP; };
+  const put = (l, x, y) => { // x = linke Kante; bleibt innerhalb der Fläche
+    l.x = Math.max(0, Math.min(1 - l.w, x));
+    l.y = Math.max(0, Math.min(1 - hf(l), y));
+  };
+  const jackets = of('Jacken'), tops = [...of('Shirts'), ...of('Pullover')], pants = of('Hosen');
 
-  // Linke Spalte von oben nach unten
-  let y = 0.03, pants = null;
-  for (const cat of ['Caps', 'Shirts', 'Pullover', 'Hosen']) {
-    for (const l of of(cat)) {
-      if (cat === 'Hosen') pants = l;
-      y = place(l, COL_LEFT, y);
-    }
-  }
-  for (const l of of('Gürtel')) place(l, COL_LEFT, pants ? pants.y + 0.005 : y); // Gürtel auf dem Hosenbund
+  // Rechts oben: Jacke, rechtsbündig
+  let jacketBottom = 0.03;
+  for (const l of jackets) { put(l, 0.96 - l.w, 0.03); jacketBottom = Math.max(jacketBottom, l.y + hf(l)); }
 
-  // Rechte Spalte: ohne Jacke beginnt sie auf Höhe der Hose
-  let yr = of('Jacken').length ? 0.03 : (pants ? pants.y : 0.3);
-  for (const cat of ['Jacken', 'Taschen', 'Schuhe']) for (const l of of(cat)) yr = place(l, COL_RIGHT, yr);
+  // Mitte: Oberteil, mittig; mit Jacke ein Stück tiefer, damit es davor liegt
+  const topY = jackets.length ? 0.155 : 0.04;
+  let topBottom = jackets.length ? jacketBottom : 0.04;
+  for (const l of tops) { put(l, 0.49 - l.w / 2, topY); topBottom = Math.max(topBottom, l.y + hf(l)); }
 
-  // Schmuck: kleine Reihe unter der rechten Spalte
-  of('Schmuck').forEach((l, k) => {
-    l.x = clampX(0.52 + (k % 3) * 0.15, l);
-    l.y = yr + 0.01 + Math.floor(k / 3) * 0.1;
-  });
+  // Hose: unter dem Oberteil, mittig
+  let pantsTop = topBottom, pantsBottom = 0.97;
+  for (const l of pants) { put(l, 0.495 - l.w / 2, pantsTop); pantsBottom = l.y + hf(l); }
+
+  // Gürtel auf dem Hosenbund
+  for (const l of of('Gürtel')) put(l, 0.495 - l.w / 2, pantsTop + 0.005);
+
+  // Rechts neben der Hose: Tasche auf Höhe des Hosenbunds
+  let ty = pantsTop;
+  for (const l of of('Taschen')) { put(l, 0.955 - l.w, ty); ty = l.y + hf(l) + 0.01; }
+
+  // Links oben: Schmuck, darunter Cap(s)
+  let ly = 0.05;
+  for (const l of [...of('Schmuck'), ...of('Caps')]) { put(l, 0.18 - l.w / 2 + 0.05, ly); ly = l.y + hf(l) + 0.025; }
+
+  // Links unten: Schuhe, am unteren Ende der Hose
+  let sy = pants.length ? pantsBottom - 0.16 : 0.8;
+  for (const l of of('Schuhe')) { put(l, 0.27 - l.w / 2, sy); sy = l.y + hf(l) + 0.01; }
 }
 
 function renderStage() {

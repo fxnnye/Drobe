@@ -21,7 +21,7 @@ const PLACEMENT = {
   Hosen: { w: 0.50, h: 0.50 },
   Gürtel: { w: 0.28, h: 0.05 },
   Taschen: { w: 0.40, h: 0.22 },
-  Schmuck: { w: 0.14, h: 0.08 },
+  Schmuck: { w: 0.22, h: 0.07 },
   'Caps': { w: 0.30, h: 0.12 },
   Schuhe: { w: 0.44, h: 0.15 },
 };
