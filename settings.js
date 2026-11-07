@@ -119,7 +119,7 @@ function applyTheme(mode) {
   if (mode === 'light' || mode === 'dark') root.dataset.theme = mode; else delete root.dataset.theme;
   document.querySelectorAll('#themeChips .chip').forEach((c) => c.classList.toggle('active', c.dataset.theme === (mode === 'light' || mode === 'dark' ? mode : 'system')));
   const dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.querySelector('meta[name=theme-color]').content = dark ? '#121212' : '#333638';
+  document.querySelector('meta[name=theme-color]').content = dark ? '#121212' : '#ffffff';
 }
 let themeMode = 'system';
 try { themeMode = localStorage.getItem('drobe-theme') || 'system'; } catch (e) { /* ohne Speicher: automatisch */ }
