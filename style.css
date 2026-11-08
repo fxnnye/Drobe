@@ -809,3 +809,6 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 4px; border-radius: 
 .size-head { position: sticky; top: 0; padding: 8px 16px 4px; background: var(--surface); font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 
 .landing { padding-top: 0; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+.top h1 { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.top h1:active { opacity: .7; }
