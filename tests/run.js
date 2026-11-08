@@ -17,6 +17,16 @@ const ready = new Promise((res) => frame.addEventListener('load', () => setTimeo
 const text = async (path) => (await fetch('../' + path, { cache: 'no-store' })).text();
 const png = (w, h, draw) => new Promise((res) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), c); c.toBlob(res, 'image/png'); });
 
+/* ---------- Markenvorschläge ---------- */
+group('Markenvorschläge');
+for (const [typed, want] of [['adidsa', 'Adidas'], ['nik', 'Nike'], ['stussy', 'Stüssy'], ['levis', "Levi's"], ['north face', 'The North Face'], ['hm', 'H&M'], ['comme des garcons', 'Comme des Garçons'], ['new balence', 'New Balance']]) {
+  test('brandMatches ' + typed + ' → ' + want, () => eq(W('brandMatches')(typed)[0], want));
+}
+test('brandMatches: Unsinn → keine Vorschläge', () => eq(W('brandMatches')('qqxzvv'), []));
+test('brandMatches: leere Eingabe → keine Vorschläge', () => eq(W('brandMatches')('  '), []));
+test('brandMatches: eigene Schreibweise steht vor der Liste', () => eq(W('brandMatches')('nik', ['Nikeish'])[0], 'Nikeish'));
+test('brandMatches: höchstens 5 Vorschläge', () => ok(W('brandMatches')('a').length <= 5));
+
 /* ---------- Farben ---------- */
 group('Farben');
 const NAMES = [

@@ -7,6 +7,7 @@ fillSelect($('wishCategory'));
 fillSelect($('wishUploadCategory'));
 buildDetails($('itemMore'), 'itd', 'items');
 buildDetails($('wishMore'), 'wsd', 'wishlist');
+['upBrand', 'itdbrand', 'wsdbrand'].forEach((id) => brandSuggest($(id)));
 
 // Alte Kategorien umsortieren (z. B. Outerwear → Jacken, Oberteile → Shirts, Accessoires → Taschen)
 async function migrateCategories() {

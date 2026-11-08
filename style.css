@@ -796,3 +796,12 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 
 
 /* Meldungen am Handy über der unteren Leiste, nicht davor */
 @media (max-width: 700px) { .toast { bottom: calc(80px + env(safe-area-inset-bottom)); } }
+
+/* Markenvorschläge unter dem Feld */
+.brand-list { border: 1px solid var(--gray-hover); border-radius: var(--r-ctrl); background: var(--surface); max-height: 280px; overflow-y: auto; overscroll-behavior: contain; }
+.brand-list[hidden] { display: none; }
+.brand-opt { display: block; width: 100%; min-height: 44px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--gray); background: none; text-align: left; font: inherit; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; cursor: pointer; }
+.brand-opt:last-child { border-bottom: 0; }
+.brand-opt.keep { font-weight: 400; color: var(--muted); }
+.brand-opt:active { background: var(--gray); }
+@media (hover: hover) and (pointer: fine) { .brand-opt:hover { background: var(--gray); } }
