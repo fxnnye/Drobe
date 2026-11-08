@@ -112,10 +112,26 @@ test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose 
     const H = (l) => l.w * W('aspects').get(l.itemId) / W('STAGE_RATIO');
     ok(L('jacke').x > L('hoodie').x && L('jacke').y < L('hoodie').y, 'Jacke rechts oben hinter dem Oberteil');
     ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) - 0.01, 'Hose unter dem Oberteil');
-    ok(L('tasche').x > 0.5 && L('tasche').y >= L('jeans').y - 0.01, 'Tasche rechts auf Hosenhöhe');
+    ok(L('tasche').x < 0.3 && L('tasche').y > L('brille').y, 'Tasche links oben bei den Accessoires');
     ok(L('schuhe').x < 0.1 && L('schuhe').y > 0.7, 'Schuhe links unten');
-    ok(L('brille').x < 0.3 && L('beanie').y > L('brille').y && L('beanie').x < 0.3, 'Schmuck und Cap links oben, Cap unter dem Schmuck');
+    ok(L('brille').x < 0.3 && L('beanie').x < 0.3 && L('beanie').y < L('brille').y, 'Schmuck und Cap links oben, Cap zuerst');
     for (const l of st.outfit.layers) ok(l.x >= 0 && l.y >= 0 && l.x + l.w <= 1.0001 && l.y + H(l) <= 1.0001, 'bleibt in der Fläche: ' + l.itemId);
+  } finally { setItems(saveItems); st.outfit = saveOutfit; }
+});
+
+test('Oberteile: Jacke und Pullover mischbar, höchstens zwei, Pullover an der Shirt-Stelle', async () => {
+  const doc = frame.contentDocument;
+  const mk = async (name, cat) => { const c = doc.createElement('canvas'); c.width = 300; c.height = 300; c.getContext('2d').fillRect(0, 0, 300, 300); return { id: 'o_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };
+  const st = W('state'), setItems = W('(v) => { items = v; }'), saveItems = W('items'), saveOutfit = st.outfit;
+  try {
+    const mine = [await mk('jacke', 'Jacken'), await mk('pulli', 'Pullover'), await mk('shirt', 'Shirts')];
+    setItems(mine);
+    st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
+    await W('addLayer')(mine[0]); await W('addLayer')(mine[1]);
+    eq(st.outfit.layers.length, 2, 'Jacke und Pullover zusammen');
+    ok(st.outfit.layers.find((l) => l.itemId === 'o_jacke').x > st.outfit.layers.find((l) => l.itemId === 'o_pulli').x, 'Jacke rechts, Pullover mittig');
+    await W('addLayer')(mine[2]);
+    eq(st.outfit.layers.map((l) => l.itemId).sort(), ['o_pulli', 'o_shirt'], 'drittes Oberteil ersetzt das älteste');
   } finally { setItems(saveItems); st.outfit = saveOutfit; }
 });
 

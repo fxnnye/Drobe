@@ -19,15 +19,15 @@ const PLACEMENT = {
   Shirts: { w: 0.52, h: 0.30 },
   Pullover: { w: 0.58, h: 0.32 },
   Hosen: { w: 0.50, h: 0.50 },
-  Gürtel: { w: 0.28, h: 0.05 },
-  Taschen: { w: 0.40, h: 0.22 },
-  Schmuck: { w: 0.22, h: 0.07 },
-  'Caps': { w: 0.30, h: 0.12 },
+  Gürtel: { w: 0.24, h: 0.05 },
+  Taschen: { w: 0.24, h: 0.17 },
+  Schmuck: { w: 0.20, h: 0.07 },
+  'Caps': { w: 0.22, h: 0.10 },
   Schuhe: { w: 0.44, h: 0.15 },
 };
 const STAGE_RATIO = 16 / 9; // Höhe : Breite der Bühne
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
-const EXCLUSIVE = { Shirts: ['Shirts', 'Pullover'], Pullover: ['Shirts', 'Pullover'] }; // ersetzen sich gegenseitig
+const MAX_OBERTEILE = 2; // Jacke, Pullover und Shirt lassen sich mischen, zusammen aber höchstens zwei
 // Standard-Stapelreihenfolge (hinten → vorne)
 const STACK = ['Jacken', 'Shirts', 'Pullover', 'Hosen', 'Gürtel', 'Taschen', 'Schmuck', 'Caps', 'Schuhe'];
 const EXPORT_W = 900, EXPORT_H = 1600;

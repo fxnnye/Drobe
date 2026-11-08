@@ -57,9 +57,20 @@ const fitWidth = (it, aspect) => {
 async function addLayer(it) {
   const aspect = await aspectOf(it);
   const w = fitWidth(it, aspect) * (it.scale || 1); // it.scale: vom Nutzer gemerkte Anpassung
-  // Regeln: pro Kategorie nur ein Teil (Schmuck: beliebig viele), Shirt und Pullover schließen sich aus
-  const replaced = MULTI.includes(it.category) ? [] : EXCLUSIVE[it.category] || [it.category];
+  // Regeln: pro Kategorie nur ein Teil (Schmuck: beliebig viele); Oberteile (Jacke, Pullover, Shirt) mischbar, aber höchstens zwei
+  const replaced = MULTI.includes(it.category) ? [] : [it.category];
   state.outfit.layers = state.outfit.layers.filter((l) => !replaced.includes(itemById(l.itemId)?.category));
+  if (GROUPS.Oberteile.includes(it.category)) {
+    const tops = () => state.outfit.layers.filter((l) => GROUPS.Oberteile.includes(itemById(l.itemId)?.category));
+    let dropped = false;
+    while (tops().length >= MAX_OBERTEILE) { // das älteste Oberteil weicht (uid beginnt mit dem Zeitpunkt des Hinzufügens)
+      const oldest = tops().reduce((a, b) => (a.uid <= b.uid ? a : b));
+      state.outfit.layers = state.outfit.layers.filter((l) => l !== oldest);
+      if (state.selected === oldest.uid) state.selected = null;
+      dropped = true;
+    }
+    if (dropped) toast('Höchstens 2 Oberteile: das älteste wurde ersetzt');
+  }
   const layer = { uid: uid(), itemId: it.id, x: 0.3, y: 0.3, w };
   // Standard-Stapelreihenfolge einhalten (Jacke hinter Oberteil usw.)
   const rank = STACK.indexOf(it.category);
@@ -70,8 +81,8 @@ async function addLayer(it) {
   renderStage();
 }
 
-// Ordnet die Teile wie eine Outfit-Collage an: links oben Schmuck und Cap, rechts oben die Jacke, in der Mitte das Oberteil
-// (vor der Jacke), darunter die Hose, rechts davon die Tasche, links unten die Schuhe, der Gürtel auf dem Hosenbund.
+// Ordnet die Teile wie eine Outfit-Collage an: links oben alle Accessoires (Cap, Schmuck, Gürtel, Tasche), rechts oben die Jacke,
+// in der Mitte Shirt und Pullover (vor der Jacke), darunter die Hose, links unten die Schuhe.
 // Fehlt ein Teil, rücken die anderen nach. Von Hand verschobene Teile bleiben liegen.
 async function relayout() {
   const auto = state.outfit.layers.filter((l) => !l.manual && itemById(l.itemId));
@@ -88,25 +99,18 @@ async function relayout() {
   let jacketBottom = 0.03;
   for (const l of jackets) { put(l, 0.96 - l.w, 0.03); jacketBottom = Math.max(jacketBottom, l.y + hf(l)); }
 
-  // Mitte: Oberteil, mittig; mit Jacke ein Stück tiefer, damit es davor liegt
+  // Mitte: Shirt und Pullover, mittig; mit Jacke ein Stück tiefer, damit es davor liegt. Zwei Teile liegen leicht versetzt übereinander.
   const topY = jackets.length ? 0.155 : 0.04;
   let topBottom = jackets.length ? jacketBottom : 0.04;
-  for (const l of tops) { put(l, 0.49 - l.w / 2, topY); topBottom = Math.max(topBottom, l.y + hf(l)); }
+  tops.forEach((l, i) => { put(l, 0.49 - l.w / 2 + i * 0.04, topY + i * 0.05); topBottom = Math.max(topBottom, l.y + hf(l)); });
 
-  // Hose: unter dem Oberteil, mittig
+  // Hose: unter den Oberteilen, mittig
   let pantsTop = topBottom, pantsBottom = 0.97;
   for (const l of pants) { put(l, 0.495 - l.w / 2, pantsTop); pantsBottom = l.y + hf(l); }
 
-  // Gürtel auf dem Hosenbund
-  for (const l of of('Gürtel')) put(l, 0.495 - l.w / 2, pantsTop + 0.005);
-
-  // Rechts neben der Hose: Tasche auf Höhe des Hosenbunds
-  let ty = pantsTop;
-  for (const l of of('Taschen')) { put(l, 0.955 - l.w, ty); ty = l.y + hf(l) + 0.01; }
-
-  // Links oben: Schmuck, darunter Cap(s)
-  let ly = 0.05;
-  for (const l of [...of('Schmuck'), ...of('Caps')]) { put(l, 0.18 - l.w / 2 + 0.05, ly); ly = l.y + hf(l) + 0.025; }
+  // Links oben: alle Accessoires untereinander (Cap, Schmuck, Gürtel, Tasche)
+  let ly = 0.04;
+  for (const l of [...of('Caps'), ...of('Schmuck'), ...of('Gürtel'), ...of('Taschen')]) { put(l, 0.13 - l.w / 2, ly); ly = l.y + hf(l) + 0.025; }
 
   // Links unten: Schuhe, am unteren Ende der Hose
   let sy = pants.length ? pantsBottom - 0.16 : 0.8;
