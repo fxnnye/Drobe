@@ -302,7 +302,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <select id="itemCategory"></select>
     </label>
     <label class="field">Notizen
-      <input type="text" id="itemNote" maxlength="120" placeholder="z. B. Preis, Größe, Marke">
+      <textarea id="itemNote" rows="2" maxlength="120" placeholder="z. B. Preis, Größe, Marke"></textarea>
     </label>
     <div id="itemMore"></div>
     <button class="btn full" type="button" id="itSimilar">Ähnliche Teile von anderen</button>
@@ -364,7 +364,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <select id="wishCategory"></select>
     </label>
     <label class="field">Preis / Notiz
-      <input type="text" id="wishNote" maxlength="120" placeholder="z. B. 89 €">
+      <textarea id="wishNote" rows="2" maxlength="120" placeholder="z. B. 89 €"></textarea>
     </label>
     <label class="field">Link zum Shop
       <input type="text" id="wishLink" inputmode="url" autocapitalize="off" placeholder="https://…">
@@ -442,7 +442,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     </div>
     <div id="upWish" hidden>
       <label class="field">Preis / Notiz
-        <input type="text" id="upNote" maxlength="120" placeholder="z. B. 89 €">
+        <textarea id="upNote" rows="2" maxlength="120" placeholder="z. B. 89 €"></textarea>
       </label>
       <label class="field">Link zum Shop
         <input type="text" id="upLink" inputmode="url" autocapitalize="off" placeholder="https://…">

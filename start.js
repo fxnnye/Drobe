@@ -160,11 +160,11 @@ document.querySelectorAll('dialog').forEach((d) => {
   d.addEventListener('pointerdown', (e) => { down = e.target === d && outside(e); });
   d.addEventListener('click', (e) => { if (down && e.target === d && outside(e)) d.close(); down = false; });
 });
-// Enter in einem Textfeld speichert und schließt den Dialog (Teil, Wunschliste, Hochladen)
+// Enter speichert und schließt den Dialog (Teil, Wunschliste, Hochladen, Profil). Mehrzeilige Felder (Notizen, Über mich) machen einen Absatz.
 [['itemDialog', 'itemSave'], ['wishDialog', 'wishSave'], ['uploadDialog', 'upAdd'], ['profileDialog', 'profTextSave']].forEach(([d, btn]) => {
   $(d).addEventListener('keydown', (e) => {
     const t = e.target;
-    if (e.key !== 'Enter' || e.isComposing || t.tagName !== 'INPUT' || !['text', 'search', 'number', 'url'].includes(t.type)) return;
+    if (e.key !== 'Enter' || e.isComposing || e.shiftKey || ['TEXTAREA', 'BUTTON', 'A', 'SELECT', 'SUMMARY'].includes(t.tagName) || (t.tagName === 'INPUT' && ['file', 'checkbox', 'radio'].includes(t.type))) return;
     e.preventDefault();
     if (t.blur) t.blur();
     $(btn).click();
