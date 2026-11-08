@@ -229,7 +229,7 @@ function brandSuggest(input) {
 
 /* ---------- Größenvorschläge: scrollbare Liste (Kleidung, Schuhe, Hosen); eigene Eingabe bleibt möglich ---------- */
 const SIZE_GROUPS = {
-  Kleidung: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'],
+  Kleidung: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
   Schuhe: Array.from({ length: 13 }, (_, i) => String(36 + i)),
   Hosen: Array.from({ length: 15 }, (_, i) => 'W' + (26 + i)),
   Einheitsgröße: ['One Size'],
