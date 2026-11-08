@@ -200,10 +200,12 @@ function updatePanel() {
   $('bgCustom').value = bg;
   $('bgCustom').parentElement.classList.toggle('active', !BG_COLORS.includes(bg.toLowerCase()));
   $('outfitName').value = state.outfit.name;
-  $('outfitVis').value = state.outfit.vis || 'private';
+  $('outfitVis').value = outfitVisOf(state.outfit);
   $('outfitDelete').hidden = !state.outfit.id; // Löschen gibt es nur für gespeicherte Outfits
 }
 $('outfitVis').onchange = () => { state.outfit.vis = $('outfitVis').value; };
+// Neue Outfits sind standardmäßig öffentlich; gespeicherte behalten ihre Einstellung
+function outfitVisOf(o) { return o.vis || (o.id ? 'private' : 'public'); }
 // Hintergrundfarbe des Outfits: feste Farben plus freie Farbwahl
 const BG_COLORS = ['#ffffff', '#f1efe9', '#e9e9e9', '#f6d5d9', '#d6e4f0', '#d9e8d4', '#111111'];
 function setupSwatches() {
@@ -325,15 +327,17 @@ $('saveOutfit').onclick = async () => {
     bg: o.bg || '#ffffff',
     thumb, created: Date.now(),
   };
-  if (o.vis === 'public') rec.vis = 'public';
+  const vis = outfitVisOf(o);
+  if (vis === 'public') rec.vis = 'public';
   await dbPut('outfits', rec);
   const idx = outfits.findIndex((x) => x.id === rec.id);
   if (idx >= 0) outfits[idx] = rec; else outfits.push(rec);
   urls.delete('thumb-' + rec.id);
-  o.id = rec.id; o.name = rec.name;
+  o.id = rec.id; o.name = rec.name; o.vis = vis;
   updatePanel();
   renderOutfits();
   toast('Outfit gespeichert');
+  showView('outfits'); // Fenster schließen: zurück zu den Outfits im Profil
 };
 
 function renderOutfits() {
