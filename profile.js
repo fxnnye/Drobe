@@ -163,7 +163,12 @@ const Profile = (() => {
     const me = Cloud.user();
     const own = !!me && me.name === data.username;
     if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
-    box.append(el('h2', 'pub-name', data.username));
+    const head = el('div', 'pub-head');
+    const av = el('span', 'avatar lg');
+    paintAvatar(av, own ? ownAvatar : null, data.username);
+    head.append(av, el('h2', 'pub-name', data.username));
+    box.append(head);
+    sb.rpc('profile_avatar', { p_username: data.username }).then((r) => { if (!r.error && r.data) paintAvatar(av, r.data, data.username); }, () => {});
     const about = [data.city, data.followers ? data.followers + ' Follower' : ''].filter(Boolean).join(' · ');
     if (data.bio || about) {
       const a = el('div', 'pub-about');
@@ -641,7 +646,19 @@ const Profile = (() => {
     }
   }
 
-  /* ---------- Eigener Profiltext ---------- */
+  /* ---------- Eigenes Profil: Foto, Text, Stadt ---------- */
+  let ownAvatar = null; // Data-URL oder null
+  let pendingAvatar; // undefined = unverändert, '' = entfernen, sonst neue Data-URL
+  // Zeigt ein Profilbild, sonst den Anfangsbuchstaben
+  function paintAvatar(node, url, name) {
+    node.replaceChildren();
+    node.classList.toggle('has-img', !!url);
+    if (url) { const i = el('img'); i.alt = ''; i.src = url; node.append(i); } else node.textContent = ((name || '?')[0] || '?').toUpperCase();
+  }
+  function paintOwnAvatars() {
+    const u = Cloud.user();
+    if ($('meAvatar')) paintAvatar($('meAvatar'), ownAvatar, u && u.name);
+  }
   async function loadOwnText() {
     const sb = Cloud.client();
     if (!sb || !navigator.onLine) return;
@@ -650,7 +667,32 @@ const Profile = (() => {
       if (error) throw error;
       $('profBio').value = (data && data.bio) || '';
       $('profCity').value = (data && data.city) || '';
+      ownAvatar = (data && data.avatar) || null;
+      paintOwnAvatars();
     } catch (e) { console.error(e); }
+  }
+  // Mittig quadratisch zuschneiden, auf 256 px verkleinern
+  async function squareJpeg(file) {
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const side = Math.min(bmp.width, bmp.height), N = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = N;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, N, N);
+    g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, N, N);
+    if (bmp.close) bmp.close();
+    return c.toDataURL('image/jpeg', 0.85);
+  }
+  function openProfileEdit() {
+    const u = Cloud.user();
+    if (!u) return;
+    pendingAvatar = undefined;
+    $('profMsg').textContent = '';
+    $('profLink').value = profileLink(u.name);
+    paintAvatar($('pfAvatar'), ownAvatar, u.name);
+    $('pfPhotoDel').hidden = !ownAvatar;
+    $('profileDialog').showModal();
+    loadOwnText().then(() => { if (pendingAvatar === undefined) { paintAvatar($('pfAvatar'), ownAvatar, u.name); $('pfPhotoDel').hidden = !ownAvatar; } });
   }
   async function saveOwnText() {
     const msg = $('profMsg');
@@ -658,10 +700,17 @@ const Profile = (() => {
     if (!Cloud.client() || !navigator.onLine) { msg.textContent = 'Dafür brauchst du eine Internetverbindung.'; return; }
     $('profTextSave').disabled = true;
     try {
-      const { error } = await Cloud.client().rpc('update_my_profile', { p_bio: $('profBio').value, p_city: $('profCity').value });
+      const sb = Cloud.client();
+      const { error } = await sb.rpc('update_my_profile', { p_bio: $('profBio').value, p_city: $('profCity').value });
       if (error) throw error;
-      msg.className = 'pw-msg';
-      msg.textContent = 'Gespeichert.';
+      if (pendingAvatar !== undefined) {
+        const r = await sb.rpc('set_my_avatar', { p_avatar: pendingAvatar });
+        if (r.error) throw r.error;
+        ownAvatar = pendingAvatar || null;
+        paintOwnAvatars();
+      }
+      $('profileDialog').close();
+      toast('Profil gespeichert');
     } catch (e) { console.error(e); msg.textContent = 'Das hat nicht geklappt. Läuft die neueste Datenbank-Version?'; }
     $('profTextSave').disabled = false;
   }
@@ -746,10 +795,20 @@ const Profile = (() => {
     window.addEventListener('hashchange', route);
     window.addEventListener('online', () => { if (readLocalSafe()?.dirty) pushShowcase().catch((e) => console.error(e)); });
     document.querySelector('.tabs').addEventListener('click', () => { if (viewing) leave(); });
-    document.querySelector('[data-open=profile]').addEventListener('click', () => {
-      const u = Cloud.user();
-      $('profLink').value = u ? profileLink(u.name) : '';
-    });
+    $('meProfile').onclick = openProfileEdit;
+    $('pfCancel').onclick = () => $('profileDialog').close();
+    $('pfPhoto').onclick = () => $('pfFile').click();
+    $('pfFile').onchange = async () => {
+      const f = $('pfFile').files[0];
+      $('pfFile').value = '';
+      if (!f) return;
+      try {
+        pendingAvatar = await squareJpeg(f);
+        paintAvatar($('pfAvatar'), pendingAvatar, Cloud.user().name);
+        $('pfPhotoDel').hidden = false;
+      } catch (e) { console.error(e); toast('Das Bild konnte nicht gelesen werden.'); }
+    };
+    $('pfPhotoDel').onclick = () => { pendingAvatar = ''; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
     document.querySelector('[data-open=moderation]').addEventListener('click', loadReports);
     document.querySelector('[data-open=errors]').addEventListener('click', loadErrors);
@@ -771,7 +830,7 @@ const Profile = (() => {
     $('profPreview').onclick = async () => {
       const u = Cloud.user();
       if (!u) return;
-      $('settingsDialog').close();
+      $('profileDialog').close();
       toast('Einen Moment …');
       try { await Cloud.sync(); } catch (e) { /* Vorschau zeigt dann den letzten Serverstand */ }
       location.hash = '#/u/' + u.name;
@@ -873,5 +932,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, shape));
   }
 
-  return { matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
+  return { paintOwnAvatars, matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
 })();

@@ -161,7 +161,7 @@ document.querySelectorAll('dialog').forEach((d) => {
   d.addEventListener('click', (e) => { if (down && e.target === d && outside(e)) d.close(); down = false; });
 });
 // Enter in einem Textfeld speichert und schließt den Dialog (Teil, Wunschliste, Hochladen)
-[['itemDialog', 'itemSave'], ['wishDialog', 'wishSave'], ['uploadDialog', 'upAdd']].forEach(([d, btn]) => {
+[['itemDialog', 'itemSave'], ['wishDialog', 'wishSave'], ['uploadDialog', 'upAdd'], ['profileDialog', 'profTextSave']].forEach(([d, btn]) => {
   $(d).addEventListener('keydown', (e) => {
     const t = e.target;
     if (e.key !== 'Enter' || e.isComposing || t.tagName !== 'INPUT' || !['text', 'search', 'number', 'url'].includes(t.type)) return;

@@ -47,13 +47,12 @@ document.querySelectorAll('.subtab').forEach((t) => t.addEventListener('click', 
 $('meFollowers').onclick = () => showView('followers');
 $('meFollowing').onclick = () => showView('following');
 document.querySelectorAll('[data-back-me]').forEach((b) => { b.onclick = () => showView('me'); });
-$('meProfile').onclick = () => { const u = Cloud.user(); if (u) location.hash = '#/u/' + u.name; };
 
 function renderMeHead() {
   const u = Cloud.user();
   const name = u ? u.name : '';
   $('meName').textContent = name;
-  $('meAvatar').textContent = (name[0] || '?').toUpperCase();
+  Profile.paintOwnAvatars();
   const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
   $('meCounts').textContent = [n(items.length, 'Teil', 'Teile'), n(outfits.length, 'Outfit', 'Outfits'), n(wishlist.length, 'Wunsch', 'Wünsche')].join(' · ');
   $('meProfile').hidden = !u;

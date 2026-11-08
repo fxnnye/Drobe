@@ -812,3 +812,12 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 4px; border-radius: 
 
 .top h1 { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .top h1:active { opacity: .7; }
+
+/* Profilbild */
+.avatar { overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.lg { width: 72px; height: 72px; font-size: 28px; }
+.avatar-edit { display: flex; align-items: center; gap: var(--gap); margin-bottom: 12px; }
+.avatar-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.pub-head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.pub-head .pub-name { margin: 0; min-width: 0; overflow-wrap: anywhere; }

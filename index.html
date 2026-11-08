@@ -148,7 +148,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <span class="muted small" id="meCounts"></span>
         <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button></span>
       </div>
-      <button class="btn" type="button" id="meProfile">Ansehen</button>
+      <button class="btn" type="button" id="meProfile">Bearbeiten</button>
     </div>
     <div class="subtabs" role="tablist">
       <button class="subtab active" type="button" data-sub="closet">Schrank</button>
@@ -518,6 +518,36 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
+<dialog id="profileDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2>Profil bearbeiten</h2>
+    <div class="avatar-edit">
+      <span class="avatar lg" id="pfAvatar" aria-hidden="true"></span>
+      <div class="avatar-btns">
+        <button class="btn" type="button" id="pfPhoto">Foto ändern</button>
+        <button class="btn" type="button" id="pfPhotoDel" hidden>Entfernen</button>
+      </div>
+      <input type="file" id="pfFile" accept="image/*" hidden>
+    </div>
+    <p class="muted small">Öffentlich ist nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst. Notizen und Shop-Links bleiben immer privat.</p>
+    <label class="field">Über mich
+      <textarea id="profBio" rows="3" maxlength="160" placeholder="z. B. Streetwear, Vintage, Größe M"></textarea>
+    </label>
+    <label class="field">Stadt
+      <input type="text" id="profCity" maxlength="40" placeholder="z. B. Hamburg" autocomplete="off">
+    </label>
+    <p class="pw-msg" id="profMsg" role="status"></p>
+    <button class="btn full" type="button" id="profCopy">Profil-Link kopieren</button>
+    <input type="text" id="profLink" readonly hidden>
+    <button class="btn full" type="button" id="profPreview">So sehen andere mein Profil</button>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="pfCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="profTextSave">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="settingsDialog">
   <form method="dialog" onsubmit="return false">
     <div class="set-head">
@@ -529,7 +559,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
     <div class="set-panel" data-panel="main">
       <button class="set-row" type="button" data-open="account">Konto</button>
-      <button class="set-row" type="button" data-open="profile">Öffentliches Profil</button>
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
       <button class="set-row" type="button" id="backupOpen">Backup</button>
@@ -574,22 +603,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <div id="modList"></div>
     </div>
 
-    <div class="set-panel" data-panel="profile" data-title="Öffentliches Profil" hidden>
-      <p class="muted small">Öffentlich ist nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst. Notizen und Shop-Links bleiben immer privat.</p>
-      <label class="field">Über mich
-        <textarea id="profBio" rows="3" maxlength="160" placeholder="z. B. Streetwear, Vintage, Größe M"></textarea>
-      </label>
-      <label class="field">Stadt
-        <input type="text" id="profCity" maxlength="40" placeholder="z. B. Hamburg" autocomplete="off">
-      </label>
-      <p class="pw-msg" id="profMsg" role="status"></p>
-      <button class="btn full" type="button" id="profTextSave">Text speichern</button>
-      <label class="field">Dein Profil-Link
-        <input type="text" id="profLink" readonly>
-      </label>
-      <button class="btn full" type="button" id="profCopy">Link kopieren</button>
-      <button class="btn primary full" type="button" id="profPreview">So sehen andere mein Profil</button>
-    </div>
 
     <div class="set-panel" data-panel="password" data-title="Passwort ändern" hidden>
       <label class="field">Neues Passwort
