@@ -805,3 +805,6 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 
 .brand-opt.keep { font-weight: 400; color: var(--muted); }
 .brand-opt:active { background: var(--gray); }
 @media (hover: hover) and (pointer: fine) { .brand-opt:hover { background: var(--gray); } }
+
+.size-list { max-height: 240px; }
+.size-head { position: sticky; top: 0; padding: 8px 14px 4px; background: var(--surface); font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }

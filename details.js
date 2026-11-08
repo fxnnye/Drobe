@@ -226,3 +226,61 @@ function brandSuggest(input) {
   input.setAttribute('autocomplete', 'off');
   input.setAttribute('autocorrect', 'off');
 }
+
+/* ---------- Größenvorschläge: scrollbare Liste (Kleidung, Schuhe, Hosen); eigene Eingabe bleibt möglich ---------- */
+const SIZE_GROUPS = {
+  Kleidung: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', 'One Size'],
+  Schuhe: Array.from({ length: 13 }, (_, i) => String(36 + i)),
+  Hosen: Array.from({ length: 15 }, (_, i) => 'W' + (26 + i)),
+};
+// Welche Gruppe zuerst steht, richtet sich nach der Kategorie des Teils
+const sizeOrder = (category) => {
+  const first = category === 'Schuhe' ? 'Schuhe' : category === 'Hosen' ? 'Hosen' : 'Kleidung';
+  return [first, ...Object.keys(SIZE_GROUPS).filter((g) => g !== first)];
+};
+// Passende Größen zu einer Eingabe, gruppiert; ohne Eingabe die ganze Liste
+function sizeMatches(q, category) {
+  const nq = brandKey(q);
+  return sizeOrder(category).map((g) => {
+    const all = SIZE_GROUPS[g];
+    const hit = !nq ? all : [...all.filter((s) => brandKey(s).startsWith(nq)), ...all.filter((s) => !brandKey(s).startsWith(nq) && brandKey(s).includes(nq))];
+    return [g, hit];
+  }).filter(([, hit]) => hit.length);
+}
+function sizeSuggest(input, categoryId) {
+  if (!input) return;
+  const list = document.createElement('div');
+  list.className = 'brand-list size-list';
+  list.hidden = true;
+  input.after(list);
+  let accepted = null;
+  const hide = () => { list.hidden = true; list.replaceChildren(); };
+  const take = (v) => { input.value = v; accepted = v; hide(); };
+  const row = (label, value, cls) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'brand-opt' + (cls ? ' ' + cls : ''); b.textContent = label;
+    b.onclick = () => take(value);
+    list.appendChild(b);
+  };
+  const show = () => {
+    const q = input.value.trim();
+    hide();
+    if (q && q === accepted) return;
+    const groups = sizeMatches(q, categoryId && $(categoryId) ? $(categoryId).value : '');
+    if (q && groups.some(([, hit]) => hit.includes(q))) return; // genau eine Größe aus der Liste
+    for (const [g, hit] of groups) {
+      const h = document.createElement('div');
+      h.className = 'size-head'; h.textContent = g;
+      list.appendChild(h);
+      hit.forEach((s) => row(s, s));
+    }
+    if (q) row('„' + q + '“ so lassen', q, 'keep');
+    if (!list.children.length) return;
+    list.hidden = false;
+  };
+  input.addEventListener('input', () => { accepted = null; show(); });
+  input.addEventListener('focus', show);
+  input.addEventListener('blur', hide);
+  list.addEventListener('mousedown', (e) => e.preventDefault());
+  input.setAttribute('autocomplete', 'off');
+}

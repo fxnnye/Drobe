@@ -27,6 +27,15 @@ test('brandMatches: leere Eingabe → keine Vorschläge', () => eq(W('brandMatch
 test('brandMatches: eigene Schreibweise steht vor der Liste', () => eq(W('brandMatches')('nik', ['Nikeish'])[0], 'Nikeish'));
 test('brandMatches: höchstens 5 Vorschläge', () => ok(W('brandMatches')('a').length <= 5));
 
+group('Größenvorschläge');
+test('sizeMatches: ohne Eingabe alle drei Gruppen, Kleidung zuerst', () => eq(W('sizeMatches')('', 'Jacken').map(([g]) => g), ['Kleidung', 'Schuhe', 'Hosen']));
+test('sizeMatches: Schuhe-Kategorie zeigt Schuhgrößen zuerst', () => eq(W('sizeMatches')('', 'Schuhe')[0][0], 'Schuhe'));
+test('sizeMatches: Hosen-Kategorie zeigt Hosengrößen zuerst', () => eq(W('sizeMatches')('', 'Hosen')[0][0], 'Hosen'));
+test('sizeMatches: Schuhgrößen 36 bis 48', () => { const s = W('sizeMatches')('', 'Schuhe')[0][1]; eq([s[0], s[s.length - 1], s.length], ['36', '48', 13]); });
+test('sizeMatches: xl findet XL zuerst', () => eq(W('sizeMatches')('xl', 'Jacken')[0][1][0], 'XL'));
+test('sizeMatches: 42 findet nur Schuhgröße', () => eq(W('sizeMatches')('42', 'Jacken'), [['Schuhe', ['42']]]));
+test('sizeMatches: Unsinn findet nichts', () => eq(W('sizeMatches')('qqq', 'Jacken'), []));
+
 /* ---------- Farben ---------- */
 group('Farben');
 const NAMES = [
