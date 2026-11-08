@@ -863,3 +863,5 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .outfit-items { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 @media (min-width: 800px) { .outfit-page { grid-template-columns: 360px 1fr; align-items: start; } .outfit-photo img { margin: 0; } }
 #outfitsEmpty { margin-top: 60px; } /* gleiche Höhe wie bei Schrank und Wunschliste (dort steht darüber die Kategorienzeile) */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } /* nur für Screenreader, damit die Liste oben bündig mit den anderen Ansichten startet */
+.thread-head { margin-bottom: 16px; }
