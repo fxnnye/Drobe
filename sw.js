@@ -1,5 +1,5 @@
 // Offline-Cache. Bei jeder Änderung die Version anheben (Datei bleibt 1500 Byte).
-const CACHE = 'drobe-v118';
+const CACHE = 'drobe-v119';
 const JS = ['colors', 'profile', 'cloud', 'core', 'details', 'imaging', 'feed', 'closet', 'search', 'upload', 'item', 'outfits', 'wishlist', 'settings', 'start', 'errors'].map((n) => n + '.js');
 const FILES = [
   './', 'index.html', 'style.css', ...JS, 'vendor/supabase.js', 'manifest.webmanifest',

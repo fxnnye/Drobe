@@ -642,7 +642,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="chip" type="button" data-legal-tab="datenschutz">Datenschutz</button>
       <button class="chip" type="button" data-legal-tab="nutzung">Nutzung</button>
     </div>
-    <p class="legal-warn" id="legalWarn">Entwurf: Die gelb markierten Stellen müssen vom Betreiber mit echten Angaben ersetzt werden, bevor Drobe öffentlich genutzt wird. Dies ersetzt keine Rechtsberatung.</p>
     <div class="legal-body" id="legalBody">
       <div data-legal-page="impressum">
         <h2>Impressum</h2>
@@ -659,8 +658,8 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <p>Finn Freund, <a href="mailto:drobe.information@gmail.com">drobe.information@gmail.com</a></p>
         <h3>Welche Daten verarbeitet werden</h3>
         <ul>
-          <li><b>Konto:</b> Benutzername und Passwort. Das Passwort wird nur als Hash gespeichert. Es wird keine echte E-Mail-Adresse verlangt.</li>
-          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen, Outfits und Wünschen sowie dein Profiltext (Über mich, Stadt). Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst.</li>
+          <li><b>Konto:</b> E-Mail-Adresse, Benutzername und Passwort. Das Passwort wird nur als Hash gespeichert. Die E-Mail-Adresse dient zur Bestätigung und zum Zurücksetzen des Passworts und ist für andere nicht sichtbar. Der Benutzername ist für andere sichtbar.</li>
+          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen, Outfits und Wünschen sowie dein Profiltext (Über mich, Stadt) und dein Profilbild. Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst.</li>
           <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
           <li><b>Fehlerprotokoll:</b> Tritt in der App ein unerwarteter Fehler auf, werden die Fehlermeldung, die Stelle im Programm, die Seite (ohne Benutzernamen) und die App-Version an den Betreiber gesendet. Es werden keine Inhalte deines Schranks oder deiner Nachrichten mitgeschickt. Die Meldungen werden nach 30 Tagen gelöscht.</li>
           <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
@@ -669,12 +668,12 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <p>Bereitstellung der App und deines Kontos (Art. 6 Abs. 1 lit. b DSGVO), Sicherheit und Missbrauchsschutz (Art. 6 Abs. 1 lit. f DSGVO).</p>
         <h3>Empfänger und Dienstleister</h3>
         <ul>
-          <li><b>Supabase</b> (Datenbank, Anmeldung, Dateispeicher): <mark class="todo">[Region und Anbieter-Anschrift eintragen, im Supabase-Dashboard unter den Projekteinstellungen prüfen; Auftragsverarbeitungsvertrag abschließen]</mark></li>
+          <li><b>Supabase</b> (Datenbank, Anmeldung, Dateispeicher): Die Daten liegen auf Servern in der EU (Region West EU, Irland). Mit dem Anbieter besteht ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO.</li>
           <li><b>GitHub Pages</b> (Auslieferung der App-Dateien): Beim Aufruf wird technisch bedingt deine IP-Adresse an GitHub übertragen.</li>
           <li><b>jsDelivr und IMG.LY</b> (Programmbibliotheken und Modelle für Freistellen und Ähnlichkeit): Sie werden beim ersten Gebrauch geladen, dabei sieht der Anbieter deine IP-Adresse. Deine Fotos werden dafür nicht hochgeladen, die Verarbeitung läuft auf deinem Gerät.</li>
         </ul>
         <h3>Speicherdauer</h3>
-        <p>Deine Daten bleiben, bis du sie oder dein Konto löschst. „Konto löschen“ in den Einstellungen entfernt dein Konto und die zugehörigen Datensätze. Dateien in Unterhaltungen können kurzzeitig bis zur nächsten Bereinigung gespeichert bleiben. <mark class="todo">[Ablauf der Bereinigung prüfen und eintragen]</mark></p>
+        <p>Deine Daten bleiben, bis du sie oder dein Konto löschst. „Konto löschen“ in den Einstellungen entfernt dein Konto und die zugehörigen Datensätze. Zur Sicherheit legt die Datenbank täglich eine Sicherungskopie an. Gelöschte Daten können deshalb noch bis zu 30 Tage in diesen Sicherungen liegen und werden danach entfernt.</p>
         <h3>Lokaler Speicher</h3>
         <p>Die App speichert Daten in deinem Browser (IndexedDB, Local Storage, Cache), damit sie schnell ist und offline läuft. Es gibt keine Werbung und keine Tracker.</p>
         <h3>Deine Rechte</h3>
@@ -684,14 +683,14 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <h2>Nutzungsbedingungen</h2>
         <ol>
           <li><b>Was Drobe ist.</b> Drobe ist ein digitaler Kleiderschrank mit einem Bereich, in dem du Teile zeigen und anfragen kannst. Drobe wickelt keine Zahlungen ab und ist nicht Vertragspartner von Käufen oder Tauschgeschäften zwischen Nutzern.</li>
-          <li><b>Dein Konto.</b> Du bist für dein Passwort verantwortlich. Ohne E-Mail-Adresse gibt es keine Zurücksetzung. Du darfst nur Inhalte hochladen, an denen du die nötigen Rechte hast.</li>
+          <li><b>Dein Konto.</b> Du bist für dein Passwort verantwortlich. Das Passwort kannst du über deine E-Mail-Adresse zurücksetzen. Du darfst nur Inhalte hochladen, an denen du die nötigen Rechte hast.</li>
           <li><b>Erlaubte Inhalte.</b> Keine Fälschungen, keine rechtswidrigen, beleidigenden, pornografischen oder diskriminierenden Inhalte, keine Fotos anderer Personen ohne deren Einwilligung, kein Spam und keine Betrugsversuche.</li>
           <li><b>Moderation.</b> Gemeldete oder offensichtlich regelwidrige Inhalte können entfernt, Konten können gesperrt werden.</li>
           <li><b>Geschäfte zwischen Nutzern.</b> Absprachen, Zahlung und Versand laufen allein zwischen euch. Sei vorsichtig mit Vorkasse und teile keine Zahlungsdaten in Nachrichten.</li>
-          <li><b>Haftung.</b> Drobe wird ohne Gewähr bereitgestellt. Die gesetzliche Haftung bleibt unberührt. <mark class="todo">[Haftungsregelung rechtlich prüfen lassen]</mark></li>
+          <li><b>Haftung.</b> Drobe wird ohne Gewähr bereitgestellt. Die gesetzliche Haftung bleibt unberührt. Für Inhalte der Nutzer und für Geschäfte zwischen Nutzern übernimmt der Betreiber keine Haftung, soweit das gesetzlich zulässig ist. Bei Vorsatz und grober Fahrlässigkeit sowie bei Verletzung von Leben, Körper und Gesundheit haftet der Betreiber unbeschränkt.</li>
           <li><b>Beenden.</b> Du kannst dein Konto jederzeit in den Einstellungen löschen.</li>
         </ol>
-        <p class="muted small">Stand: <mark class="todo">[Datum eintragen]</mark></p>
+        <p class="muted small">Stand: 09. November 2026</p>
       </div>
     </div>
     <div class="row">
