@@ -40,11 +40,16 @@ function renderHistory() {
     box.append(row);
   });
 }
+// Farbe, Größe und Marke gibt es erst, wenn ein Artikel gesucht wurde (Ergebnisse sind sichtbar); sonst werden sie geleert
+function syncFilters() {
+  const show = state.searchMode === 'items' && state.showResults;
+  $('soFilters').hidden = !show;
+  if (!show) { $('fColor').value = ''; $('fSize').value = ''; $('fBrand').value = ''; }
+}
 function setSearchMode(mode, showResults = false) {
   state.searchMode = mode;
   state.showResults = showResults;
   document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
-  $('soFilters').hidden = mode === 'members';
   $('soInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
   runSearch();
 }
@@ -81,6 +86,7 @@ function renderSuggestions(list, t, box) {
 const searchFilters = () => ({ color: $('fColor').value, size: $('fSize').value.trim(), brand: $('fBrand').value.trim() });
 const filtersActive = () => state.searchMode === 'items' && Object.values(searchFilters()).some(Boolean);
 async function runSearch() {
+  syncFilters();
   const q = $('soInput').value, mode = state.searchMode, t = q.trim();
   const box = $('memberResults');
   renderHistory();
@@ -118,7 +124,7 @@ async function runSearch() {
     box.append(b);
   }
 }
-$('soInput').addEventListener('input', () => { state.showResults = false; clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
+$('soInput').addEventListener('input', () => { state.showResults = false; syncFilters(); clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });

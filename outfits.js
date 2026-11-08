@@ -54,6 +54,7 @@ const fitWidth = (it, aspect) => {
   return Math.min(box.w, box.h * STAGE_RATIO / aspect);
 };
 
+let layerSeq = 0;
 async function addLayer(it) {
   const aspect = await aspectOf(it);
   const w = fitWidth(it, aspect) * (it.scale || 1); // it.scale: vom Nutzer gemerkte Anpassung
@@ -63,15 +64,15 @@ async function addLayer(it) {
   if (GROUPS.Oberteile.includes(it.category)) {
     const tops = () => state.outfit.layers.filter((l) => GROUPS.Oberteile.includes(itemById(l.itemId)?.category));
     let dropped = false;
-    while (tops().length >= MAX_OBERTEILE) { // das älteste Oberteil weicht (uid beginnt mit dem Zeitpunkt des Hinzufügens)
-      const oldest = tops().reduce((a, b) => (a.uid <= b.uid ? a : b));
+    while (tops().length >= MAX_OBERTEILE) { // das älteste Oberteil weicht (seq zählt das Hinzufügen; geladene Teile haben keine und gelten als älter)
+      const oldest = tops().reduce((a, b) => ((a.seq || 0) <= (b.seq || 0) ? a : b));
       state.outfit.layers = state.outfit.layers.filter((l) => l !== oldest);
       if (state.selected === oldest.uid) state.selected = null;
       dropped = true;
     }
     if (dropped) toast('Höchstens 2 Oberteile: das älteste wurde ersetzt');
   }
-  const layer = { uid: uid(), itemId: it.id, x: 0.3, y: 0.3, w };
+  const layer = { uid: uid(), seq: ++layerSeq, itemId: it.id, x: 0.3, y: 0.3, w };
   // Standard-Stapelreihenfolge einhalten (Jacke hinter Oberteil usw.)
   const rank = STACK.indexOf(it.category);
   const at = state.outfit.layers.findIndex((l) => STACK.indexOf(itemById(l.itemId).category) > rank);
