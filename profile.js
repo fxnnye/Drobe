@@ -734,6 +734,7 @@ const Profile = (() => {
     paintAvatar($('pfAvatar'), ownAvatar, u.name);
     $('pfPhotoDel').hidden = !ownAvatar;
     $('profileDialog').showModal();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // kein Fokusrahmen auf dem ersten Knopf
     loadOwnText().then(() => { if (pendingAvatar === undefined) { paintAvatar($('pfAvatar'), ownAvatar, u.name); $('pfPhotoDel').hidden = !ownAvatar; } });
   }
   async function saveOwnText() {
