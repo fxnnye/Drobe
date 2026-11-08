@@ -115,7 +115,7 @@ test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose 
     ok(L('tasche').x < 0.3 && L('tasche').y > L('brille').y, 'Tasche links oben bei den Accessoires');
     ok(L('guertel').x > 0.5 && Math.abs(L('guertel').y - L('jeans').y) < 0.02, 'Gürtel rechts neben der Hose auf Bundhöhe');
     ok(L('schuhe').x < 0.1 && L('schuhe').y > 0.7, 'Schuhe links unten');
-    ok(L('brille').x < 0.3 && L('beanie').x < 0.3 && L('beanie').y < L('brille').y, 'Schmuck und Cap links oben, Cap zuerst');
+    ok(L('brille').x < 0.3 && L('beanie').x > L('brille').x && L('beanie').x < 0.35 && L('beanie').y < 0.1, 'Schmuck links oben, Cap etwas weiter innen');
     for (const l of st.outfit.layers) ok(l.x >= 0 && l.y >= 0 && l.x + l.w <= 1.0001 && l.y + H(l) <= 1.0001, 'bleibt in der Fläche: ' + l.itemId);
   } finally { setItems(saveItems); st.outfit = saveOutfit; }
 });
