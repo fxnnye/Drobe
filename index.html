@@ -529,6 +529,11 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       </div>
       <input type="file" id="pfFile" accept="image/*" hidden>
     </div>
+    <div class="crop" id="pfCrop" hidden>
+      <canvas id="pfCanvas" width="256" height="256" aria-label="Ausschnitt des Profilbilds"></canvas>
+      <p class="muted small">Zum Verschieben ziehen, mit dem Regler zoomen.</p>
+      <input type="range" id="pfZoom" min="100" max="400" step="1" value="100" aria-label="Zoom">
+    </div>
     <p class="muted small">Öffentlich ist nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst. Notizen und Shop-Links bleiben immer privat.</p>
     <label class="field">Über mich
       <textarea id="profBio" rows="3" maxlength="160" placeholder="z. B. Streetwear, Vintage, Größe M"></textarea>

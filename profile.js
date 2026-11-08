@@ -671,22 +671,44 @@ const Profile = (() => {
       paintOwnAvatars();
     } catch (e) { console.error(e); }
   }
-  // Mittig quadratisch zuschneiden, auf 256 px verkleinern
-  async function squareJpeg(file) {
-    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
-    const side = Math.min(bmp.width, bmp.height), N = 256;
-    const c = document.createElement('canvas');
-    c.width = c.height = N;
-    const g = c.getContext('2d');
-    g.fillStyle = '#fff'; g.fillRect(0, 0, N, N);
-    g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, N, N);
-    if (bmp.close) bmp.close();
-    return c.toDataURL('image/jpeg', 0.85);
+  // Ausschnitt wählen: Bild verschieben und zoomen, Ergebnis 256 × 256 px
+  const crop = { bmp: null, zoom: 1, x: 0, y: 0 }; // x, y: Verschiebung des Bildmittelpunkts in Zeichenpixeln
+  const CN = 256;
+  function cropDraw() {
+    const c = $('pfCanvas'), g = c.getContext('2d'), b = crop.bmp;
+    if (!b) return;
+    const s = Math.max(CN / b.width, CN / b.height) * crop.zoom, w = b.width * s, h = b.height * s;
+    const mx = (w - CN) / 2, my = (h - CN) / 2; // so weit darf verschoben werden, dass der Rand nie leer bleibt
+    crop.x = Math.max(-mx, Math.min(mx, crop.x));
+    crop.y = Math.max(-my, Math.min(my, crop.y));
+    g.fillStyle = '#fff'; g.fillRect(0, 0, CN, CN);
+    g.drawImage(b, (CN - w) / 2 + crop.x, (CN - h) / 2 + crop.y, w, h);
+  }
+  function cropResult() { cropDraw(); return $('pfCanvas').toDataURL('image/jpeg', 0.85); }
+  async function startCrop(file) {
+    if (crop.bmp && crop.bmp.close) crop.bmp.close();
+    crop.bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    crop.zoom = 1; crop.x = 0; crop.y = 0;
+    $('pfZoom').value = 100;
+    $('pfCrop').hidden = false;
+    cropDraw();
+  }
+  function wireCrop() {
+    const c = $('pfCanvas');
+    let drag = null;
+    const k = () => CN / c.getBoundingClientRect().width;
+    c.onpointerdown = (e) => { drag = { px: e.clientX, py: e.clientY, x: crop.x, y: crop.y }; c.setPointerCapture(e.pointerId); };
+    c.onpointermove = (e) => { if (!drag) return; crop.x = drag.x + (e.clientX - drag.px) * k(); crop.y = drag.y + (e.clientY - drag.py) * k(); cropDraw(); };
+    c.onpointerup = c.onpointercancel = () => { drag = null; };
+    c.addEventListener('wheel', (e) => { e.preventDefault(); $('pfZoom').value = Math.max(100, Math.min(400, +$('pfZoom').value - e.deltaY / 4)); $('pfZoom').oninput(); }, { passive: false });
+    $('pfZoom').oninput = () => { crop.zoom = +$('pfZoom').value / 100; cropDraw(); };
   }
   function openProfileEdit() {
     const u = Cloud.user();
     if (!u) return;
     pendingAvatar = undefined;
+    $('pfCrop').hidden = true;
+    $('pfAvatar').hidden = false;
     $('profMsg').textContent = '';
     $('profLink').value = profileLink(u.name);
     paintAvatar($('pfAvatar'), ownAvatar, u.name);
@@ -703,6 +725,7 @@ const Profile = (() => {
       const sb = Cloud.client();
       const { error } = await sb.rpc('update_my_profile', { p_bio: $('profBio').value, p_city: $('profCity').value });
       if (error) throw error;
+      if (!$('pfCrop').hidden) pendingAvatar = cropResult();
       if (pendingAvatar !== undefined) {
         const r = await sb.rpc('set_my_avatar', { p_avatar: pendingAvatar });
         if (r.error) throw r.error;
@@ -796,6 +819,7 @@ const Profile = (() => {
     window.addEventListener('online', () => { if (readLocalSafe()?.dirty) pushShowcase().catch((e) => console.error(e)); });
     document.querySelector('.tabs').addEventListener('click', () => { if (viewing) leave(); });
     $('meProfile').onclick = openProfileEdit;
+    wireCrop();
     $('pfCancel').onclick = () => $('profileDialog').close();
     $('pfPhoto').onclick = () => $('pfFile').click();
     $('pfFile').onchange = async () => {
@@ -803,12 +827,13 @@ const Profile = (() => {
       $('pfFile').value = '';
       if (!f) return;
       try {
-        pendingAvatar = await squareJpeg(f);
-        paintAvatar($('pfAvatar'), pendingAvatar, Cloud.user().name);
+        await startCrop(f);
+        pendingAvatar = null; // wird beim Speichern aus dem Ausschnitt erzeugt
+        $('pfAvatar').hidden = true;
         $('pfPhotoDel').hidden = false;
       } catch (e) { console.error(e); toast('Das Bild konnte nicht gelesen werden.'); }
     };
-    $('pfPhotoDel').onclick = () => { pendingAvatar = ''; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
+    $('pfPhotoDel').onclick = () => { pendingAvatar = ''; $('pfCrop').hidden = true; $('pfAvatar').hidden = false; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
     document.querySelector('[data-open=moderation]').addEventListener('click', loadReports);
     document.querySelector('[data-open=errors]').addEventListener('click', loadErrors);
