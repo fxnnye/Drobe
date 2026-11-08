@@ -845,3 +845,5 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .auth-error:empty { display: none; }
 .auth-card .linkish { align-self: center; padding: 8px 12px; }
 .auth-card .legal-links:not(#nope) { margin-top: 8px; }
+.up-preview { touch-action: none; cursor: grab; overscroll-behavior: contain; }
+.up-preview.grabbing { cursor: grabbing; }

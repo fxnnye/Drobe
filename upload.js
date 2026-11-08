@@ -136,12 +136,12 @@ const wrapAngle = (a) => ((a + 180) % 360 + 360) % 360 - 180;
 // Es ist immer nur ein Dialog offen; `activeCtx` sagt, welcher: seine Elemente und sein Bildzustand werden benutzt.
 const ctxUp = {
   cur: () => upCur, refresh: () => refreshUpload(),
-  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle'), zoomRow: $('upZoomRow'), zoom: $('upZoom'), zoomVal: $('upZoomVal'), pan: $('upPan') },
+  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle') },
 };
 let itCur = null;
 const ctxIt = {
   cur: () => itCur, refresh: () => { renderTools(itCur); $('itemSave').disabled = !!itCur && (itCur.busy || itCur.queue > 0); },
-  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle'), zoomRow: $('itZoomRow'), zoom: $('itZoom'), zoomVal: $('itZoomVal'), pan: $('itPan') },
+  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle') },
 };
 let activeCtx = ctxUp;
 const cur = () => activeCtx.cur();
@@ -172,30 +172,78 @@ function setAngle(a) {
   c.el.angle.oninput = (e) => setAngle(+e.target.value);
 });
 
-// Zoom: das Foto lässt sich vergrößern, damit Lasso und Radierer genauer werden. „Verschieben“ schiebt den Ausschnitt mit dem Finger.
-function setZoom(z) {
+// Zoom und Verschieben direkt im Foto: Handy mit zwei Fingern (zoomen und schieben), PC mit Mausrad (zoomen) und gedrückter Maus (schieben).
+// Ist Einzeichnen oder Radierer an, malt ein Finger bzw. die linke Maustaste; dann schiebt man mit zwei Fingern, mittlerer/rechter Maustaste oder Leertaste + Ziehen.
+let zoomNow = 1;
+function setZoom(z, cx, cy) {
+  z = Math.max(1, Math.min(5, z));
   const wrap = el().preview.parentElement; // .up-zoom
   const box = wrap.parentElement;          // .up-preview (scrollt)
-  const fx = box.scrollWidth ? (box.scrollLeft + box.clientWidth / 2) / box.scrollWidth : 0.5;
-  const fy = box.scrollHeight ? (box.scrollTop + box.clientHeight / 2) / box.scrollHeight : 0.5;
+  const br = box.getBoundingClientRect();
+  const px = cx == null ? br.left + br.width / 2 : cx, py = cy == null ? br.top + br.height / 2 : cy;
+  const w0 = box.scrollWidth, h0 = box.scrollHeight;
+  const fx = box.scrollLeft + px - br.left, fy = box.scrollTop + py - br.top; // Punkt unter dem Finger bzw. Zeiger
   wrap.style.setProperty('--z', z);
-  el().zoom.value = Math.round(z * 100);
-  el().zoomVal.textContent = Math.round(z * 100) + ' %';
-  box.scrollLeft = fx * box.scrollWidth - box.clientWidth / 2; // Mitte bleibt in der Mitte
-  box.scrollTop = fy * box.scrollHeight - box.clientHeight / 2;
+  zoomNow = z;
+  const w1 = box.scrollWidth, h1 = box.scrollHeight;
+  box.scrollLeft = fx * (w0 ? w1 / w0 : 1) - (px - br.left); // der Punkt bleibt, wo er war
+  box.scrollTop = fy * (h0 ? h1 / h0 : 1) - (py - br.top);
   if (drawCanvas) { // Zeichenfläche folgt der neuen Größe
     const r = wrap.getBoundingClientRect();
     drawCanvas.width = r.width; drawCanvas.height = r.height;
   }
 }
-function setPan(on) {
-  el().pan.classList.toggle('on', on);
-  el().pan.setAttribute('aria-pressed', String(on));
-  if (drawCanvas) drawCanvas.style.pointerEvents = on ? 'none' : ''; // dann scrollt der Finger das Foto statt zu zeichnen
-}
+let spaceDown = false;
+addEventListener('keydown', (e) => { if (e.code === 'Space' && !/INPUT|TEXTAREA|BUTTON|SELECT/.test((e.target || {}).tagName || '') && drawCanvas) { spaceDown = true; e.preventDefault(); } });
+addEventListener('keyup', (e) => { if (e.code === 'Space') spaceDown = false; });
 [ctxUp, ctxIt].forEach((c) => {
-  c.el.zoom.addEventListener('input', () => { if (activeCtx === c) setZoom(+c.el.zoom.value / 100); });
-  c.el.pan.addEventListener('click', () => { if (activeCtx === c) setPan(!c.el.pan.classList.contains('on')); });
+  const box = c.el.preview.parentElement.parentElement; // .up-preview
+  const pts = new Map();
+  let last = null, pan = null, gesturing = false;
+  const mid = () => { const p = [...pts.values()]; return { x: p.reduce((t, q) => t + q.x, 0) / p.length, y: p.reduce((t, q) => t + q.y, 0) / p.length, d: p.length > 1 ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) : 0 }; };
+  const mine = () => activeCtx === c;
+  box.addEventListener('wheel', (e) => { if (!mine()) return; e.preventDefault(); setZoom(zoomNow * Math.exp(-e.deltaY / 300), e.clientX, e.clientY); }, { passive: false });
+  box.addEventListener('contextmenu', (e) => { if (drawCanvas) e.preventDefault(); });
+  box.addEventListener('pointerdown', (e) => {
+    if (!mine()) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const tool = !!drawCanvas;
+    const mousePan = e.pointerType === 'mouse' && (e.button !== 0 || spaceDown || !tool);
+    if (pts.size > 1 && e.pointerType !== 'mouse') {
+      gesturing = true; // zweiter Finger: nicht zeichnen, sondern zoomen und schieben
+      if (drawCanvas) drawCanvas.dispatchEvent(new PointerEvent('pointercancel', { pointerId: [...pts.keys()][0] }));
+      last = mid(); e.stopPropagation(); e.preventDefault(); return;
+    }
+    if (mousePan || (!tool && e.pointerType !== 'mouse')) { // ohne Werkzeug schiebt auch ein Finger
+      pan = { id: e.pointerId, x: e.clientX, y: e.clientY, sl: box.scrollLeft, st: box.scrollTop };
+      box.setPointerCapture(e.pointerId);
+      box.classList.add('grabbing');
+      e.stopPropagation(); e.preventDefault();
+    }
+  }, true);
+  box.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (gesturing && pts.size > 1) {
+      const m = mid();
+      box.scrollLeft -= m.x - last.x; box.scrollTop -= m.y - last.y;
+      if (last.d && m.d) setZoom(zoomNow * m.d / last.d, m.x, m.y);
+      last = m; e.stopPropagation(); e.preventDefault(); return;
+    }
+    if (gesturing) { e.stopPropagation(); return; }
+    if (pan && pan.id === e.pointerId) {
+      box.scrollLeft = pan.sl - (e.clientX - pan.x); box.scrollTop = pan.st - (e.clientY - pan.y);
+      e.stopPropagation(); e.preventDefault();
+    }
+  }, true);
+  const up = (e) => {
+    const was = pts.delete(e.pointerId);
+    if (gesturing) { e.stopPropagation(); if (!pts.size) gesturing = false; else last = mid(); }
+    if (pan && pan.id === e.pointerId) { pan = null; box.classList.remove('grabbing'); e.stopPropagation(); }
+    return was;
+  };
+  box.addEventListener('pointerup', up, true);
+  box.addEventListener('pointercancel', (e) => { if (gesturing && e.isTrusted === false) return; up(e); }, true);
 });
 
 /* Bereich einzeichnen: grob um das Teil malen, alles außerhalb wird transparent und abgeschnitten */
@@ -207,11 +255,9 @@ function stopDraw() {
   el().erase.classList.remove('on');
   el().erase.textContent = 'Radierer';
   el().brushRow.hidden = true;
-  el().hint.textContent = 'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.';
+  el().hint.textContent = 'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.';
   el().hint.hidden = true;
-  el().zoomRow.hidden = true;
   setZoom(1);
-  setPan(false);
   el().preview.closest('dialog').classList.remove('tooling');
 }
 // Abgebildeter Bereich des Fotos innerhalb des Elements (object-fit: contain)
@@ -256,7 +302,6 @@ bindTool('draw', async () => {
   el().draw.classList.add('on');
   el().draw.textContent = 'Einzeichnen abbrechen';
   el().hint.hidden = false;
-  el().zoomRow.hidden = false;
   el().preview.closest('dialog').classList.add('tooling'); // Foto bleibt oben stehen, während man die Werkzeuge darunter benutzt
   const ctx = cv.getContext('2d');
   let pts = [];
@@ -441,9 +486,8 @@ bindTool('erase', async () => {
   el().erase.classList.add('on');
   el().erase.textContent = 'Fertig';
   el().brushRow.hidden = false;
-  el().hint.textContent = 'Male über Stellen, die weg sollen. Mit „Zurückholen“ malst du Gelöschtes wieder ein, „Zurück“ nimmt den letzten Strich zurück.';
+  el().hint.textContent = 'Male über Stellen, die weg sollen. Mit „Zurückholen“ malst du Gelöschtes wieder ein, „Zurück“ nimmt den letzten Strich zurück. Zoomen: zwei Finger oder Mausrad.';
   el().hint.hidden = false;
-  el().zoomRow.hidden = false;
   el().preview.closest('dialog').classList.add('tooling'); // Foto bleibt oben stehen, während man die Werkzeuge darunter benutzt
   const ctx = cv.getContext('2d');
   let pts = [];

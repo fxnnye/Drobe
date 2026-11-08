@@ -322,14 +322,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <button class="btn grow" type="button" id="itErase">Radierer</button>
         <button class="btn" type="button" id="itUndo" hidden>Zurück</button>
       </div>
-      <div class="field" id="itZoomRow" hidden>
-        <div class="zoom-line">
-          <label>Zoom <b id="itZoomVal">100 %</b>
-            <input type="range" id="itZoom" min="100" max="400" step="10" value="100">
-          </label>
-          <button class="btn" type="button" id="itPan" aria-pressed="false">Verschieben</button>
-        </div>
-      </div>
       <div class="field" id="itBrushRow" hidden>
         <div class="chips up-mode">
           <button class="chip active" type="button" data-mode="erase">Löschen</button>
@@ -339,7 +331,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
           <input type="range" id="itBrush" min="6" max="60" step="1" value="24">
         </label>
       </div>
-      <p class="muted small" id="itDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.</p>
+      <p class="muted small" id="itDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.</p>
       <button class="btn full" type="button" id="itRemove">Hintergrund entfernen</button>
       <label class="field">Größe im Outfit: <span id="itScaleVal">100 %</span>
         <input type="range" id="itScale" min="50" max="150" step="5" value="100">
@@ -396,14 +388,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="btn grow" type="button" id="upErase">Radierer</button>
       <button class="btn" type="button" id="upUndo" hidden>Zurück</button>
     </div>
-    <div class="field" id="upZoomRow" hidden>
-      <div class="zoom-line">
-        <label>Zoom <b id="upZoomVal">100 %</b>
-          <input type="range" id="upZoom" min="100" max="400" step="10" value="100">
-        </label>
-        <button class="btn" type="button" id="upPan" aria-pressed="false">Verschieben</button>
-      </div>
-    </div>
     <div class="field" id="upBrushRow" hidden>
       <div class="chips up-mode">
         <button class="chip active" type="button" data-mode="erase">Löschen</button>
@@ -413,7 +397,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <input type="range" id="upBrush" min="6" max="60" step="1" value="24">
       </label>
     </div>
-    <p class="muted small" id="upDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt.</p>
+    <p class="muted small" id="upDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.</p>
     <button class="btn full" type="button" id="upRemove">Hintergrund entfernen</button>
     <label class="field">Name
       <input type="text" id="upName" maxlength="60">
