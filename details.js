@@ -229,15 +229,12 @@ function brandSuggest(input) {
 
 /* ---------- Größenvorschläge: scrollbare Liste (Kleidung, Schuhe, Hosen); eigene Eingabe bleibt möglich ---------- */
 const SIZE_GROUPS = {
-  Kleidung: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', 'One Size'],
+  Kleidung: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'],
   Schuhe: Array.from({ length: 13 }, (_, i) => String(36 + i)),
   Hosen: Array.from({ length: 15 }, (_, i) => 'W' + (26 + i)),
+  Einheitsgröße: ['One Size'],
 };
-// Welche Gruppe zuerst steht, richtet sich nach der Kategorie des Teils
-const sizeOrder = (category) => {
-  const first = category === 'Schuhe' ? 'Schuhe' : category === 'Hosen' ? 'Hosen' : 'Kleidung';
-  return [first, ...Object.keys(SIZE_GROUPS).filter((g) => g !== first)];
-};
+const sizeOrder = () => Object.keys(SIZE_GROUPS); // feste Reihenfolge: Kleidung, Schuhe, Hosen, ganz unten One Size
 // Passende Größen zu einer Eingabe, gruppiert; ohne Eingabe die ganze Liste
 function sizeMatches(q, category) {
   const nq = brandKey(q);
