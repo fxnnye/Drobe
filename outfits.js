@@ -106,7 +106,11 @@ async function relayout() {
 
   // Hose: unter den Oberteilen, mittig
   let pantsTop = topBottom, pantsBottom = 0.97;
-  for (const l of pants) { put(l, 0.495 - l.w / 2, pantsTop); pantsBottom = l.y + hf(l); }
+  for (const l of pants) { // Hose füllt den Platz bis zum unteren Rand, damit unten keine Lücke bleibt (nie breiter als 62 %)
+    const it = itemById(l.itemId);
+    l.w = Math.min(0.62, (0.97 - pantsTop) * STAGE_RATIO / aspects.get(l.itemId)) * (it.scale || 1);
+    put(l, 0.495 - l.w / 2, pantsTop); pantsBottom = l.y + hf(l);
+  }
 
   // Rechts neben der Hose, auf Höhe des Hosenbunds: Gürtel
   for (const l of of('Gürtel')) put(l, 0.955 - l.w, pantsTop);
