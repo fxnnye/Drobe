@@ -12,7 +12,14 @@ $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ?
 // Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Wunschliste sind Unterseiten von „Profil“.
 const ME_VIEWS = ['closet', 'outfits', 'wishlist', 'followers', 'following'];
 const topTab = (name) => (name === 'builder' || ME_VIEWS.includes(name) ? 'me' : name);
+// Ohne Konto sind nur Feed und Suche offen; alles andere verlangt die Anmeldung
+const isGuest = () => document.body.classList.contains('guest');
+async function loginGate(what) {
+  if (await askConfirm('Um ' + what + ' zu nutzen, musst du dich anmelden.', 'Anmelden')) $('guestLogin').click();
+}
+const GATE_TEXT = { messages: 'Nachrichten', me: 'dein Profil' };
 function showView(name) {
+  if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';
   const prev = state.view;
   state.view = name;
@@ -93,6 +100,7 @@ function feedEmptyState(kind) {
 $('feedRetry').onclick = () => loadFeed(false);
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
   c.onclick = () => {
+    if (isGuest() && c.dataset.kind === 'saved') { loginGate('„Gemerkt“'); return; }
     feed.kind = c.dataset.kind;
     document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
     loadFeed(true);

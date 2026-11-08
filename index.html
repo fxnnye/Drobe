@@ -81,17 +81,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   </button>
 </header>
 
-<!-- Startseite für Gäste und öffentliche Profile (ohne Konto sichtbar) -->
-<section id="landing" class="landing" hidden>
-  <h2>Zeig deinen Schrank. Such, was dir fehlt.</h2>
-  <p class="muted">Drobe ist dein digitaler Kleiderschrank. Du bestimmst, was andere sehen, und alles ist standardmäßig privat.</p>
-  <form id="findForm" class="find">
-    <input type="text" id="findName" placeholder="Benutzername eines Profils" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20">
-    <button class="btn primary" type="submit">Profil ansehen</button>
-  </form>
-  <p class="auth-error" id="findError" role="alert"></p>
-  <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">Nutzungsbedingungen</a></p>
-</section>
+<!-- Für Gäste: Rechtliches unter dem Feed und der Suche -->
 <section id="publicView" class="public" hidden></section>
 
 <main>
@@ -298,6 +288,9 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <p class="empty" id="outfitsEmpty">Noch keine Outfits gespeichert.</p>
   </section>
 </main>
+<footer id="landing" class="landing" hidden>
+  <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">Nutzungsbedingungen</a></p>
+</footer>
 
 <dialog id="itemDialog">
   <form method="dialog" id="itemForm">

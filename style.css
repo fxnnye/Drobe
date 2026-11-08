@@ -387,8 +387,8 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 /* ---------- Gäste und öffentliche Profile ---------- */
 .guest-actions { margin-left: auto; display: flex; gap: 8px; }
 .guest-actions[hidden] { display: none; }
-.guest .tabs, .guest .menu { display: none; }
-.guest main, .viewing-profile main { display: none; }
+.guest .menu { display: none; }
+.viewing-profile main { display: none; }
 .landing, .public { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
 .landing[hidden], .public[hidden] { display: none; }
 .landing h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -.02em; }
@@ -529,7 +529,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 #feedEmpty[hidden] { display: none; }
 .outfits-feed .card .img { aspect-ratio: 9 / 16; }
 
-.guest .tabs { display: none; }
 
 @media (max-width: 700px) {
   /* Untere Leiste: fünf gleich breite Felder, Symbol über der Beschriftung, Hinzufügen groß in der Mitte */
@@ -808,3 +807,5 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 3px; border-radius: 
 
 .size-list { max-height: 240px; }
 .size-head { position: sticky; top: 0; padding: 8px 14px 4px; background: var(--surface); font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+.landing { padding-top: 0; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }

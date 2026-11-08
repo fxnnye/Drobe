@@ -746,13 +746,6 @@ const Profile = (() => {
     window.addEventListener('hashchange', route);
     window.addEventListener('online', () => { if (readLocalSafe()?.dirty) pushShowcase().catch((e) => console.error(e)); });
     document.querySelector('.tabs').addEventListener('click', () => { if (viewing) leave(); });
-    $('findForm').onsubmit = (e) => {
-      e.preventDefault();
-      const n = $('findName').value.trim().toLowerCase();
-      if (!/^[a-z0-9._-]{3,20}$/.test(n)) { $('findError').textContent = 'Benutzernamen haben 3 bis 20 Zeichen: Buchstaben, Zahlen, Punkt, Strich, Unterstrich.'; return; }
-      $('findError').textContent = '';
-      location.hash = '#/u/' + n;
-    };
     document.querySelector('[data-open=profile]').addEventListener('click', () => {
       const u = Cloud.user();
       $('profLink').value = u ? profileLink(u.name) : '';

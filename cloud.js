@@ -190,13 +190,14 @@ const Cloud = (() => {
     $('auth').hidden = false;
     $('authCancel').hidden = !document.body.classList.contains('guest');
   }
-  // Ohne Konto: Gäste sehen die Startseite und öffentliche Profile, Anmelden liegt oben rechts
+  // Ohne Konto: Gäste nutzen Feed und Suche und sehen öffentliche Profile, Anmelden liegt oben rechts
   function enterGuest() {
     document.body.classList.remove('locked');
     document.body.classList.add('guest');
     $('auth').hidden = true;
     $('guestActions').hidden = false;
     Profile.start();
+    showView('feed'); // Gäste landen im Feed; Suche geht auch, Nachrichten und Profil verlangen die Anmeldung
     if (linkBad) { toast('Der Link ist abgelaufen oder schon benutzt. Registriere dich erneut oder melde dich an.'); showAuth(false); }
   }
 
