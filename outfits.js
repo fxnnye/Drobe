@@ -17,9 +17,11 @@ function renderPicker() {
   });
   markPicks();
   $('pickerEmpty').classList.toggle('show', list.length === 0);
-  $('pickerEmpty').textContent = items.length === 0
-    ? 'Lade zuerst Teile in den Schrank hoch.'
-    : 'Keine Teile in dieser Kategorie.';
+  if (!list.length) {
+    setEmpty($('pickerEmpty'), items.length === 0
+      ? { ic: 'closet', title: 'Dein Schrank ist leer', text: 'Lade zuerst Teile hoch, dann kannst du sie kombinieren.', cta: 'Teil hinzufügen', fn: () => showView('add') }
+      : { ic: 'closet', title: 'Keine Teile in dieser Kategorie' });
+  }
 }
 
 function markPicks() {
@@ -407,6 +409,7 @@ function renderOutfits() {
     grid.appendChild(card);
   });
   $('outfitsEmpty').classList.toggle('show', outfits.length === 0);
+  if (!outfits.length) setEmpty($('outfitsEmpty'), { ic: 'outfit', title: 'Noch keine Outfits', text: 'Kombiniere Teile aus deinem Schrank zu einem Outfit.', cta: 'Outfit erstellen', fn: () => showView('builder') });
 }
 
 function editOutfit(o) {

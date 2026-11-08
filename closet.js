@@ -24,7 +24,10 @@ function renderCloset() {
     grid.appendChild(card);
   });
   $('closetEmpty').classList.toggle('show', list.length === 0);
-  $('closetEmpty').textContent = items.length === 0
-    ? 'Dein Schrank ist noch leer. Tippe unten auf +, um das erste Teil hinzuzufügen.'
-    : (q ? 'Nichts gefunden.' : 'Keine Teile in dieser Kategorie.');
+  if (!list.length) {
+    setEmpty($('closetEmpty'), items.length === 0
+      ? { ic: 'closet', title: 'Dein Schrank ist noch leer', text: 'Lade dein erstes Teil hoch, am besten mit Foto auf hellem Hintergrund.', cta: 'Erstes Teil hinzufügen', fn: () => showView('add') }
+      : q ? { ic: 'search', title: 'Nichts gefunden', text: 'Versuche einen anderen Suchbegriff.' }
+        : { ic: 'closet', title: 'Keine Teile in dieser Kategorie' });
+  }
 }

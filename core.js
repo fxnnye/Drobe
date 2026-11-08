@@ -94,3 +94,27 @@ function urlFor(rec) {
   if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
   return urls.get(rec.id);
 }
+
+/* ---------- Leere Ansichten: Symbol, Titel, Satz und nächster Schritt ---------- */
+const EMPTY_ICONS = {
+  closet: '<path d="M12 4a2 2 0 1 1 2 2c-1 0-2 .6-2 1.6V9"/><path d="M12 9L3.5 15.2A1.3 1.3 0 0 0 4.3 17.5h15.4a1.3 1.3 0 0 0 .8-2.3z"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/>',
+  outfit: '<path d="M8 4l-5 3 2 4 3-1v10h8V10l3 1 2-4-5-3a4 4 0 0 1-8 0z"/>',
+  chat: '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  wifi: '<path d="M2 9a15 15 0 0 1 20 0M5 12.500a10.500 10.500 0 0 1 14 0M8.500 16a5.500 5.500 0 0 1 7 0"/><path d="M12 19.500h.01"/><path d="M3 3l18 18"/>',
+};
+// node leeren und mit Symbol, Titel, Text und (optional) Knopf füllen
+function setEmpty(node, o) {
+  node.replaceChildren();
+  const ic = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  ic.setAttribute('viewBox', '0 0 24 24'); ic.setAttribute('width', '40'); ic.setAttribute('height', '40');
+  ic.setAttribute('fill', 'none'); ic.setAttribute('stroke', 'currentColor'); ic.setAttribute('stroke-width', '1.6');
+  ic.setAttribute('stroke-linecap', 'round'); ic.setAttribute('stroke-linejoin', 'round'); ic.setAttribute('aria-hidden', 'true');
+  ic.setAttribute('class', 'empty-ic');
+  ic.innerHTML = EMPTY_ICONS[o.ic || 'closet'];
+  const t = document.createElement('b'); t.className = 'empty-title'; t.textContent = o.title;
+  node.append(ic, t);
+  if (o.text) { const p = document.createElement('span'); p.className = 'empty-text'; p.textContent = o.text; node.append(p); }
+  if (o.cta) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = o.cta; b.onclick = o.fn; node.append(b); }
+}

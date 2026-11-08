@@ -93,7 +93,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="chip" type="button" data-kind="saved">Gemerkt</button>
     </div>
     <div class="grid feed-grid" id="feedGrid"></div>
-    <div class="empty" id="feedEmpty" hidden><p id="feedEmptyText"></p><button class="btn" type="button" id="feedEmptyCta" hidden></button></div>
+    <div class="empty" id="feedEmpty" hidden></div>
     <div class="feed-more"><button class="btn" type="button" id="feedMore" hidden>Mehr laden</button><button class="btn" type="button" id="feedRetry" hidden>Nochmal versuchen</button></div>
   </section>
 
@@ -118,7 +118,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   <!-- NACHRICHTEN -->
   <section id="view-messages" class="view">
     <h2 class="page-title">Nachrichten</h2>
-    <p class="muted small" id="inboxEmpty">Noch keine Nachrichten.</p>
+    <div class="empty" id="inboxEmpty"></div>
     <div id="inboxList"></div>
     <div class="thread" id="threadPane" hidden>
       <div class="thread-head">
@@ -165,7 +165,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="grid" id="closetGrid"></div>
-    <p class="empty" id="closetEmpty">Dein Schrank ist noch leer. Tippe unten auf +, um das erste Teil hinzuzufügen.</p>
+    <div class="empty" id="closetEmpty"></div>
   </section>
 
   <!-- WUNSCHLISTE -->
@@ -175,7 +175,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="grid" id="wishGrid"></div>
-    <p class="empty" id="wishEmpty">Deine Wunschliste ist noch leer.</p>
+    <div class="empty" id="wishEmpty"></div>
   </section>
 
   <!-- FOLLOWER UND FOLGE ICH -->
@@ -235,7 +235,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <aside class="picker">
         <div class="chips" id="pickerFilter"></div>
         <div class="picker-grid" id="pickerGrid"></div>
-        <p class="empty" id="pickerEmpty">Keine Teile in dieser Kategorie.</p>
+        <div class="empty" id="pickerEmpty"></div>
       </aside>
 
       <div class="stage-wrap">
@@ -285,7 +285,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   <!-- OUTFITS -->
   <section id="view-outfits" class="view">
     <div class="grid outfits" id="outfitGrid"></div>
-    <p class="empty" id="outfitsEmpty">Noch keine Outfits gespeichert.</p>
+    <div class="empty" id="outfitsEmpty"></div>
   </section>
 </main>
 <footer id="landing" class="landing" hidden>

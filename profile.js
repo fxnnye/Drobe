@@ -168,7 +168,7 @@ const Profile = (() => {
     paintAvatar(av, own ? ownAvatar : null, data.username);
     head.append(av, el('h2', 'pub-name', data.username));
     box.append(head);
-    sb.rpc('profile_avatar', { p_username: data.username }).then((r) => { if (!r.error && r.data) paintAvatar(av, r.data, data.username); }, () => {});
+    if (!own) avatarOf(data.username).then((url) => { if (url) paintAvatar(av, url, data.username); });
     const about = [data.city, data.followers ? data.followers + ' Follower' : ''].filter(Boolean).join(' · ');
     if (data.bio || about) {
       const a = el('div', 'pub-about');
@@ -290,7 +290,7 @@ const Profile = (() => {
     seller.type = 'button';
     const sn = el('span', 'seller-name');
     sn.append(el('b', null, data.username), el('span', 'muted small', 'Zum Profil'));
-    seller.append(el('span', 'avatar', (data.username[0] || '?').toUpperCase()), sn);
+    seller.append(avatarFor(data.username), sn);
     seller.onclick = () => { location.hash = '#/u/' + data.username; };
     info.append(seller);
 
@@ -477,7 +477,8 @@ const Profile = (() => {
     $('inboxBadge').textContent = unread ? String(unread) : '';
     $('menuBtn').classList.toggle('has-unread', unread > 0 && !markRead);
     if (!markRead) return;
-    $('inboxEmpty').hidden = list.length > 0;
+    $('inboxEmpty').classList.toggle('show', !list.length);
+    if (!list.length) setEmpty($('inboxEmpty'), { ic: 'chat', title: 'Noch keine Nachrichten', text: 'Fragst du bei einem Teil nach oder schreibt dir jemand, erscheint es hier.' });
     const box = $('inboxList');
     box.replaceChildren();
     for (const m of list) {
@@ -488,7 +489,7 @@ const Profile = (() => {
         : (m.mine ? 'Zu „' : 'Zu deinem Wunsch „') + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
       const top = el('span', 'thread-top');
       top.append(el('b', null, m.other), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
-      row.append(el('span', 'avatar sm', (m.other[0] || '?').toUpperCase()), top, el('span', 'muted small thread-sub', subject));
+      row.append(avatarFor(m.other, 'sm'), top, el('span', 'muted small thread-sub', subject));
       if (m.last_text) row.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
       row.onclick = () => openThread(m, subject);
       box.append(row);
@@ -555,11 +556,11 @@ const Profile = (() => {
   function openThread(m, subject) {
     thread = { id: m.id, other: m.other };
     $('inboxList').hidden = true;
-    $('inboxEmpty').hidden = true;
+    $('inboxEmpty').classList.remove('show');
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
     document.body.classList.add('in-thread');
-    $('threadWho').textContent = m.other;
+    $('threadWho').replaceChildren(avatarFor(m.other, 'sm'), el('span', null, m.other));
     $('threadAbout').textContent = subject;
     $('threadErr').hidden = true;
     $('threadInput').value = '';
@@ -654,6 +655,25 @@ const Profile = (() => {
     node.replaceChildren();
     node.classList.toggle('has-img', !!url);
     if (url) { const i = el('img'); i.alt = ''; i.src = url; node.append(i); } else node.textContent = ((name || '?')[0] || '?').toUpperCase();
+  }
+  // Profilbild anderer: einmal je Name vom Server holen und merken, dann den Buchstaben ersetzen
+  const avatarCache = new Map();
+  function avatarOf(name) {
+    if (!avatarCache.has(name)) {
+      const sb = Cloud.client();
+      avatarCache.set(name, sb && navigator.onLine
+        ? sb.rpc('profile_avatar', { p_username: name }).then((r) => (r.error ? null : r.data || null), () => null)
+        : Promise.resolve(null));
+    }
+    return avatarCache.get(name);
+  }
+  function avatarFor(name, cls) {
+    const a = el('span', 'avatar' + (cls ? ' ' + cls : ''));
+    paintAvatar(a, null, name);
+    const me = Cloud.user();
+    if (me && me.name === name && ownAvatar) paintAvatar(a, ownAvatar, name);
+    else avatarOf(name).then((url) => { if (url) paintAvatar(a, url, name); });
+    return a;
   }
   function paintOwnAvatars() {
     const u = Cloud.user();
@@ -949,7 +969,7 @@ const Profile = (() => {
     const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : '#/u/' + rec.username; };
     const owner = el('button', 'feed-owner');
     owner.type = 'button';
-    owner.append(el('span', 'avatar sm', (rec.username[0] || '?').toUpperCase()), el('span', null, rec.username));
+    owner.append(avatarFor(rec.username, 'sm'), el('span', null, rec.username));
     owner.onclick = () => { location.hash = '#/u/' + rec.username; };
     const img = el('button', 'img feed-img');
     img.type = 'button';

@@ -154,8 +154,8 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 .card-actions .btn { padding: 8px 12px; font-size: 13px; }
 .card-actions .btn[hidden] { display: none; }
 
-.empty { text-align: center; color: var(--muted); padding: 64px 0; display: none; }
-.empty.show { display: block; }
+.empty { text-align: center; color: var(--muted); padding: 48px 16px; display: none; }
+.empty.show { display: flex; }
 
 /* Outfit bauen */
 .builder { display: grid; grid-template-columns: 260px minmax(0, 1fr) 280px; gap: 24px; align-items: start; }
@@ -525,7 +525,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .feed-card .meta span:not(.muted) { color: var(--text); font-size: 13px; }
 .feed-more { display: flex; justify-content: center; padding: 24px 0; }
 .feed-more .btn[hidden] { display: none; }
-#feedEmpty:not([hidden]) { display: block; }
+#feedEmpty:not([hidden]) { display: flex; }
 #feedEmpty[hidden] { display: none; }
 .outfits-feed .card .img { aspect-ratio: 9 / 16; }
 
@@ -847,3 +847,9 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .auth-card .legal-links:not(#nope) { margin-top: 8px; }
 .up-preview { touch-action: none; cursor: grab; overscroll-behavior: contain; }
 .up-preview.grabbing { cursor: grabbing; }
+.empty.show, #feedEmpty:not([hidden]) { flex-direction: column; align-items: center; gap: 8px; }
+.empty-ic { color: var(--muted); opacity: .7; margin-bottom: 8px; }
+.empty-title { color: var(--text); font-size: 18px; }
+.empty-text { max-width: 320px; font-size: 14px; line-height: 1.4; }
+.empty .btn { margin-top: 16px; }
+.thread-who { display: inline-flex; align-items: center; gap: 8px; }

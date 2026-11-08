@@ -45,9 +45,11 @@ function renderWishlist() {
     grid.appendChild(card);
   });
   $('wishEmpty').classList.toggle('show', list.length === 0);
-  $('wishEmpty').textContent = wishlist.length === 0
-    ? 'Deine Wunschliste ist noch leer. Tippe unten auf +, um ein Teil hinzuzufügen, das du kaufen willst.'
-    : 'Keine Teile in dieser Kategorie.';
+  if (!list.length) {
+    setEmpty($('wishEmpty'), wishlist.length === 0
+      ? { ic: 'heart', title: 'Deine Wunschliste ist noch leer', text: 'Sammle Teile, die du dir noch kaufen willst.', cta: 'Wunsch hinzufügen', fn: () => document.querySelector('#view-wishlist .add-btn').click() }
+      : { ic: 'heart', title: 'Keine Teile in dieser Kategorie' });
+  }
 }
 
 const wishDlg = $('wishDialog');

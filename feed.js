@@ -82,24 +82,18 @@ async function loadFeed(reset) {
     console.error(e);
     more.hidden = true;
     empty.hidden = false;
-    $('feedEmptyText').textContent = navigator.onLine ? 'Der Feed ist gerade nicht verfügbar.' : 'Für den Feed brauchst du eine Internetverbindung.';
-    $('feedEmptyCta').hidden = true;
+    setEmpty(empty, navigator.onLine
+      ? { ic: 'search', title: 'Der Feed ist gerade nicht verfügbar', text: 'Bitte versuche es gleich noch einmal.' }
+      : { ic: 'wifi', title: 'Keine Verbindung', text: 'Für den Feed brauchst du eine Internetverbindung.' });
     retry.hidden = false;
   } finally { done(); feed.loading = false; }
 }
 // Leerer Feed: sagt, warum, und bietet den nächsten Schritt an
 function feedEmptyState(kind) {
-  const cta = $('feedEmptyCta');
-  const go = (label, fn) => { cta.textContent = label; cta.onclick = fn; cta.hidden = false; };
-  cta.hidden = true;
-  if (kind === 'saved') {
-    $('feedEmptyText').textContent = 'Noch nichts gemerkt. Auf der Seite eines Teils kannst du es mit „Merken“ speichern.';
-  } else if (kind === 'outfits') {
-    $('feedEmptyText').textContent = 'Noch keine öffentlichen Outfits von anderen.';
-  } else {
-    $('feedEmptyText').textContent = 'Noch keine öffentlichen Teile von anderen. Sobald jemand etwas freigibt, erscheint es hier.';
-    go('Eigenes Teil hinzufügen', () => showView('add'));
-  }
+  const e = $('feedEmpty');
+  if (kind === 'saved') setEmpty(e, { ic: 'heart', title: 'Noch nichts gemerkt', text: 'Auf der Seite eines Teils kannst du es mit „Merken“ speichern.' });
+  else if (kind === 'outfits') setEmpty(e, { ic: 'outfit', title: 'Noch keine Outfits von anderen', text: 'Sobald jemand ein Outfit öffentlich stellt, erscheint es hier.' });
+  else setEmpty(e, { ic: 'closet', title: 'Noch keine Teile von anderen', text: 'Sobald jemand etwas freigibt, erscheint es hier.', cta: 'Eigenes Teil hinzufügen', fn: () => showView('add') });
 }
 $('feedRetry').onclick = () => loadFeed(false);
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
