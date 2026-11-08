@@ -832,3 +832,16 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 #profMsg:empty { display: none; }
 .avatar-btns { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
 .avatar-edit .avatar { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+
+/* Anmeldung: mittig, gleichmäßige Abstände (16 px) */
+.auth-card { display: flex; flex-direction: column; gap: 16px; text-align: center; }
+.auth-card > *:not(#nope) { margin: 0; }
+.auth-card h1 { font-size: 40px; line-height: 1.1; }
+.auth-card h2:not(#nope) { margin-bottom: 8px; }
+.auth-card .field, .auth-card .check { text-align: left; }
+.auth-card .field { gap: 8px; }
+.auth-card .btn.full { width: 100%; }
+.auth-error { min-height: 0; }
+.auth-error:empty { display: none; }
+.auth-card .linkish { align-self: center; padding: 8px 12px; }
+.auth-card .legal-links:not(#nope) { margin-top: 8px; }
