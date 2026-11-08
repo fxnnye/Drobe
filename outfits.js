@@ -81,8 +81,8 @@ async function addLayer(it) {
   renderStage();
 }
 
-// Ordnet die Teile wie eine Outfit-Collage an: links oben alle Accessoires (Cap, Schmuck, Gürtel, Tasche), rechts oben die Jacke,
-// in der Mitte Shirt und Pullover (vor der Jacke), darunter die Hose, links unten die Schuhe.
+// Ordnet die Teile wie eine Outfit-Collage an: links oben Cap, Schmuck und Tasche, rechts oben die Jacke,
+// in der Mitte Shirt und Pullover (vor der Jacke), darunter die Hose, rechts daneben auf Bundhöhe der Gürtel, links unten die Schuhe.
 // Fehlt ein Teil, rücken die anderen nach. Von Hand verschobene Teile bleiben liegen.
 async function relayout() {
   const auto = state.outfit.layers.filter((l) => !l.manual && itemById(l.itemId));
@@ -108,9 +108,12 @@ async function relayout() {
   let pantsTop = topBottom, pantsBottom = 0.97;
   for (const l of pants) { put(l, 0.495 - l.w / 2, pantsTop); pantsBottom = l.y + hf(l); }
 
-  // Links oben: alle Accessoires untereinander (Cap, Schmuck, Gürtel, Tasche)
+  // Rechts neben der Hose, auf Höhe des Hosenbunds: Gürtel
+  for (const l of of('Gürtel')) put(l, 0.955 - l.w, pantsTop);
+
+  // Links oben: Accessoires untereinander (Cap, Schmuck, Tasche)
   let ly = 0.04;
-  for (const l of [...of('Caps'), ...of('Schmuck'), ...of('Gürtel'), ...of('Taschen')]) { put(l, 0.13 - l.w / 2, ly); ly = l.y + hf(l) + 0.025; }
+  for (const l of [...of('Caps'), ...of('Schmuck'), ...of('Taschen')]) { put(l, 0.13 - l.w / 2, ly); ly = l.y + hf(l) + 0.025; }
 
   // Links unten: Schuhe, am unteren Ende der Hose
   let sy = pants.length ? pantsBottom - 0.16 : 0.8;

@@ -104,7 +104,7 @@ test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose 
   const mk = async (name, cat, asp) => { const c = doc.createElement('canvas'); c.width = 300; c.height = Math.round(300 * asp); c.getContext('2d').fillRect(0, 0, c.width, c.height); return { id: 't_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };
   const st = W('state'), setItems = W('(v) => { items = v; }'), saveItems = W('items'), saveOutfit = st.outfit;
   try {
-    const mine = [await mk('brille', 'Schmuck', 0.33), await mk('beanie', 'Caps', 1), await mk('jacke', 'Jacken', 1), await mk('hoodie', 'Pullover', 1.22), await mk('jeans', 'Hosen', 1.8), await mk('tasche', 'Taschen', 0.82), await mk('schuhe', 'Schuhe', 0.38)];
+    const mine = [await mk('brille', 'Schmuck', 0.33), await mk('beanie', 'Caps', 1), await mk('jacke', 'Jacken', 1), await mk('hoodie', 'Pullover', 1.22), await mk('jeans', 'Hosen', 1.8), await mk('tasche', 'Taschen', 0.82), await mk('schuhe', 'Schuhe', 0.38), await mk('guertel', 'Gürtel', 0.12)];
     setItems(mine);
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
     for (const it of mine) await W('addLayer')(it);
@@ -113,6 +113,7 @@ test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose 
     ok(L('jacke').x > L('hoodie').x && L('jacke').y < L('hoodie').y, 'Jacke rechts oben hinter dem Oberteil');
     ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) - 0.01, 'Hose unter dem Oberteil');
     ok(L('tasche').x < 0.3 && L('tasche').y > L('brille').y, 'Tasche links oben bei den Accessoires');
+    ok(L('guertel').x > 0.5 && Math.abs(L('guertel').y - L('jeans').y) < 0.02, 'Gürtel rechts neben der Hose auf Bundhöhe');
     ok(L('schuhe').x < 0.1 && L('schuhe').y > 0.7, 'Schuhe links unten');
     ok(L('brille').x < 0.3 && L('beanie').x < 0.3 && L('beanie').y < L('brille').y, 'Schmuck und Cap links oben, Cap zuerst');
     for (const l of st.outfit.layers) ok(l.x >= 0 && l.y >= 0 && l.x + l.w <= 1.0001 && l.y + H(l) <= 1.0001, 'bleibt in der Fläche: ' + l.itemId);
