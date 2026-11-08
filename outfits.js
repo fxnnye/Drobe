@@ -375,7 +375,7 @@ function renderOutfits() {
     }
     showView('builder');
   };
-  grid.appendChild(add);
+  if (outfits.length) grid.appendChild(add); // ohne Outfits übernimmt die Meldung samt Knopf
   [...outfits].sort((a, b) => b.created - a.created).forEach((o) => {
     const card = document.createElement('div');
     card.className = 'card';

@@ -853,3 +853,13 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .empty-text { max-width: 320px; font-size: 14px; line-height: 1.4; }
 .empty .btn { margin-top: 16px; }
 .thread-who { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Outfit-Seite */
+.outfit-page { display: grid; grid-template-columns: 1fr; gap: 24px; }
+.outfit-photo img { display: block; width: 100%; max-width: 360px; aspect-ratio: 9 / 16; object-fit: contain; background: #fff; border: 1px solid var(--gray-hover); border-radius: var(--r-card); margin: 0 auto; }
+.outfit-info { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.outfit-info > * { margin: 0; }
+.outfit-sub { font-size: 16px; }
+.outfit-items { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+@media (min-width: 800px) { .outfit-page { grid-template-columns: 360px 1fr; align-items: start; } .outfit-photo img { margin: 0; } }
+#outfitsEmpty { margin-top: 60px; } /* gleiche Höhe wie bei Schrank und Wunschliste (dort steht darüber die Kategorienzeile) */

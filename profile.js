@@ -5,6 +5,8 @@ const Profile = (() => {
   const SHOWCASE_MAX = 6;
   const parseHash = () => { const m = /^#\/u\/([a-z0-9._-]{3,20})$/i.exec(location.hash); return m ? m[1].toLowerCase() : null; };
   const parseItemHash = () => { const m = /^#\/i\/([a-z0-9._-]{3,20})\/([A-Za-z0-9_-]{1,40})$/.exec(location.hash); return m ? { name: m[1].toLowerCase(), id: m[2] } : null; };
+  const parseOutfitHash = () => { const m = /^#\/o\/([a-z0-9._-]{3,20})\/([A-Za-z0-9_-]{1,40})$/.exec(location.hash); return m ? { name: m[1].toLowerCase(), id: m[2] } : null; };
+  const outfitLink = (name, id) => '#/o/' + name + '/' + id;
   const itemLink = (name, id) => '#/i/' + name + '/' + id;
   const profileLink = (name) => location.origin + location.pathname + '#/u/' + name;
   const el = (tag, cls, text) => {
@@ -229,11 +231,68 @@ const Profile = (() => {
     const pinned = data.showcase.map((id) => byId.get(id)).filter(Boolean);
     if (pinned.length) box.append(section('Showcase', pinned.map(itemCard), 'pub-showcase'));
     if (data.items.length) box.append(section('Schrank', data.items.map(itemCard)));
-    if (data.outfits.length) box.append(section('Outfits', data.outfits.map((o) => card(o, urls))));
+    if (data.outfits.length) box.append(section('Outfits', data.outfits.map((o) => card(o, urls, null, null, () => { location.hash = outfitLink(data.username, o.id); }))));
     if (data.wishlist.length) box.append(section('Gesucht', data.wishlist.map(wishCard)));
     if (!data.items.length && !data.outfits.length && !data.wishlist.length) box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.'));
   }
 
+
+  /* ---------- Outfit-Seite (#/o/<name>/<id>): das Outfit und seine öffentlichen Teile ---------- */
+  async function renderOutfit(name, id) {
+    const box = $('publicView');
+    box.replaceChildren();
+    const same = () => { const h = parseOutfitHash(); return h && h.name === name && h.id === id; };
+    const back = el('button', 'btn pub-back', '← Zurück');
+    back.type = 'button';
+    back.onclick = () => { if (history.length > 1) history.back(); else leave(); };
+    box.append(back);
+    message(box, 'Lade …', { loading: true });
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return message(box, 'Zum Ansehen brauchst du eine Internetverbindung.', { retry: () => renderOutfit(name, id) });
+    let data, urls = {};
+    try {
+      const res = await sb.rpc('public_outfit', { p_username: name, p_id: id });
+      if (res.error) throw res.error;
+      data = res.data;
+      if (data) urls = await signedUrls(sb, [data.path, ...data.items.map((r) => r.path)]);
+    } catch (e) {
+      console.error(e);
+      if (same()) message(box, 'Das Outfit konnte nicht geladen werden.', { retry: () => renderOutfit(name, id) });
+      return;
+    }
+    if (!same()) return;
+    box.querySelector('.pub-msg')?.remove();
+    if (!data) return message(box, 'Dieses Outfit ist nicht mehr verfügbar.');
+
+    const page = el('div', 'outfit-page');
+    const photo = el('div', 'outfit-photo');
+    if (urls[data.path]) { const i = el('img'); i.alt = data.name || 'Outfit'; i.src = urls[data.path]; photo.append(i); }
+    const info = el('div', 'outfit-info');
+    info.append(el('h2', 'item-name', data.name || 'Outfit'));
+    const owner = el('button', 'seller');
+    owner.type = 'button';
+    const on = el('span', 'seller-name');
+    on.append(el('b', null, data.username), el('span', 'muted small', 'Zum Profil'));
+    owner.append(avatarFor(data.username), on);
+    owner.onclick = () => { location.hash = '#/u/' + data.username; };
+    info.append(owner);
+    const h = el('h3', 'outfit-sub', 'Teile in diesem Outfit');
+    info.append(h);
+    if (data.items.length) {
+      const grid = el('div', 'grid outfit-items');
+      for (const it of data.items) {
+        const tags = it.vis === 'sale' && it.price != null ? [[money(it.price), 'sale']] : it.vis === 'trade' ? [['Zum Tausch', 'trade']] : [];
+        grid.append(card(it, urls, tags, null, () => { location.hash = itemLink(data.username, it.id); }));
+      }
+      info.append(grid);
+    } else {
+      info.append(el('p', 'muted', 'Die Teile dieses Outfits sind nicht öffentlich.'));
+    }
+    const hidden = data.total - data.items.length;
+    if (hidden > 0 && data.items.length) info.append(el('p', 'muted small', hidden === 1 ? 'Ein weiteres Teil ist privat.' : hidden + ' weitere Teile sind privat.'));
+    page.append(photo, info);
+    box.append(page);
+  }
 
   /* ---------- Detailseite eines Teils (#/i/<name>/<id>) ---------- */
   async function renderItem(name, id) {
@@ -842,13 +901,14 @@ const Profile = (() => {
 
   /* ---------- Navigation ---------- */
   async function route() {
-    const name = parseHash(), itm = parseItemHash();
-    viewing = !!name || !!itm;
+    const name = parseHash(), itm = parseItemHash(), otf = parseOutfitHash();
+    viewing = !!name || !!itm || !!otf;
     body.classList.toggle('viewing-profile', viewing);
     $('publicView').hidden = !viewing;
     $('landing').hidden = viewing || !body.classList.contains('guest');
     if (name) await render(name);
     else if (itm) await renderItem(itm.name, itm.id);
+    else if (otf) await renderOutfit(otf.name, otf.id);
   }
   function leave() {
     history.pushState(null, '', location.pathname + location.search);
@@ -966,7 +1026,7 @@ const Profile = (() => {
   // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
   function feedCard(rec, urls, kind) {
     const c = el('div', 'card feed-card');
-    const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : '#/u/' + rec.username; };
+    const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : outfitLink(rec.username, rec.id); };
     const owner = el('button', 'feed-owner');
     owner.type = 'button';
     owner.append(avatarFor(rec.username, 'sm'), el('span', null, rec.username));
