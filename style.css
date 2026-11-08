@@ -825,3 +825,4 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 4px; border-radius: 
 .crop canvas { width: min(220px, 70vw); aspect-ratio: 1; border-radius: 50%; background: var(--gray); touch-action: none; cursor: grab; }
 .crop input[type=range] { width: min(260px, 80%); }
 .avatar[hidden], .crop[hidden] { display: none; }
+.crop canvas { width: min(300px, 80vw); }

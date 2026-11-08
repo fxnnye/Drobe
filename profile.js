@@ -689,19 +689,39 @@ const Profile = (() => {
     if (crop.bmp && crop.bmp.close) crop.bmp.close();
     crop.bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
     crop.zoom = 1; crop.x = 0; crop.y = 0;
-    $('pfZoom').value = 100;
     $('pfCrop').hidden = false;
+    cropDraw();
+  }
+  // Zoom um einen Punkt (f: Abstand zur Mitte in Zeichenpixeln); nie weiter heraus als bis das Bild den Kreis füllt
+  function cropZoomTo(z, fx, fy) {
+    z = Math.max(1, Math.min(5, z));
+    const r = z / crop.zoom;
+    crop.x = fx - (fx - crop.x) * r; crop.y = fy - (fy - crop.y) * r;
+    crop.zoom = z;
     cropDraw();
   }
   function wireCrop() {
     const c = $('pfCanvas');
-    let drag = null;
+    const pts = new Map(); // aktive Finger/Maus
+    let last = null; // Stand der Geste: Mittelpunkt und Fingerabstand
     const k = () => CN / c.getBoundingClientRect().width;
-    c.onpointerdown = (e) => { drag = { px: e.clientX, py: e.clientY, x: crop.x, y: crop.y }; c.setPointerCapture(e.pointerId); };
-    c.onpointermove = (e) => { if (!drag) return; crop.x = drag.x + (e.clientX - drag.px) * k(); crop.y = drag.y + (e.clientY - drag.py) * k(); cropDraw(); };
-    c.onpointerup = c.onpointercancel = () => { drag = null; };
-    c.addEventListener('wheel', (e) => { e.preventDefault(); $('pfZoom').value = Math.max(100, Math.min(400, +$('pfZoom').value - e.deltaY / 4)); $('pfZoom').oninput(); }, { passive: false });
-    $('pfZoom').oninput = () => { crop.zoom = +$('pfZoom').value / 100; cropDraw(); };
+    const local = (cx, cy) => { const r = c.getBoundingClientRect(); return [(cx - r.left - r.width / 2) * k(), (cy - r.top - r.height / 2) * k()]; };
+    const gesture = () => {
+      const p = [...pts.values()];
+      const mx = p.reduce((s, q) => s + q.x, 0) / p.length, my = p.reduce((s, q) => s + q.y, 0) / p.length;
+      return { mx, my, d: p.length > 1 ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) : 0 };
+    };
+    c.onpointerdown = (e) => { pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); c.setPointerCapture(e.pointerId); last = gesture(); };
+    c.onpointermove = (e) => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const g = gesture();
+      crop.x += (g.mx - last.mx) * k(); crop.y += (g.my - last.my) * k();
+      if (g.d && last.d) { const [fx, fy] = local(g.mx, g.my); cropZoomTo(crop.zoom * g.d / last.d, fx, fy); } else cropDraw();
+      last = g;
+    };
+    c.onpointerup = c.onpointercancel = (e) => { pts.delete(e.pointerId); last = pts.size ? gesture() : null; };
+    c.addEventListener('wheel', (e) => { e.preventDefault(); const [fx, fy] = local(e.clientX, e.clientY); cropZoomTo(crop.zoom * Math.exp(-e.deltaY / 300), fx, fy); }, { passive: false });
   }
   function openProfileEdit() {
     const u = Cloud.user();
