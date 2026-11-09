@@ -314,6 +314,7 @@ async function renderOutfitCanvas(layers, w, h, bg = '#ffffff') {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; // scharfes Verkleinern
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
   for (const l of layers) {
@@ -331,17 +332,33 @@ async function renderOutfitCanvas(layers, w, h, bg = '#ffffff') {
   return c;
 }
 
+// Vorschaubild der Outfits: doppelte Auflösung (720 × 1280), damit es auf Handy und Retina-Bildschirmen scharf bleibt
+const THUMB_W = 720, THUMB_H = 1280, THUMB_V = 2;
+// Ältere Outfits (kleine Vorschau) einmalig in hoher Auflösung neu berechnen
+async function upgradeOutfitThumbs() {
+  for (const o of outfits) {
+    if ((o.tv || 0) >= THUMB_V || !o.layers || !o.layers.length || !o.layers.every((l) => itemById(l.itemId))) continue;
+    try {
+      o.thumb = await canvasBlob(await renderOutfitCanvas(o.layers, THUMB_W, THUMB_H, o.bg), 'image/jpeg', 0.9);
+      o.tv = THUMB_V;
+      urls.delete('thumb-' + o.id);
+      await dbPut('outfits', o);
+    } catch (e) { console.error(e); }
+  }
+  renderOutfits();
+}
+
 $('saveOutfit').onclick = async () => {
   const o = state.outfit;
   const layers = o.layers.filter((l) => itemById(l.itemId));
   if (!layers.length) return toast('Füge zuerst Teile hinzu');
-  const thumb = await canvasBlob(await renderOutfitCanvas(layers, 360, 640, o.bg), 'image/jpeg', 0.85);
+  const thumb = await canvasBlob(await renderOutfitCanvas(layers, THUMB_W, THUMB_H, o.bg), 'image/jpeg', 0.9);
   const rec = {
     id: o.id || uid(),
     name: o.name.trim() || 'Outfit ' + (outfits.length + 1),
     layers: layers.map(({ itemId, x, y, w, rot }) => ({ itemId, x, y, w, rot: rot || 0 })),
     bg: o.bg || '#ffffff',
-    thumb, created: Date.now(),
+    thumb, tv: THUMB_V, created: Date.now(),
   };
   const vis = outfitVisOf(o);
   if (vis === 'public') rec.vis = 'public';

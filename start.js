@@ -77,6 +77,7 @@ async function reloadAll() {
   wishlist.sort((a, b) => a.created - b.created);
   outfits.sort((a, b) => a.created - b.created);
   renderCloset(); renderWishlist(); renderOutfits(); renderPicker();
+  upgradeOutfitThumbs().catch((e) => console.error(e));
   backfillColors();
   backfillTrim();
 }

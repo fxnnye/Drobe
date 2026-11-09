@@ -30,7 +30,7 @@ const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig i
 const MAX_OBERTEILE = 2; // Jacke, Pullover und Shirt lassen sich mischen, zusammen aber höchstens zwei
 // Standard-Stapelreihenfolge (hinten → vorne)
 const STACK = ['Jacken', 'Shirts', 'Pullover', 'Hosen', 'Gürtel', 'Taschen', 'Schmuck', 'Caps', 'Schuhe'];
-const EXPORT_W = 900, EXPORT_H = 1600;
+const EXPORT_W = 1080, EXPORT_H = 1920;
 
 const $ = (id) => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
