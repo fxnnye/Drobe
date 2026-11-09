@@ -290,8 +290,39 @@ const Profile = (() => {
     }
     const hidden = data.total - data.items.length;
     if (hidden > 0 && data.items.length) info.append(el('p', 'muted small', hidden === 1 ? 'Ein weiteres Teil ist privat.' : hidden + ' weitere Teile sind privat.'));
+    const me2 = Cloud.user();
+    if (!(me2 && me2.name === data.username)) { // fremdes Outfit: mit eigenen Teilen nachbauen
+      const cp = el('button', 'btn primary full', 'Outfit nachbauen');
+      cp.type = 'button';
+      cp.onclick = me2 ? () => rebuildOutfit(data) : () => Cloud.showAuth(false);
+      const hint = el('p', 'muted small', 'Setzt passende Teile aus deinem Schrank ein. Danach kannst du sie in der Liste austauschen.');
+      info.insertBefore(hint, h); info.insertBefore(cp, hint);
+    }
     page.append(photo, info);
     box.append(page);
+  }
+
+  // Outfit eines anderen als Vorlage: für jedes Teil das passende aus dem eigenen Schrank (gleiche Kategorie, am liebsten gleiche Marke und gleicher Name)
+  async function rebuildOutfit(data) {
+    if (!items.length) { toast('Dein Schrank ist noch leer. Lade zuerst Teile hoch.'); showView('add'); return; }
+    state.outfit = { id: null, name: (data.name || 'Outfit') + ' (nachgebaut)', bg: '#ffffff', layers: [] };
+    state.selected = null;
+    history.pushState(null, '', location.pathname + location.search);
+    await route();
+    showView('builder');
+    const low = (s) => String(s || '').toLowerCase();
+    const used = new Set();
+    let placed = 0;
+    for (const src of data.items) {
+      const cands = items.filter((i) => i.category === src.category && !used.has(i.id));
+      if (!cands.length) continue;
+      const pick = cands.find((i) => low(i.brand) === low(src.brand) && low(i.name) === low(src.name)) || cands.slice().sort((a, b) => (b.created || 0) - (a.created || 0))[0];
+      used.add(pick.id);
+      await addLayer(pick);
+      placed++;
+    }
+    const total = data.items.length;
+    toast(placed ? placed + ' von ' + total + ' Teilen eingesetzt. Tippe ein Teil in der Liste, um es zu tauschen.' : 'Kein passendes Teil in deinem Schrank gefunden. Wähle Teile aus der Liste.');
   }
 
   /* ---------- Detailseite eines Teils (#/i/<name>/<id>) ---------- */
