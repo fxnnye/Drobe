@@ -40,11 +40,18 @@ function renderHistory() {
     box.append(row);
   });
 }
+// Angebot: Alle, Öffentlich, Tausch oder Kaufen (filtert die Treffer)
+let searchKind = '';
+function setKind(k) {
+  searchKind = k;
+  document.querySelectorAll('#fKind .chip').forEach((c) => c.classList.toggle('active', c.dataset.kind === k));
+}
+const byKind = (list) => (searchKind ? list.filter((r) => r.vis === searchKind) : list);
 // Farbe, Größe und Marke gibt es erst, wenn ein Artikel gesucht wurde (Ergebnisse sind sichtbar); sonst werden sie geleert
 function syncFilters() {
   const show = state.searchMode === 'items' && state.showResults;
   $('soFilters').hidden = !show;
-  if (!show) { $('fColor').value = ''; $('fSize').value = ''; $('fBrand').value = ''; }
+  if (!show) { $('fColor').value = ''; $('fSize').value = ''; $('fBrand').value = ''; setKind(''); }
 }
 function setSearchMode(mode, showResults = false) {
   state.searchMode = mode;
@@ -95,8 +102,8 @@ async function runSearch() {
   box.replaceChildren();
   const note = (m) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = m; box.append(p); };
   const fail = (m) => { box.replaceChildren(); errorNotice(box, m, runSearch); };
-  const fkey = JSON.stringify(searchFilters());
-  const stale = () => $('soInput').value !== q || state.searchMode !== mode || JSON.stringify(searchFilters()) !== fkey; // inzwischen weitergetippt
+  const fkey = JSON.stringify(searchFilters()), kkey = searchKind;
+  const stale = () => $('soInput').value !== q || state.searchMode !== mode || JSON.stringify(searchFilters()) !== fkey || searchKind !== kkey; // inzwischen weitergetippt
   if (mode === 'items') {
     const filters = searchFilters();
     const hasFilter = Object.values(filters).some(Boolean);
@@ -105,7 +112,7 @@ async function runSearch() {
     try {
       const list = await Profile.fetchItems(t.length >= 2 ? t : '', filters);
       if (stale()) return;
-      if (state.showResults || hasFilter) return await Profile.showItems(list, box, stale);
+      if (state.showResults || hasFilter) return await Profile.showItems(byKind(list), box, stale);
       renderSuggestions(list, t, box);
     } catch (e) { console.error(e); if (!stale()) fail(navigator.onLine ? 'Die Suche ist gerade nicht verfügbar.' : 'Für die Suche brauchst du eine Internetverbindung.'); }
     return;
@@ -129,6 +136,7 @@ $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.pre
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 for (const c of COLORS) { $('fColor').append(new Option(c, c)); $('upColor').append(new Option(c, c)); }
+document.querySelectorAll('#fKind .chip').forEach((c) => { c.onclick = () => { setKind(c.dataset.kind); clearTimeout(searchTimer); runSearch(); }; });
 for (const id of ['fColor', 'fSize', 'fBrand']) {
   $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 }

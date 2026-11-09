@@ -992,7 +992,7 @@ const Profile = (() => {
   async function showItems(list, box, stale) {
     const sb = Cloud.client();
     box.replaceChildren();
-    if (!list.length) return box.append(el('p', 'muted', 'Keine Teile gefunden. Gefunden werden nur Teile, die andere öffentlich gestellt haben.'));
+    if (!list.length) return box.append(el('p', 'muted', 'Keine passenden Teile gefunden. Gefunden werden nur Teile, die andere öffentlich gestellt haben.'));
     const urls = await signedUrls(sb, list.map((r) => r.path));
     if (stale()) return;
     box.replaceChildren();
