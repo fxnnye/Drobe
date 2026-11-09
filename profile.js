@@ -139,7 +139,7 @@ const Profile = (() => {
   async function render(name) {
     const box = $('publicView');
     box.replaceChildren();
-    const back = el('button', 'btn pub-back', Cloud.user() ? '← Zurück zu Drobe' : '← Zur Startseite');
+    const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück zu Drobe' : 'Zur Startseite');
     back.type = 'button';
     back.onclick = leave;
     box.append(back);
@@ -242,7 +242,7 @@ const Profile = (() => {
     const box = $('publicView');
     box.replaceChildren();
     const same = () => { const h = parseOutfitHash(); return h && h.name === name && h.id === id; };
-    const back = el('button', 'btn pub-back', '← Zurück');
+    const back = el('button', 'btn pub-back back-btn', 'Zurück');
     back.type = 'button';
     back.onclick = () => { if (history.length > 1) history.back(); else leave(); };
     box.append(back);
@@ -299,7 +299,7 @@ const Profile = (() => {
     const box = $('publicView');
     box.replaceChildren();
     const same = () => { const h = parseItemHash(); return h && h.name === name && h.id === id; };
-    const back = el('button', 'btn pub-back', '← Zurück');
+    const back = el('button', 'btn pub-back back-btn', 'Zurück');
     back.type = 'button';
     back.onclick = () => { if (history.length > 1) history.back(); else leave(); };
     box.append(back);

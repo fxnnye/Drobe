@@ -122,7 +122,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <div id="inboxList"></div>
     <div class="thread" id="threadPane" hidden>
       <div class="thread-head">
-        <button class="btn" type="button" id="threadBack" aria-label="Zurück">← Zurück</button>
+        <button class="btn back-btn" type="button" id="threadBack" aria-label="Zurück">Zurück</button>
         <button class="thread-who" type="button" id="threadWho"></button>
       </div>
       <p class="muted small" id="threadAbout"></p>
@@ -180,17 +180,17 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
   <!-- FOLLOWER UND FOLGE ICH -->
   <section id="view-followers" class="view">
-    <button class="btn builder-back" type="button" data-back-me>← Zurück</button>
+    <button class="btn builder-back back-btn" type="button" data-back-me>Zurück</button>
     <div class="member-results people" id="followersList"></div>
   </section>
   <section id="view-following" class="view">
-    <button class="btn builder-back" type="button" data-back-me>← Zurück</button>
+    <button class="btn builder-back back-btn" type="button" data-back-me>Zurück</button>
     <div class="member-results people" id="followingList"></div>
   </section>
 
   <!-- HINZUFÜGEN -->
   <section id="view-add" class="view">
-    <button class="btn builder-back" type="button" id="addBack">← Zurück</button>
+    <button class="btn builder-back back-btn" type="button" id="addBack">Zurück</button>
     <h2 class="page-title">Hinzufügen</h2>
     <div class="chips" id="addTarget">
       <button class="chip active" type="button" data-target="closet">Schrank</button>
@@ -230,7 +230,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
   <!-- BUILDER -->
   <section id="view-builder" class="view">
-    <button class="btn builder-back" type="button" id="builderBack">← Outfits</button>
+    <button class="btn builder-back back-btn" type="button" id="builderBack">Outfits</button>
     <div class="builder">
       <aside class="picker">
         <div class="chips" id="pickerFilter"></div>
