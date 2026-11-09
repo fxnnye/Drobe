@@ -536,22 +536,51 @@ const Profile = (() => {
     $('inboxBadge').textContent = unread ? String(unread) : '';
     $('menuBtn').classList.toggle('has-unread', unread > 0 && !markRead);
     if (!markRead) return;
-    $('inboxEmpty').classList.toggle('show', !list.length);
-    if (!list.length) setEmpty($('inboxEmpty'), { ic: 'chat', title: 'Noch keine Nachrichten', text: 'Fragst du bei einem Teil nach oder schreibt dir jemand, erscheint es hier.' });
+    inboxData = list;
+    renderInbox();
+  }
+  // Kaufen = ich habe angefragt (oder mir bietet jemand etwas zu meinem Wunsch an), Verkaufen = jemand fragt nach meinem Teil (oder ich biete an)
+  let inboxData = [], inboxTab = 'buy';
+  const sideOf = (m) => ((m.kind === 'interest') === m.mine ? 'buy' : 'sell');
+  async function renderInbox() {
+    const sb = Cloud.client();
     const box = $('inboxList');
+    const buyN = inboxData.filter((m) => sideOf(m) === 'buy' && m.unread).length, sellN = inboxData.filter((m) => sideOf(m) === 'sell' && m.unread).length;
+    $('msgBuyBadge').textContent = buyN || ''; $('msgSellBadge').textContent = sellN || '';
+    document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.classList.toggle('active', t.dataset.tab === inboxTab); t.setAttribute('aria-selected', String(t.dataset.tab === inboxTab)); });
+    const list = inboxData.filter((m) => sideOf(m) === inboxTab);
+    $('inboxEmpty').classList.toggle('show', !list.length);
+    if (!list.length) setEmpty($('inboxEmpty'), inboxTab === 'buy'
+      ? { ic: 'chat', title: 'Keine Kauf-Nachrichten', text: 'Wenn du bei einem Teil nachfragst, erscheint die Unterhaltung hier.' }
+      : { ic: 'chat', title: 'Keine Verkaufs-Nachrichten', text: 'Fragt jemand nach einem deiner Teile, erscheint es hier.' });
     box.replaceChildren();
+    const rows = [];
     for (const m of list) {
-      const row = el('button', 'inbox-item thread-row' + (m.unread ? ' unread' : ''));
+      const row = el('button', 'inbox-item thread-row msg-row' + (m.unread ? ' unread' : ''));
       row.type = 'button';
       const subject = m.kind === 'interest'
         ? (m.mine ? 'Interesse an „' : 'Interesse an deinem „') + (m.record_name || 'Teil') + '“'
         : (m.mine ? 'Zu „' : 'Zu deinem Wunsch „') + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
+      const thumb = el('span', 'msg-thumb');
+      const own = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null; // mein eigenes Teil: Foto liegt lokal
+      if (own && own.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(own); thumb.append(i); }
+      else if (m.record_path) rows.push({ m, thumb });
+      const main = el('span', 'msg-main');
       const top = el('span', 'thread-top');
-      top.append(el('b', null, m.other), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
-      row.append(avatarFor(m.other, 'sm'), top, el('span', 'muted small thread-sub', subject));
-      if (m.last_text) row.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
+      top.append(el('b', 'msg-title', m.record_brand || m.record_name || 'Teil'), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
+      main.append(top);
+      if (m.record_brand && m.record_name) main.append(el('span', 'small msg-name', m.record_name));
+      if (m.last_text) main.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
+      const who = el('span', 'msg-who muted small');
+      who.append(avatarFor(m.other, 'xs'), el('span', null, m.other));
+      main.append(who);
+      row.append(thumb, main);
       row.onclick = () => openThread(m, subject);
       box.append(row);
+    }
+    if (rows.length && sb) { // Fotos der Teile nachladen (nur öffentliche sind abrufbar)
+      const urls = await signedUrls(sb, [...new Set(rows.map((r) => r.m.record_path))]);
+      for (const { m, thumb } of rows) if (urls[m.record_path]) { const i = el('img'); i.alt = ''; i.src = urls[m.record_path]; thumb.append(i); }
     }
   }
 
@@ -563,6 +592,7 @@ const Profile = (() => {
     $('threadPane').hidden = true;
     document.body.classList.remove('in-thread');
     $('inboxList').hidden = false;
+    $('msgTabs').hidden = false;
     document.querySelector('#view-messages .page-title').hidden = false;
   }
   function closeThread() { leaveThread(); loadInbox(true); }
@@ -615,6 +645,7 @@ const Profile = (() => {
   function openThread(m, subject) {
     thread = { id: m.id, other: m.other };
     $('inboxList').hidden = true;
+    $('msgTabs').hidden = true;
     $('inboxEmpty').classList.remove('show');
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
@@ -944,6 +975,7 @@ const Profile = (() => {
       if (error) return toast('Das hat nicht geklappt.');
       loadErrors();
     };
+    document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.onclick = () => { inboxTab = t.dataset.tab; renderInbox(); }; });
     $('intCancel').onclick = () => $('interestDialog').close();
     $('repCancel').onclick = () => $('reportDialog').close();
     $('repSend').onclick = sendReport;

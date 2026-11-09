@@ -124,6 +124,10 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   <!-- NACHRICHTEN -->
   <section id="view-messages" class="view">
     <h2 class="page-title sr-only">Nachrichten</h2>
+    <div class="msg-tabs" id="msgTabs" role="tablist">
+      <button class="msg-tab active" type="button" role="tab" data-tab="buy">Kaufen <span class="badge" id="msgBuyBadge"></span></button>
+      <button class="msg-tab" type="button" role="tab" data-tab="sell">Verkaufen <span class="badge" id="msgSellBadge"></span></button>
+    </div>
     <div class="empty" id="inboxEmpty"></div>
     <div id="inboxList"></div>
     <div class="thread" id="threadPane" hidden>
