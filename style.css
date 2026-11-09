@@ -915,3 +915,7 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .thread-item-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .thread-item-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .msg-thumb.sm { width: 48px; height: 48px; flex: none; border-radius: 10px; background: var(--bg); }
+
+/* Chat-Kopf: Zurück-Knopf und Name mittig auf einer Linie (Knopf ohne eigenen Außenabstand, der Kopf trägt Rand oben und unten) */
+.thread-head { padding-top: 4px; margin-bottom: 16px; }
+.thread-head #threadBack { margin: 0; }
