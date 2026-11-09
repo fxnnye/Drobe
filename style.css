@@ -905,3 +905,13 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 @keyframes drop-out { to { opacity: 0; transform: translateY(-20px) scale(.96); } }
 @keyframes fade-out { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { #settingsDialog[open], #settingsDialog.closing { animation-name: fade-bg; } #settingsDialog.closing { animation-name: fade-out; } }
+
+/* Chat-Kopf: größerer Name mit Profilbild, darunter das Teil mit kleinem Bild */
+.avatar.md { width: 40px; height: 40px; font-size: 16px; }
+.thread-who { font-size: 22px; letter-spacing: -.01em; gap: 12px; }
+.thread-head { align-items: center; gap: 16px; }
+.thread-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; margin: 0 0 16px; border: 0; border-radius: var(--r-card); background: var(--gray); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.thread-item:disabled { cursor: default; }
+.thread-item-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.thread-item-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-thumb.sm { width: 48px; height: 48px; flex: none; border-radius: 10px; background: var(--bg); }

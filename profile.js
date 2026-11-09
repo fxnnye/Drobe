@@ -658,8 +658,21 @@ const Profile = (() => {
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
     document.body.classList.add('in-thread');
-    $('threadWho').replaceChildren(avatarFor(m.other, 'sm'), el('span', null, m.other));
-    $('threadAbout').textContent = subject;
+    $('threadWho').replaceChildren(avatarFor(m.other, 'md'), el('span', null, m.other));
+    // Das Teil, um das es geht: kleines Bild, Name und Art der Anfrage
+    $('threadItem').textContent = m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch');
+    $('threadAbout').textContent = m.kind === 'interest'
+      ? (m.mine ? 'Deine Anfrage zu diesem Teil' : 'Anfrage zu deinem Teil')
+      : (m.mine ? 'Dein Angebot zu diesem Wunsch' : 'Angebot zu deinem Wunsch') + (m.ref_name ? ': ' + m.ref_name : '');
+    const th = $('threadThumb');
+    th.replaceChildren();
+    const ownIt = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null;
+    if (ownIt && ownIt.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(ownIt); th.append(i); }
+    else if (m.record_path && Cloud.client()) signedUrls(Cloud.client(), [m.record_path]).then((u) => { if (u[m.record_path] && thread && thread.id === m.id) { const i = el('img'); i.alt = ''; i.src = u[m.record_path]; th.replaceChildren(i); } });
+    const owner = m.mine ? m.other : (Cloud.user() && Cloud.user().name);
+    const box = $('threadItemBox');
+    box.disabled = !(m.kind === 'interest' && m.record_id && owner);
+    box.onclick = () => { if (!box.disabled) location.hash = itemLink(owner, m.record_id); };
     $('threadErr').hidden = true;
     $('threadInput').value = '';
     const tl = el('div', 'loading'); tl.append(el('span', 'spinner'), el('span', null, 'Lade …'));

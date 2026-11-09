@@ -135,7 +135,10 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <button class="btn back-btn" type="button" id="threadBack" aria-label="Zurück">Zurück</button>
         <button class="thread-who" type="button" id="threadWho"></button>
       </div>
-      <p class="muted small" id="threadAbout"></p>
+      <button class="thread-item" type="button" id="threadItemBox">
+        <span class="msg-thumb sm" id="threadThumb"></span>
+        <span class="thread-item-text"><b id="threadItem"></b><span class="muted small" id="threadAbout"></span></span>
+      </button>
       <div class="thread-msgs" id="threadMsgs"></div>
       <p class="muted small" id="threadErr" hidden></p>
       <form class="thread-form" id="threadForm">
