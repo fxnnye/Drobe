@@ -97,9 +97,9 @@ const Profile = (() => {
       meta.append(row);
     }
     if (action) {
-      const b = el('button', 'btn pub-action', action.label);
+      const b = action.node || el('button', 'btn pub-action', action.label);
       b.type = 'button';
-      b.onclick = action.fn;
+      if (!action.node) b.onclick = action.fn;
       meta.append(b);
       if (action.alt) {
         const r = el('button', 'pub-report', action.alt.label);
@@ -215,7 +215,7 @@ const Profile = (() => {
       if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
       const buy = it.vis === 'sale';
       const open = () => { location.hash = itemLink(data.username, it.id); };
-      return card(it, urls, tags, own ? null : { label: buy ? 'Anfrage senden' : 'Interesse', fn: open, alt: rep(it) }, open);
+      return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: buy ? 'Anfrage senden' : 'Tauschanfrage', fn: open, alt: rep(it) }, open);
     };
     const wishCard = (w) => {
       const m = !own && me ? itemMatch(w) : null;
@@ -355,14 +355,14 @@ const Profile = (() => {
 
     if (!own) {
       const buy = it.vis === 'sale';
-      const go = el('button', 'btn primary full', buy ? 'Kaufanfrage senden' : 'Interesse und Nachricht senden');
-      go.type = 'button';
-      go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
-      info.append(go);
-      if (me) {
-        const sv = toggle(el('button', 'btn full save-btn'), 'toggle_save', { p_username: data.username, p_item: it.id }, saved, data.username + '/' + it.id, ['♡ Merken', '♥ Gemerkt']);
-        sv.type = 'button';
-        info.append(sv);
+      if (it.vis === 'public') { // nur gezeigt, nicht angeboten: hier gibt es nichts zu erfragen, nur zu merken
+        info.append(saveBtn(it, data.username, 'primary full'));
+      } else {
+        const go = el('button', 'btn primary full', buy ? 'Kaufanfrage senden' : 'Tauschanfrage senden');
+        go.type = 'button';
+        go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
+        info.append(go);
+        info.append(saveBtn(it, data.username, 'full'));
       }
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
@@ -416,6 +416,14 @@ const Profile = (() => {
     btn.textContent = on ? labels[1] : labels[0];
     btn.classList.toggle('on', on);
     return btn;
+  }
+
+  // Merken-Knopf eines fremden Teils; ohne Konto führt er zur Anmeldung
+  function saveBtn(it, username, cls) {
+    const b = el('button', 'btn save-btn ' + cls);
+    b.type = 'button';
+    if (!Cloud.user()) { b.textContent = '♡ Merken'; b.onclick = () => Cloud.showAuth(false); return b; }
+    return toggle(b, 'toggle_save', { p_username: username, p_item: it.id }, saved, username + '/' + it.id, ['♡ Merken', '♥ Gemerkt']);
   }
 
   // Listen unter „Profil“: wer mir folgt und wem ich folge
@@ -481,7 +489,7 @@ const Profile = (() => {
   function askInterest(kind, to, rec, myItem) {
     intCtx = { kind, to, rec, ref: null };
     const buy = kind === 'interest' && rec.vis === 'sale';
-    $('intTitle').textContent = buy ? 'Kaufanfrage' : kind === 'interest' ? 'Interesse melden' : 'Hab ich';
+    $('intTitle').textContent = buy ? 'Kaufanfrage' : kind === 'interest' ? 'Tauschanfrage' : 'Hab ich';
     $('intPayHint').hidden = !buy;
     $('intWhat').textContent = (kind === 'interest' ? to + ' · ' : to + ' sucht · ') + (rec.name || '');
     $('intMsg').value = '';
