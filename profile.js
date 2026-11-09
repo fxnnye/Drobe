@@ -215,7 +215,7 @@ const Profile = (() => {
       if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
       const buy = it.vis === 'sale';
       const open = () => { location.hash = itemLink(data.username, it.id); };
-      return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: buy ? 'Anfrage senden' : 'Tauschanfrage', fn: open, alt: rep(it) }, open);
+      return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: buy ? 'Anfrage senden' : 'Tauschanfrage', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) }, open);
     };
     const wishCard = (w) => {
       const m = !own && me ? itemMatch(w) : null;
@@ -512,7 +512,7 @@ const Profile = (() => {
       });
       if (error) throw error;
       $('interestDialog').close();
-      toast(c.kind === 'interest' ? 'Interesse gesendet' : 'Gesendet');
+      toast(c.kind === 'interest' ? 'Anfrage gesendet' : 'Gesendet');
       if (c.kind === 'interest') { // weiter zu den Nachrichten, dort läuft die Unterhaltung
         history.pushState(null, '', location.pathname + location.search);
         await route();
