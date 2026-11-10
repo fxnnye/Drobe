@@ -1079,3 +1079,22 @@ dialog h2 { margin: 0 0 var(--s-2); }
 .so-history-item { padding: 12px 0; }
 .so-history-row .icon { width: 32px; height: 44px; padding: 0; flex: none; display: flex; align-items: center; justify-content: flex-end; }
 .so-history-head button { padding-right: 0; }
+
+/* Schrank-Kopfzeile: „Auswählen“ gleich hoch wie die Chips; auf dem Handy bekommen die Chips eine eigene Zeile */
+#closetSelect { height: var(--h-chip); min-height: var(--h-chip); padding-top: 0; padding-bottom: 0; }
+@media (max-width: 599px) {
+  #view-closet .filter-row { flex-wrap: wrap; row-gap: 12px; }
+  #view-closet .filter-row .chips { flex: 1 1 100%; }
+  #view-closet .filter-row #closetSelect { margin-left: auto; }
+}
+
+/* Hinzufügen: Kategorie-Feld schrumpft, der Knopf bleibt innerhalb des Rahmens */
+.upload-actions .field-inline { min-width: 0; }
+.upload-actions .field-inline select { width: 100%; min-width: 0; }
+.upload-actions > .btn { flex: none; }
+
+/* Dialoge: Textabstände auf dem Raster statt der Browser-Vorgabe (1em) */
+dialog p.muted { margin: 0 0 var(--s-2); }
+.welcome-steps { margin: var(--s-2) 0 var(--s-4); }
+input[type=checkbox], input[type=radio] { margin: 0; }
+:where(button.icon) { padding: 0; }
