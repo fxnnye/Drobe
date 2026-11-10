@@ -165,24 +165,24 @@ const Profile = (() => {
     const me = Cloud.user();
     const own = !!me && me.name === data.username;
     if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
-    const head = el('div', 'pub-head');
-    const av = el('span', 'avatar lg');
+    const cnt = (k, one, many) => k + ' ' + (k === 1 ? one : many);
+    const head = el('div', 'me-head');
+    const av = el('span', 'avatar');
     paintAvatar(av, own ? ownAvatar : null, data.username);
-    head.append(av, el('h2', 'pub-name', data.username));
+    const info = el('div', 'me-info');
+    info.append(el('strong', null, data.username));
+    info.append(el('span', 'muted small', [cnt(data.items.length, 'Teil', 'Teile'), cnt(data.outfits.length, 'Outfit', 'Outfits'), cnt(data.wishlist.length, 'Wunsch', 'Wünsche')].join(' · ')));
+    const about = [data.city, data.followers ? cnt(data.followers, 'Follower', 'Follower') : ''].filter(Boolean).join(' · ');
+    if (about) info.append(el('span', 'muted small', about));
+    if (data.bio) info.append(el('span', 'small pub-bio', data.bio));
+    head.append(av, info);
     box.append(head);
     if (!own) avatarOf(data.username).then((url) => { if (url) paintAvatar(av, url, data.username); });
-    const about = [data.city, data.followers ? data.followers + ' Follower' : ''].filter(Boolean).join(' · ');
-    if (data.bio || about) {
-      const a = el('div', 'pub-about');
-      if (data.bio) a.append(el('p', null, data.bio));
-      if (about) a.append(el('p', 'muted small', about));
-      box.append(a);
-    }
     if (me && !own) {
       const bar = el('div', 'pub-tools');
       const fb = toggle(el('button', 'btn'), 'toggle_follow', { p_username: data.username }, follows, data.username, ['Folgen', 'Du folgst']);
       fb.type = 'button';
-      bar.append(fb);
+      head.append(fb);
       const rb = el('button', 'btn', 'Melden');
       rb.type = 'button';
       rb.onclick = () => askReport(data.username, null);
@@ -227,13 +227,63 @@ const Profile = (() => {
       if (n) box.append(el('p', 'pub-banner match', n === 1 ? 'Ein Teil hier passt zu deiner Wunschliste.' : n + ' Teile hier passen zu deiner Wunschliste.'));
     }
 
+    // Gleicher Aufbau wie das eigene Profil: Reiter Schrank, Outfits, Wunschliste; im Schrank Kategorie-Chips
     const byId = new Map(data.items.map((i) => [i.id, i]));
     const pinned = data.showcase.map((id) => byId.get(id)).filter(Boolean);
-    if (pinned.length) box.append(section('Showcase', pinned.map(itemCard), 'pub-showcase'));
-    if (data.items.length) box.append(section('Schrank', data.items.map(itemCard)));
-    if (data.outfits.length) box.append(section('Outfits', data.outfits.map((o) => card(o, urls, null, null, () => { location.hash = outfitLink(data.username, o.id); }))));
-    if (data.wishlist.length) box.append(section('Gesucht', data.wishlist.map(wishCard)));
-    if (!data.items.length && !data.outfits.length && !data.wishlist.length) box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.'));
+    if (!data.items.length && !data.outfits.length && !data.wishlist.length) { box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.')); return; }
+    const tabs = el('div', 'subtabs');
+    tabs.setAttribute('role', 'tablist');
+    const pane = el('div');
+    let tab = data.items.length || !data.outfits.length ? 'closet' : 'outfits', cat = 'Alle';
+    const tabDefs = [['closet', 'Schrank'], ['outfits', 'Outfits', data.outfits.length], ['wishlist', 'Wunschliste']];
+    const grid = (cards, cls) => { const g = el('div', 'grid' + (cls ? ' ' + cls : '')); g.append(...cards); return g; };
+    const tile = (rec, sub, open, extra) => {
+      const c = card(rec, urls, null, extra || null, open);
+      const meta = c.querySelector('.meta');
+      meta.replaceChildren(el('b', null, rec.name || ''));
+      if (sub) meta.append(el('span', null, sub));
+      if (extra) { const b2 = extra.node || null; if (!b2) { const bt = el('button', 'btn pub-action', extra.label); bt.type = 'button'; bt.onclick = extra.fn; meta.append(bt); } }
+      return c;
+    };
+    const itemSub = (it) => [it.category, it.vis === 'sale' ? (it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf') : it.vis === 'trade' ? 'Tausch' : 'Öffentlich'].filter(Boolean).join(' · ');
+    const itemTile = (it) => {
+      const w = !own && me ? wishMatch(it) : null;
+      const c = tile(it, itemSub(it), () => { location.hash = itemLink(data.username, it.id); });
+      if (w) c.querySelector('.meta').append(el('span', 'pub-tag match', 'Passt zu deinem Wunsch: ' + w.name));
+      return c;
+    };
+    const paint = () => {
+      tabs.replaceChildren();
+      for (const [k, label, count] of tabDefs) {
+        const b2 = el('button', 'subtab' + (k === tab ? ' active' : ''));
+        b2.type = 'button';
+        b2.setAttribute('role', 'tab');
+        b2.append(label);
+        if (count != null) { b2.append(' '); b2.append(el('span', 'badge', String(count))); }
+        b2.onclick = () => { tab = k; paint(); };
+        tabs.append(b2);
+      }
+      pane.replaceChildren();
+      if (tab === 'closet') {
+        if (pinned.length) pane.append(section('Showcase', pinned.map(itemTile), 'pub-showcase'));
+        const chips = el('div', 'chips');
+        for (const c of ['Alle', ...TOP]) {
+          const b2 = el('button', 'chip' + (cat === c ? ' active' : ''), c);
+          b2.type = 'button';
+          b2.onclick = () => { cat = c; paint(); };
+          chips.append(b2);
+        }
+        pane.append(chips);
+        const list = data.items.filter((i) => matchesFilter(i, cat));
+        pane.append(list.length ? grid(list.map(itemTile)) : el('p', 'muted', 'Nichts in dieser Kategorie.'));
+      } else if (tab === 'outfits') {
+        pane.append(data.outfits.length ? grid(data.outfits.map((o) => { const c = tile(o, 'Öffentlich', () => { location.hash = outfitLink(data.username, o.id); }); return c; }), 'outfits') : el('p', 'muted', 'Keine öffentlichen Outfits.'));
+      } else {
+        pane.append(data.wishlist.length ? grid(data.wishlist.map(wishCard)) : el('p', 'muted', 'Keine Wünsche.'));
+      }
+    };
+    box.append(tabs, pane);
+    paint();
   }
 
 

@@ -950,3 +950,8 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .mod-head { font-size: 15px; margin: 20px 0 8px; }
 .mod-item .muted.rec { margin: 2px 0 0; }
 #confirmText { white-space: pre-line; }
+
+.pub-bio { display: block; color: var(--text); margin-top: 4px; overflow-wrap: anywhere; }
+#publicView .me-head { padding-top: 0; }
+#publicView .subtabs { margin-bottom: 16px; }
+#publicView .chips { margin-bottom: 16px; }
