@@ -263,6 +263,14 @@ test('schema_version passt zur App und ist ohne Anmeldung lesbar', async () => {
   const t = await fetch(url + '/rest/v1/schema_info?select=*', { headers: { apikey: key } });
   ok(t.status >= 400 || (await t.json()).length === 0, 'schema_info direkt lesbar');
 });
+test('Listen in der Datenbank stimmen mit der App überein (Kategorie, Zustand)', async () => {
+  const { url, key } = await api();
+  const get = async (t) => (await (await fetch(url + '/rest/v1/' + t + '?select=key,name_de,name_en&order=sort', { headers: { apikey: key } })).json());
+  const cats = await get('categories'), conds = await get('conditions');
+  eq(cats.map((c) => c.key), W('CATEGORIES'));
+  eq(conds.map((c) => c.key), W('CONDS'));
+  ok([...cats, ...conds].every((x) => x.name_de && x.name_en), 'Name fehlt');
+});
 test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
   const r = await rpc('feed_stage', {});
   eq(r.status, 200); ok([0, 1, 2].includes(r.body), 'feed_stage: ' + JSON.stringify(r.body));
