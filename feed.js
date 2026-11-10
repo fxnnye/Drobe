@@ -38,9 +38,9 @@ function showView(name) {
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
-// Tipp auf „jawnz“ oben links: wie der Reiter Feed (verlässt auch ein geöffnetes Profil)
+// Tipp auf „JAWNZ“ oben links: wie der Reiter Feed (verlässt auch ein geöffnetes Profil)
 const logo = document.querySelector('.top h1');
-logo.setAttribute('role', 'link'); logo.tabIndex = 0; logo.setAttribute('aria-label', 'jawnz, zum Feed');
+logo.setAttribute('role', 'link'); logo.tabIndex = 0; logo.setAttribute('aria-label', 'JAWNZ, zum Feed');
 logo.onclick = () => document.querySelector('.tab[data-view=feed]').click();
 logo.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); logo.onclick(); } };
 document.querySelectorAll('.subtab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.sub)));

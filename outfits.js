@@ -442,7 +442,7 @@ function editOutfit(o) {
   const gone = o.layers.length - state.outfit.layers.length;
   if (gone) toast(gone === 1 ? 'Ein Teil fehlt, es wurde aus dem Schrank gelöscht' : `${gone} Teile fehlen, sie wurden aus dem Schrank gelöscht`);
 }
-// Export im Story-Format (9:16) mit dezentem jawnz-Zeichen. Es sitzt etwas über dem unteren Rand, damit die
+// Export im Story-Format (9:16) mit dezentem JAWNZ-Zeichen. Es sitzt etwas über dem unteren Rand, damit die
 // Antwortleiste von Instagram es nicht verdeckt, und passt seine Farbe an den Hintergrund an.
 async function outfitExportCanvas(o) {
   const c = await renderOutfitCanvas(o.layers, EXPORT_W, EXPORT_H, o.bg);
@@ -454,7 +454,7 @@ async function outfitExportCanvas(o) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
-  ctx.fillText('jawnz', EXPORT_W / 2, EXPORT_H * 0.9);
+  ctx.fillText('JAWNZ', EXPORT_W / 2, EXPORT_H * 0.9);
   return c;
 }
 const outfitFileName = (o) => (o.name || 'outfit').replace(/[^\w\-äöüÄÖÜß ]+/g, '').trim() || 'outfit';

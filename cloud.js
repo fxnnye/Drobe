@@ -206,7 +206,7 @@ const Cloud = (() => {
   function showSent(name, mail) {
     const f = $('authForm');
     f.replaceChildren();
-    const h = document.createElement('h1'); h.textContent = 'jawnz';
+    const h = document.createElement('h1'); h.textContent = 'JAWNZ';
     const h2 = document.createElement('h2'); h2.textContent = 'Fast geschafft';
     const p = document.createElement('p'); p.textContent = `Hallo ${name}, wir haben dir eine Mail an ${mail} geschickt. Tippe darin auf „E-Mail bestätigen“, dann bist du drin. Schau auch im Spam-Ordner nach.`;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary full'; b.textContent = 'Zur Anmeldung';

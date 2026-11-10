@@ -44,7 +44,7 @@ Deno.serve(async () => {
       const rec = await recName(r);
       const reason = REASONS[r.reason] ?? r.reason;
       const lines = [
-        `Neue Meldung bei jawnz: ${reason}`,
+        `Neue Meldung bei JAWNZ: ${reason}`,
         '',
         `Gemeldete Person: ${name(r.target_user)}`,
         `Gemeldet von: ${name(r.reporter)}`,
@@ -52,10 +52,10 @@ Deno.serve(async () => {
         r.note ? `Notiz: ${r.note}` : null,
         `Zeit: ${new Date(r.created_at).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })}`,
         '',
-        'Ansehen und bearbeiten: jawnz öffnen → Einstellungen → Moderation',
+        'Ansehen und bearbeiten: JAWNZ öffnen → Einstellungen → Moderation',
         'https://fxnnye.github.io/Drobe/',
       ].filter((x) => x !== null).join('\n');
-      await client.send({ from: `jawnz <${FROM_USER}>`, to: TO, subject: `jawnz: neue Meldung (${reason}) zu ${name(r.target_user)}`, content: lines });
+      await client.send({ from: `JAWNZ <${FROM_USER}>`, to: TO, subject: `JAWNZ: neue Meldung (${reason}) zu ${name(r.target_user)}`, content: lines });
     }
   } catch (e) {
     await undo(); // nicht verschickt: beim nächsten Signal erneut versuchen
