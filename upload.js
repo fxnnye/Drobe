@@ -48,13 +48,13 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
       });
       const oi = await loadImage(URL.createObjectURL(out));
       c.getContext('2d').drawImage(oi, 0, 0, c.width, c.height);
-      return canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.9);
+      return canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.92);
     } catch (e) {
       console.warn('KI-Freistellen nicht verfügbar, nutze einfache Methode', e);
       c.getContext('2d').drawImage(img, 0, 0);
       const simple = cutOut(c);
       if (simple === c) throw new Error('Hintergrund nicht erkannt');
-      return canvasBlob(trim ? simple : c, 'image/webp', 0.9); // cutOut verändert c selbst und liefert nur eine zugeschnittene Kopie
+      return canvasBlob(trim ? simple : c, 'image/webp', 0.92); // cutOut verändert c selbst und liefert nur eine zugeschnittene Kopie
     }
   } finally {
     URL.revokeObjectURL(src);
@@ -125,7 +125,7 @@ async function rotateBlob(blob, deg, trim = false) {
     ctx.translate(c.width / 2, c.height / 2);
     ctx.rotate(r);
     ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-    return await canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.9);
+    return await canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.92);
   } finally {
     URL.revokeObjectURL(src);
   }
@@ -282,7 +282,7 @@ async function cropToPath(blob, pts, area) {
     ctx.closePath();
     ctx.clip();
     ctx.drawImage(img, 0, 0);
-    return await canvasBlob(c, 'image/webp', 0.9); // gleiche Größe wie vorher, außerhalb der Linie transparent
+    return await canvasBlob(c, 'image/webp', 0.92); // gleiche Größe wie vorher, außerhalb der Linie transparent
   } finally {
     URL.revokeObjectURL(src);
   }
@@ -356,7 +356,7 @@ async function trimBlobBox(blob) {
     c.width = img.naturalWidth; c.height = img.naturalHeight;
     c.getContext('2d').drawImage(img, 0, 0);
     const { x, y, canvas } = trimAlphaBox(c);
-    return { blob: await canvasBlob(canvas, 'image/webp', 0.9), x, y };
+    return { blob: await canvasBlob(canvas, 'image/webp', 0.92), x, y };
   } finally {
     URL.revokeObjectURL(src);
   }
@@ -371,7 +371,7 @@ async function retrimBlob(blob) {
     c.getContext('2d').drawImage(img, 0, 0);
     const t = trimAlphaBox(c);
     if (t.canvas.width >= c.width * 0.98 && t.canvas.height >= c.height * 0.98) return null;
-    return { blob: await canvasBlob(t.canvas, 'image/webp', 0.9), x: t.x, y: t.y };
+    return { blob: await canvasBlob(t.canvas, 'image/webp', 0.92), x: t.x, y: t.y };
   } finally {
     URL.revokeObjectURL(src);
   }
