@@ -250,6 +250,17 @@ const Profile = (() => {
       const w = !own && me ? wishMatch(it) : null;
       const c = tile(it, itemSub(it), () => { location.hash = itemLink(data.username, it.id); });
       if (w) c.querySelector('.meta').append(el('span', 'pub-tag match', 'Passt zu deinem Wunsch: ' + w.name));
+      if (!own) { // kleines Herz unten rechts im Bild: Merken
+        const img = c.querySelector('.img');
+        const wrap = el('div', 'img-wrap');
+        img.replaceWith(wrap);
+        const hb = el('button', 'heart-btn');
+        hb.type = 'button';
+        hb.setAttribute('aria-label', 'Merken');
+        if (!me) { hb.textContent = '♡'; hb.onclick = askLogin; }
+        else toggle(hb, 'toggle_save', { p_username: data.username, p_item: it.id }, saved, data.username + '/' + it.id, ['♡', '♥']);
+        wrap.append(img, hb);
+      }
       return c;
     };
     const paint = () => {
