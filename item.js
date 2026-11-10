@@ -93,6 +93,15 @@ dlg.addEventListener('close', () => {
   if (itCur && itCur.url) URL.revokeObjectURL(itCur.url);
   itCur = null;
 });
+// Teil endgültig entfernen: Datenbank, Bild-Zwischenspeicher und Outfits (Aufrufer zeichnet danach neu)
+async function dropItem(it) {
+  await dbDel('items', it.id);
+  items = items.filter((i) => i.id !== it.id);
+  URL.revokeObjectURL(urls.get(it.id));
+  urls.delete(it.id);
+  aspects.delete(it.id);
+  state.outfit.layers = state.outfit.layers.filter((l) => l.itemId !== it.id);
+}
 $('itemDelete').addEventListener('click', async () => {
   const it = state.editingItem;
   const used = outfits.filter((o) => o.layers.some((l) => l.itemId === it.id)).length;
@@ -100,12 +109,7 @@ $('itemDelete').addEventListener('click', async () => {
     ? `„${it.name}" wird in ${used} Outfit(s) verwendet und verschwindet dort. Trotzdem löschen?`
     : `„${it.name}" löschen?`;
   if (!(await askConfirm(msg))) return;
-  await dbDel('items', it.id);
-  items = items.filter((i) => i.id !== it.id);
-  URL.revokeObjectURL(urls.get(it.id));
-  urls.delete(it.id);
-  aspects.delete(it.id);
-  state.outfit.layers = state.outfit.layers.filter((l) => l.itemId !== it.id);
+  await dropItem(it);
   dlg.close();
   renderCloset();
   renderOutfits();

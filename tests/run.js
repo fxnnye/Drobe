@@ -46,6 +46,15 @@ test('expandQuery: Unbekanntes bleibt unverändert', () => eq(W('expandQuery')('
 test('expandQuery: höchstens 5 Anfragen', () => ok(W('expandQuery')('sneaker hoodie jacke').length <= 5));
 test('expandQuery: keine doppelten Anfragen', () => { const v = W('expandQuery')('schuhe'); eq(v.length, new Set(v).size); });
 
+/* ---------- Sammelaktionen im Schrank ---------- */
+group('Sichtbarkeit sammelweise');
+const vis = (rec, v) => { const r = JSON.parse(JSON.stringify(rec)); W('applyVisibility')(r, v); return r; };
+test('applyVisibility: privat entfernt vis, Marke bleibt', () => eq(vis({ name: 'A', brand: 'Nike', vis: 'public' }, 'private'), { name: 'A', brand: 'Nike' }));
+test('applyVisibility: öffentlich setzt vis', () => eq(vis({ name: 'A' }, 'public').vis, 'public'));
+test('applyVisibility: Verkauf → öffentlich verwirft den Preis', () => { const r = vis({ name: 'A', vis: 'sale', price: 50 }, 'public'); eq([r.vis, r.price], ['public', undefined]); });
+test('applyVisibility: Tausch behält den Tauschwunsch', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'trade').swap, 'M'));
+test('applyVisibility: Tausch → öffentlich verwirft den Tauschwunsch', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'public').swap, undefined));
+
 /* ---------- Farben ---------- */
 group('Farben');
 const NAMES = [

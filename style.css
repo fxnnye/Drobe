@@ -936,3 +936,14 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .outfit-actions .btn { flex: 1; }
 
 .chip[hidden] { display: none; }
+
+/* Auswahlmodus im Schrank: Kreis oben rechts am Foto, unten eine Leiste mit den Sammelaktionen */
+#closetSelect { flex: none; }
+.selecting .card .img::after { content: ''; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--text); background: var(--bg); }
+.selecting .card.selected .img { outline: 3px solid var(--red); outline-offset: -3px; }
+.selecting .card.selected .img::after { content: '✓'; display: grid; place-items: center; background: var(--red); border-color: var(--red); color: #fff; font-size: 13px; line-height: 1; }
+.bulk-bar { position: fixed; left: 12px; right: 12px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 19; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--gray-hover); border-radius: 16px; box-shadow: 0 6px 24px rgba(0, 0, 0, .18); }
+.bulk-bar[hidden] { display: none; }
+.bulk-bar b { flex: 1 1 100%; font-size: 14px; }
+@media (min-width: 701px) { .bulk-bar { bottom: 20px; max-width: 560px; margin: 0 auto; } }
+.bulk-bar .btn { padding-left: 12px; padding-right: 12px; }

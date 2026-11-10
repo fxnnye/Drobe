@@ -176,10 +176,19 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   <section id="view-closet" class="view">
     <div class="filter-row">
       <div class="chips" id="closetFilter"></div>
+      <button class="btn" type="button" id="closetSelect" aria-pressed="false">Auswählen</button>
       <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="grid" id="closetGrid"></div>
     <div class="empty" id="closetEmpty"></div>
+    <div class="bulk-bar" id="bulkBar" role="toolbar" aria-label="Auswahl ändern" hidden>
+      <b id="bulkCount">Nichts ausgewählt</b>
+      <button class="btn" type="button" id="bulkAll">Alle</button>
+      <button class="btn" type="button" data-vis="private">Privat</button>
+      <button class="btn" type="button" data-vis="public">Öffentlich</button>
+      <button class="btn" type="button" data-vis="trade">Tausch</button>
+      <button class="btn danger" type="button" id="bulkDelete">Löschen</button>
+    </div>
   </section>
 
   <!-- WUNSCHLISTE -->
