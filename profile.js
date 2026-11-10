@@ -237,6 +237,13 @@ const Profile = (() => {
   }
 
 
+  // Ansicht eines fremden öffentlichen Inhalts mitschreiben (Grundlage für den Feed); stört nie die Anzeige
+  function logView(kind, username, id) {
+    const sb = Cloud.client(), me = Cloud.user();
+    if (!sb || !me || me.name === username || !navigator.onLine) return;
+    sb.rpc('log_view', { p_username: username, p_kind: kind, p_id: id }).then(() => {}, () => {});
+  }
+
   /* ---------- Outfit-Seite (#/o/<name>/<id>): das Outfit und seine öffentlichen Teile ---------- */
   async function renderOutfit(name, id) {
     const box = $('publicView');
@@ -275,6 +282,7 @@ const Profile = (() => {
     if (!same()) return;
     box.querySelector('.pub-msg')?.remove();
     if (!data) return message(box, 'Dieses Outfit ist nicht mehr verfügbar.');
+    if (!data.local) logView('outfit', data.username, data.id);
 
     const page = el('div', 'outfit-page');
     const photo = el('div', 'outfit-photo');
@@ -381,6 +389,7 @@ const Profile = (() => {
 
     const me = Cloud.user();
     const own = !!me && me.name === data.username;
+    logView('item', data.username, id);
     const askLogin = () => Cloud.showAuth(false);
     if (own) box.append(el('p', 'pub-banner', 'So sehen andere dein Teil.'));
 

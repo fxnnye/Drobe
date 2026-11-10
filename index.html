@@ -660,9 +660,10 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
           <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
           <li><b>Fehlerprotokoll:</b> Tritt in der App ein unerwarteter Fehler auf, werden die Fehlermeldung, die Stelle im Programm, die Seite (ohne Benutzernamen) und die App-Version an den Betreiber gesendet. Es werden keine Inhalte deines Schranks oder deiner Nachrichten mitgeschickt. Die Meldungen werden nach 30 Tagen gelöscht.</li>
           <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
+          <li><b>Nutzungsdaten für den Feed:</b> Wenn du angemeldet bist, wird gespeichert, welche öffentlichen Teile und Outfits anderer du ansiehst, merkst oder anfragst, jeweils mit Datum und höchstens einmal pro Tag und Inhalt. Das dient dazu, den Feed sinnvoll zu sortieren. Andere Nutzer sehen diese Daten nicht.</li>
         </ul>
         <h3>Zwecke und Rechtsgrundlagen</h3>
-        <p>Bereitstellung der App und deines Kontos (Art. 6 Abs. 1 lit. b DSGVO), Sicherheit und Missbrauchsschutz (Art. 6 Abs. 1 lit. f DSGVO).</p>
+        <p>Bereitstellung der App und deines Kontos (Art. 6 Abs. 1 lit. b DSGVO), Sicherheit und Missbrauchsschutz sowie die Sortierung des Feeds (Art. 6 Abs. 1 lit. f DSGVO). Dem Mitschreiben der Nutzungsdaten kannst du jederzeit per E-Mail an die oben genannte Adresse widersprechen.</p>
         <h3>Empfänger und Dienstleister</h3>
         <ul>
           <li><b>Supabase</b> (Datenbank, Anmeldung, Dateispeicher): Die Daten liegen auf Servern in der EU (Region West EU, Irland). Mit dem Anbieter besteht ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO.</li>
@@ -670,9 +671,9 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
           <li><b>jsDelivr und IMG.LY</b> (Programmbibliotheken und Modelle für Freistellen und Ähnlichkeit): Sie werden beim ersten Gebrauch geladen, dabei sieht der Anbieter deine IP-Adresse. Deine Fotos werden dafür nicht hochgeladen, die Verarbeitung läuft auf deinem Gerät.</li>
         </ul>
         <h3>Speicherdauer</h3>
-        <p>Deine Daten bleiben, bis du sie oder dein Konto löschst. „Konto löschen“ in den Einstellungen entfernt dein Konto und die zugehörigen Datensätze. Zur Sicherheit legt die Datenbank täglich eine Sicherungskopie an. Gelöschte Daten können deshalb noch bis zu 30 Tage in diesen Sicherungen liegen und werden danach entfernt.</p>
+        <p>Deine Daten bleiben, bis du sie oder dein Konto löschst. Nutzungsdaten für den Feed werden spätestens nach 12 Monaten gelöscht. „Konto löschen“ in den Einstellungen entfernt dein Konto und die zugehörigen Datensätze. Zur Sicherheit legt die Datenbank täglich eine Sicherungskopie an. Gelöschte Daten können deshalb noch bis zu 30 Tage in diesen Sicherungen liegen und werden danach entfernt.</p>
         <h3>Lokaler Speicher</h3>
-        <p>Die App speichert Daten in deinem Browser (IndexedDB, Local Storage, Cache), damit sie schnell ist und offline läuft. Es gibt keine Werbung und keine Tracker.</p>
+        <p>Die App speichert Daten in deinem Browser (IndexedDB, Local Storage, Cache), damit sie schnell ist und offline läuft. Es gibt keine Werbung und keine Tracker von Drittanbietern.</p>
         <h3>Deine Rechte</h3>
         <p>Du kannst Auskunft, Berichtigung, Löschung, Einschränkung, Übertragbarkeit und Widerspruch verlangen (Art. 15 bis 21 DSGVO) und dich bei einer Aufsichtsbehörde beschweren. Wende dich an die Adresse im Impressum.</p>
       </div>
