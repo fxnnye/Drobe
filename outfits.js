@@ -419,8 +419,8 @@ function renderOutfits() {
     }
     card.querySelector('[data-a=edit]').onclick = () => editOutfit(o);
     card.querySelector('.img').style.cursor = 'pointer';
-    card.querySelector('.img').onclick = (e) => { if (!e.target.closest('.warn')) openOutfitView(o); };
-    card.querySelector('.meta').onclick = () => openOutfitView(o);
+    card.querySelector('.img').onclick = (e) => { if (!e.target.closest('.warn')) openOutfitPage(o); };
+    card.querySelector('.meta').onclick = () => openOutfitPage(o);
     if (navigator.canShare) { // nur zeigen, wo Bilder geteilt werden können (meist Handy)
       const sb = card.querySelector('[data-a=share]');
       sb.hidden = false;
@@ -475,34 +475,8 @@ async function shareOutfit(o) {
 }
 
 
-// Eigenes Outfit ansehen: alle enthaltenen Teile (auch private) aus dem lokalen Schrank
-function openOutfitView(o) {
-  const dlg = $('outfitViewDialog');
-  const key = 'thumb-' + o.id;
-  if (!urls.has(key)) urls.set(key, URL.createObjectURL(o.thumb));
-  $('ovImg').src = urls.get(key);
-  $('ovName').textContent = o.name || 'Outfit';
-  const list = $('ovList');
-  list.innerHTML = '';
-  const seen = new Set();
-  let missing = 0;
-  o.layers.forEach((l) => {
-    if (seen.has(l.itemId)) return;
-    seen.add(l.itemId);
-    const it = itemById(l.itemId);
-    if (!it) { missing++; return; }
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'ov-row';
-    row.innerHTML = '<img alt=""><span><b></b><i></i></span>';
-    row.querySelector('img').src = urlFor(it);
-    row.querySelector('b').textContent = it.name;
-    row.querySelector('i').textContent = [it.brand, it.size, it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');
-    row.onclick = () => { dlg.close(); openItemDialog(it); };
-    list.appendChild(row);
-  });
-  $('ovCount').textContent = (seen.size - missing) + ' Teile' + (missing ? ` · ${missing} aus dem Schrank gelöscht` : '');
-  $('ovClose').onclick = () => dlg.close();
-  $('ovEdit').onclick = () => { dlg.close(); editOutfit(o); };
-  dlg.showModal();
+// Eigenes Outfit öffnet dieselbe Seite wie bei anderen Konten (#/o/<name>/<id>)
+function openOutfitPage(o) {
+  const u = typeof Cloud !== 'undefined' && Cloud.user && Cloud.user();
+  location.hash = '#/o/' + (u ? u.name : 'ich') + '/' + o.id;
 }

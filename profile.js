@@ -247,14 +247,26 @@ const Profile = (() => {
     back.onclick = () => { if (history.length > 1) history.back(); else leave(); };
     box.append(back);
     message(box, 'Lade …', { loading: true });
+    const meU = Cloud.user();
+    const mine = (meU && meU.name === name) || (!meU && name === 'ich');
+    const lo = mine ? outfits.find((x) => x.id === id) : null;
     const sb = Cloud.client();
-    if (!sb || !navigator.onLine) return message(box, 'Zum Ansehen brauchst du eine Internetverbindung.', { retry: () => renderOutfit(name, id) });
+    if (!lo && (!sb || !navigator.onLine)) return message(box, 'Zum Ansehen brauchst du eine Internetverbindung.', { retry: () => renderOutfit(name, id) });
     let data, urls = {};
     try {
+      if (lo) { // eigenes Outfit: alle Teile aus dem lokalen Schrank, auch private
+        const seen = new Set(), its = [];
+        let miss = 0;
+        for (const l of lo.layers) { if (seen.has(l.itemId)) continue; seen.add(l.itemId); const it = itemById(l.itemId); if (it) its.push(it); else miss++; }
+        data = { username: meU ? meU.name : 'ich', id: lo.id, name: lo.name, path: '__o', local: lo, total: its.length + miss, items: its.map((it) => ({ ...it, path: '__i' + it.id, vis: visOf(it) })), localItems: its };
+        urls = { __o: URL.createObjectURL(lo.thumb) };
+        its.forEach((it) => { urls['__i' + it.id] = urlFor(it); });
+      } else {
       const res = await sb.rpc('public_outfit', { p_username: name, p_id: id });
       if (res.error) throw res.error;
       data = res.data;
       if (data) urls = await signedUrls(sb, [data.path, ...data.items.map((r) => r.path)]);
+      }
     } catch (e) {
       console.error(e);
       if (same()) message(box, 'Das Outfit konnte nicht geladen werden.', { retry: () => renderOutfit(name, id) });
@@ -275,13 +287,14 @@ const Profile = (() => {
     on.append(el('b', null, data.username), el('span', 'muted small', 'Zum Profil'));
     owner.append(avatarFor(data.username), on);
     owner.onclick = () => { location.hash = '#/u/' + data.username; };
-    info.append(owner);
+    if (data.username !== 'ich') info.append(owner);
     const h = el('h3', 'outfit-sub', 'Teile in diesem Outfit');
     info.append(h);
     if (data.items.length) {
       const grid = el('div', 'grid outfit-items');
       for (const it of data.items) {
         const tags = it.vis === 'sale' && it.price != null ? [[money(it.price), 'sale']] : it.vis === 'trade' ? [['Zum Tausch', 'trade']] : [];
+        if (data.local) { const rec = itemById(it.id); grid.append(card(it, urls, [], null, () => openItemDialog(rec))); continue; }
         grid.append(card(it, urls, tags, null, () => { location.hash = itemLink(data.username, it.id); }));
       }
       info.append(grid);
@@ -289,9 +302,15 @@ const Profile = (() => {
       info.append(el('p', 'muted', 'Die Teile dieses Outfits sind nicht öffentlich.'));
     }
     const hidden = data.total - data.items.length;
-    if (hidden > 0 && data.items.length) info.append(el('p', 'muted small', hidden === 1 ? 'Ein weiteres Teil ist privat.' : hidden + ' weitere Teile sind privat.'));
+    if (data.local) {
+      if (hidden > 0) info.append(el('p', 'muted small', hidden === 1 ? 'Ein Teil wurde aus dem Schrank gelöscht.' : hidden + ' Teile wurden aus dem Schrank gelöscht.'));
+      const eb = el('button', 'btn primary full', 'Bearbeiten');
+      eb.type = 'button';
+      eb.onclick = () => { leave(); editOutfit(data.local); };
+      info.append(eb);
+    } else if (hidden > 0 && data.items.length) info.append(el('p', 'muted small', hidden === 1 ? 'Ein weiteres Teil ist privat.' : hidden + ' weitere Teile sind privat.'));
     const me2 = Cloud.user();
-    if (!(me2 && me2.name === data.username)) { // fremdes Outfit: mit eigenen Teilen nachbauen
+    if (!data.local && !(me2 && me2.name === data.username)) { // fremdes Outfit: mit eigenen Teilen nachbauen
       const cp = el('button', 'btn primary full', 'Outfit nachbauen');
       cp.type = 'button';
       cp.onclick = me2 ? () => rebuildOutfit(data) : () => Cloud.showAuth(false);
