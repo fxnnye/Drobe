@@ -59,22 +59,35 @@ function renderMeHead() {
 }
 
 /* ---------- Feed: öffentliche Teile oder Outfits anderer, neueste zuerst ---------- */
-const feed = { kind: 'items', before: null, loading: false };
+const feed = { kind: 'items', before: null, loading: false, seen: new Set(), stageChecked: false };
 async function loadFeed(reset) {
   if (feed.loading) return;
   const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore'), retry = $('feedRetry');
-  if (reset) { feed.before = null; grid.replaceChildren(); }
+  if (reset) { feed.before = null; feed.seen = new Set(); grid.replaceChildren(); }
   feed.loading = true;
   retry.hidden = true;
   empty.hidden = true;
+  if (!feed.stageChecked) { // „Für dich“ erscheint erst, wenn genug aktive Nutzer da sind, und ist dann der Start-Reiter
+    feed.stageChecked = true;
+    if ((await Profile.feedStage()) >= 1) {
+      const fy = document.querySelector('#feedSwitch [data-kind=foryou]');
+      fy.hidden = false;
+      if (feed.kind === 'items') {
+        feed.kind = 'foryou';
+        document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === fy));
+      }
+    }
+  }
   const kind = feed.kind;
   const done = skeletons(grid, reset ? 8 : 4);
   try {
     const list = await Profile.feed(kind, feed.before, feed.color);
     if (kind !== feed.kind) return; // inzwischen umgeschaltet
     done();
-    await Profile.showFeed(list, grid, kind);
-    if (list.length) feed.before = list[list.length - 1].ts;
+    // „Für dich“ wird nach Punkten sortiert: beim Nachladen kann sich die Reihenfolge verschieben, Doppelte fallen weg
+    const fresh = kind === 'foryou' ? list.filter((r) => { const k = (r.outfit ? 'o/' : 'i/') + r.username + '/' + r.id; if (feed.seen.has(k)) return false; feed.seen.add(k); return true; }) : list;
+    await Profile.showFeed(fresh, grid, kind);
+    if (list.length) feed.before = kind === 'foryou' ? (feed.before || 0) + list.length : list[list.length - 1].ts;
     more.hidden = list.length < 30;
     empty.hidden = grid.children.length > 0;
     feedEmptyState(kind);

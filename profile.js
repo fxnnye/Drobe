@@ -1139,11 +1139,22 @@ const Profile = (() => {
       try { const o = await sb.rpc('my_outfit_saves'); if (!o.error && Array.isArray(o.data)) list.push(...o.data); } catch (e) { /* Funktion fehlt noch */ }
       return list.sort((a, b) => String(b.ts || '').localeCompare(String(a.ts || '')));
     }
+    if (kind === 'foryou') {
+      const { data, error } = await sb.rpc('feed_ranked', { p_offset: before || 0 });
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    }
     const args = { p_kind: kind === 'outfits' ? 'outfits' : 'items', p_before: before || null, p_color: color || null };
     if (kind === 'following') args.p_mode = 'following';
     const { data, error } = await sb.rpc('feed_public', args);
     if (error) throw error;
     return Array.isArray(data) ? data : [];
+  }
+  // Stufe des Feeds (0 = neueste zuerst); ohne Netz oder bei Fehlern bleibt alles wie bisher
+  async function feedStage() {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return 0;
+    try { const { data, error } = await sb.rpc('feed_stage'); return error ? 0 : Number(data) || 0; } catch (e) { return 0; }
   }
   // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
   function feedCard(rec, urls, kind) {
@@ -1180,5 +1191,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, rec.outfit ? 'outfits' : shape));
   }
 
-  return { paintOwnAvatars, matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
+  return { paintOwnAvatars, matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, feedStage, showFeed, loadInbox, leaveThread };
 })();

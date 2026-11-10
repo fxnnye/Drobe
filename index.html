@@ -88,6 +88,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   <!-- FEED -->
   <section id="view-feed" class="view active">
     <div class="chips feed-switch" id="feedSwitch">
+      <button class="chip" type="button" data-kind="foryou" hidden>Für dich</button>
       <button class="chip active" type="button" data-kind="items">Teile</button>
       <button class="chip" type="button" data-kind="outfits">Outfits</button>
       <button class="chip" type="button" data-kind="saved">Gemerkt</button>
@@ -660,7 +661,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
           <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
           <li><b>Fehlerprotokoll:</b> Tritt in der App ein unerwarteter Fehler auf, werden die Fehlermeldung, die Stelle im Programm, die Seite (ohne Benutzernamen) und die App-Version an den Betreiber gesendet. Es werden keine Inhalte deines Schranks oder deiner Nachrichten mitgeschickt. Die Meldungen werden nach 30 Tagen gelöscht.</li>
           <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
-          <li><b>Nutzungsdaten für den Feed:</b> Wenn du angemeldet bist, wird gespeichert, welche öffentlichen Teile und Outfits anderer du ansiehst, merkst oder anfragst, jeweils mit Datum und höchstens einmal pro Tag und Inhalt. Das dient dazu, den Feed sinnvoll zu sortieren. Andere Nutzer sehen diese Daten nicht.</li>
+          <li><b>Nutzungsdaten für den Feed:</b> Wenn du angemeldet bist, wird gespeichert, welche öffentlichen Teile und Outfits anderer du ansiehst, merkst oder anfragst, jeweils mit Datum und höchstens einmal pro Tag und Inhalt. Daraus wird die Reihenfolge im Feed berechnet, auch persönlich nach Marken, Kategorien und Farben, die dich interessieren. Das hat keine rechtlichen oder ähnlich erheblichen Folgen für dich. Andere Nutzer sehen diese Daten nicht.</li>
         </ul>
         <h3>Zwecke und Rechtsgrundlagen</h3>
         <p>Bereitstellung der App und deines Kontos (Art. 6 Abs. 1 lit. b DSGVO), Sicherheit und Missbrauchsschutz sowie die Sortierung des Feeds (Art. 6 Abs. 1 lit. f DSGVO). Dem Mitschreiben der Nutzungsdaten kannst du jederzeit per E-Mail an die oben genannte Adresse widersprechen.</p>

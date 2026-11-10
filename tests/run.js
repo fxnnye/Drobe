@@ -229,6 +229,19 @@ test('feed_public liefert eine Liste, nur freigegebene Felder', async () => {
   for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld im Feed: ' + k);
   for (const it of r.body) ok(['public', 'trade', 'sale'].includes(it.vis), 'privates Teil im Feed');
 });
+test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
+  const r = await rpc('feed_stage', {});
+  eq(r.status, 200); ok([0, 1, 2].includes(r.body), 'feed_stage: ' + JSON.stringify(r.body));
+  const c = await rpc('feed_rank_core', { p_user: '00000000-0000-0000-0000-000000000001', p_stage: 2, p_offset: 0 });
+  ok(c.status >= 400, 'feed_rank_core ist öffentlich aufrufbar');
+});
+test('feed_ranked liefert nur freigegebene Felder', async () => {
+  const r = await rpc('feed_ranked', { p_offset: 0 });
+  eq(r.status, 200); ok(Array.isArray(r.body)); ok(r.body.length <= 30, 'mehr als 30 Einträge');
+  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'swap', 'ts', 'outfit']);
+  for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld: ' + k);
+  for (const it of r.body) ok(['public', 'trade', 'sale'].includes(it.vis), 'privater Eintrag');
+});
 test('public_profile: unbekannter Name → null, bekannter nur erlaubte Felder', async () => {
   eq((await rpc('public_profile', { p_username: 'gibt-es-nicht-xyz' })).body, null);
   const all = (await rpc('feed_public', { p_kind: 'items' })).body;
