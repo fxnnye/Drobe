@@ -234,7 +234,7 @@ const rpc = async (name, args = {}) => {
 const denied = (r) => r.status === 401 || r.status === 403 || r.status === 404 || (r.body && (r.body.code === '42501' || r.body.code === 'PGRST202'));
 for (const [fn, args] of [
   ['my_threads', {}], ['my_follows', {}], ['my_followers', {}], ['my_username', {}], ['my_saves', {}], ['my_save_ids', {}], ['my_blocks', {}], ['my_interests', {}],
-  ['is_admin', {}], ['admin_reports', {}], ['admin_errors', {}], ['delete_my_account', {}], ['my_profile_text', {}],
+  ['is_admin', {}], ['has_role', { p_role: 'admin' }], ['admin_reports', {}], ['admin_errors', {}], ['delete_my_account', {}], ['my_profile_text', {}],
   ['update_my_profile', { p_bio: 'x', p_city: 'y' }], ['toggle_follow', { p_username: 'fxnnye' }], ['toggle_save', { p_username: 'fxnnye', p_item: 'x' }],
   ['send_interest', { p_to: 'fxnnye', p_kind: 'interest', p_record_id: 'x' }], ['report_user', { p_username: 'fxnnye', p_reason: 'spam' }],
   ['set_block', { p_username: 'fxnnye', p_block: true }], ['send_reply', { p_interest: '00000000-0000-0000-0000-000000000000', p_body: 'x' }],
@@ -286,6 +286,14 @@ test('listing ist ohne Anmeldung nicht lesbar und nicht beschreibbar', async () 
   ok(g.status >= 400 || (Array.isArray(gb) && gb.length === 0), 'listing liefert Daten ohne Anmeldung');
   const p = await fetch(url + '/rest/v1/listing', { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify({ item_id: 'x', user_id: '00000000-0000-0000-0000-000000000000', price_cents: 1 }) });
   ok(p.status >= 400, 'listing ohne Anmeldung beschreibbar');
+});
+test('user_role ist ohne Anmeldung nicht lesbar und nicht beschreibbar', async () => {
+  const { url, key } = await api();
+  const g = await fetch(url + '/rest/v1/user_role?select=*&limit=1', { headers: { apikey: key } });
+  const gb = await g.json().catch(() => null);
+  ok(g.status >= 400 || (Array.isArray(gb) && gb.length === 0), 'user_role liefert Daten ohne Anmeldung');
+  const p = await fetch(url + '/rest/v1/user_role', { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: '00000000-0000-0000-0000-000000000000', role: 'admin' }) });
+  ok(p.status >= 400, 'user_role ohne Anmeldung beschreibbar');
 });
 test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
   const r = await rpc('feed_stage', {});
