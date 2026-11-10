@@ -391,6 +391,9 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .viewing-profile main { display: none; }
 .landing, .public { max-width: 960px; margin: 0 auto; padding: 24px 24px 48px; }
 .landing[hidden], .public[hidden] { display: none; }
+/* Fremdes Profil: so breit wie das eigene, Kopf und Reiter bleiben schmal */
+#publicView { max-width: 1600px; padding-top: 8px; }
+@media (min-width: 701px) { .public > .me-head, .public > .pub-tools, .public > .subtabs, .public > .pub-banner, .public > .pub-about { max-width: 790px; } }
 .landing h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -.02em; }
 .find { display: flex; gap: 8px; margin: 16px 0 8px; max-width: 460px; }
 .pub-back { margin-bottom: 16px; }
