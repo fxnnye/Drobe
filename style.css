@@ -433,7 +433,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .pub-tag.match { background: #1f7a3d; color: #fff; }
 .pub-banner.match { background: #1f7a3d; color: #fff; }
 .top .menu { position: relative; }
-.menu.has-unread::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--bg); }
+.menu.has-unread::after, .menu.has-reports::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--bg); }
 .inbox-item { padding: 12px 0; border-bottom: 1px solid var(--gray-hover); display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .inbox-item.unread b::before { content: '● '; color: var(--red); }
 .inbox-item p { margin: 0; }
@@ -947,3 +947,6 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .bulk-bar b { flex: 1 1 100%; font-size: 14px; }
 @media (min-width: 701px) { .bulk-bar { bottom: 20px; max-width: 560px; margin: 0 auto; } }
 .bulk-bar .btn { padding-left: 12px; padding-right: 12px; }
+.mod-head { font-size: 15px; margin: 20px 0 8px; }
+.mod-item .muted.rec { margin: 2px 0 0; }
+#confirmText { white-space: pre-line; }

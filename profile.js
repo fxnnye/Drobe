@@ -965,35 +965,108 @@ const Profile = (() => {
     if (!sb || !navigator.onLine) return;
     try {
       const { data, error } = await sb.rpc('is_admin');
-      if (!error && data === true) { $('modRow').hidden = false; $('errRow').hidden = false; }
+      if (!error && data === true) { $('modRow').hidden = false; $('errRow').hidden = false; refreshModBadge(true); }
     } catch (e) { /* kein Admin oder Funktion fehlt noch */ }
+  }
+  // Zahl offener Meldungen: an der Zeile „Moderation“ und als Punkt am Menü (höchstens einmal pro Minute, außer erzwungen)
+  let modBadgeAt = 0;
+  async function refreshModBadge(force) {
+    if ($('modRow').hidden || (!force && Date.now() - modBadgeAt < 60000)) return;
+    modBadgeAt = Date.now();
+    try {
+      const { data, error } = await Cloud.client().rpc('admin_report_count');
+      if (error) return; // Migration 0019 fehlt noch: dann bleibt der Zähler leer
+      const n = Number(data) || 0;
+      $('modBadge').textContent = n ? String(n) : '';
+      $('menuBtn').classList.toggle('has-reports', n > 0);
+      $('menuBtn').setAttribute('aria-label', n ? 'Einstellungen, ' + n + (n === 1 ? ' offene Meldung' : ' offene Meldungen') : 'Einstellungen');
+    } catch (e) { /* kein Netz */ }
+  }
+  // Rückmeldung an den Melder: einmal zeigen, was aus den eigenen Meldungen wurde
+  const OUTCOME = {
+    hidden: 'Der gemeldete Eintrag wurde versteckt.',
+    banned: 'Das Konto wurde gesperrt.',
+    dismissed: 'Wir haben keinen Verstoß festgestellt.',
+    done: 'Wir haben sie bearbeitet.',
+  };
+  async function checkReportUpdates() {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return;
+    try {
+      const { data, error } = await sb.rpc('my_report_updates');
+      if (error || !Array.isArray(data) || !data.length) return;
+      const text = data.length === 1
+        ? 'Deine Meldung zu ' + (data[0].target || 'einem Konto') + ': ' + (OUTCOME[data[0].outcome] || OUTCOME.done)
+        : data.map((r) => (r.target || 'Konto') + ': ' + (OUTCOME[r.outcome] || OUTCOME.done)).join('\n');
+      await sb.rpc('ack_report_updates', { p_ids: data.map((r) => r.id) });
+      await askConfirm('Danke für deine Meldung.\n' + text, 'OK', true);
+    } catch (e) { /* Migration 0019 fehlt noch oder kein Netz */ }
+  }
+  // Eine Aktion auf eine Meldung ausführen; danach verschwindet sie aus der Liste (bei Sperren die ganze Liste neu, weil weitere mit erledigt sind)
+  async function modAct(row, fn, args, done, reload) {
+    const btns = row.querySelectorAll('button');
+    btns.forEach((b) => { b.disabled = true; });
+    const { error } = await Cloud.client().rpc(fn, args);
+    if (error) { btns.forEach((b) => { b.disabled = false; }); return toast('Das hat nicht geklappt.'); }
+    toast(done);
+    refreshModBadge(true);
+    if (reload) loadReports(); else row.remove();
+  }
+  async function loadBanned() {
+    const box = $('modBanned');
+    try {
+      const { data, error } = await Cloud.client().rpc('admin_banned');
+      if (error) throw error;
+      box.replaceChildren();
+      if (!data.length) return box.append(el('p', 'muted small', 'Keine gesperrten Konten.'));
+      for (const b of data) {
+        const row = el('div', 'mod-item');
+        row.append(el('b', null, b.username), el('div', 'muted small', 'gesperrt am ' + new Date(b.banned_at).toLocaleDateString('de-DE')));
+        const unban = el('button', 'btn', 'Entsperren');
+        unban.type = 'button';
+        unban.onclick = async () => {
+          if (!(await askConfirm(b.username + ' entsperren? Das Konto kann sich wieder anmelden. Die Einträge bleiben privat, bis die Person sie selbst wieder freigibt.', 'Entsperren'))) return;
+          unban.disabled = true;
+          const { error: e2 } = await Cloud.client().rpc('admin_unban', { p_username: b.username });
+          if (e2) { unban.disabled = false; return toast('Das hat nicht geklappt.'); }
+          toast(b.username + ' entsperrt');
+          loadBanned();
+        };
+        const act = el('div', 'row');
+        act.append(unban);
+        row.append(act);
+        box.append(row);
+      }
+    } catch (e) { console.error(e); message(box, 'Die gesperrten Konten konnten nicht geladen werden.', { retry: loadBanned }); }
   }
   async function loadReports() {
     const box = $('modList');
     message(box, 'Lade …', { loading: true });
+    loadBanned();
     try {
       const { data, error } = await Cloud.client().rpc('admin_reports');
       if (error) throw error;
       box.replaceChildren();
+      $('modBadge').textContent = data.length ? String(data.length) : '';
+      $('menuBtn').classList.toggle('has-reports', data.length > 0);
       if (!data.length) return box.append(el('p', 'muted', 'Keine offenen Meldungen.'));
       for (const r of data) {
         const row = el('div', 'mod-item');
-        row.append(el('b', null, (REASONS[r.reason] || r.reason) + ' · ' + (r.target || '?')));
+        row.append(el('b', null, (REASONS[r.reason] || r.reason) + ' · ' + (r.target || '?') + (r.target_banned ? ' (gesperrt)' : '')));
+        if (r.record_id) row.append(el('div', 'muted small rec', 'Eintrag: ' + (r.record_name || 'nicht mehr vorhanden')));
         row.append(el('div', 'muted small', 'gemeldet von ' + (r.reporter || '?') + ' · ' + new Date(r.created_at).toLocaleDateString('de-DE')));
         if (r.note) row.append(el('p', null, r.note));
         const act = el('div', 'row');
-        const view = el('button', 'btn', 'Profil');
-        view.type = 'button';
-        view.onclick = () => { $('settingsDialog').close(); location.hash = '#/u/' + r.target; };
-        const done = el('button', 'btn primary', 'Erledigt');
-        done.type = 'button';
-        done.onclick = async () => {
-          done.disabled = true;
-          const { error: e2 } = await Cloud.client().rpc('admin_resolve_report', { p_id: r.id });
-          if (e2) { done.disabled = false; return toast('Das hat nicht geklappt.'); }
-          row.remove();
-        };
-        act.append(view, done);
+        const btn = (label, cls, fn) => { const b = el('button', cls, label); b.type = 'button'; b.onclick = fn; act.append(b); return b; };
+        btn('Profil', 'btn', () => { $('settingsDialog').close(); location.hash = '#/u/' + r.target; });
+        if (r.record_id) btn('Teil verstecken', 'btn', async () => {
+          if (await askConfirm('„' + (r.record_name || 'Eintrag') + '“ von ' + r.target + ' verstecken? Er wird privat und lässt sich vom Besitzer nicht mehr freigeben.', 'Verstecken')) modAct(row, 'admin_hide_record', { p_id: r.id }, 'Eintrag versteckt');
+        });
+        if (!r.target_banned) btn('Konto sperren', 'btn danger', async () => {
+          if (await askConfirm(r.target + ' sperren? Die Person wird abgemeldet, alle Einträge werden versteckt, und alle offenen Meldungen zu dem Konto sind erledigt.', 'Sperren')) modAct(row, 'admin_ban', { p_id: r.id }, r.target + ' gesperrt', true);
+        });
+        btn('Kein Verstoß', 'btn', () => modAct(row, 'admin_resolve_report', { p_id: r.id, p_outcome: 'dismissed' }, 'Als „kein Verstoß“ abgeschlossen'));
+        btn('Erledigt', 'btn primary', () => modAct(row, 'admin_resolve_report', { p_id: r.id, p_outcome: 'done' }, 'Erledigt'));
         row.append(act);
         box.append(row);
       }
@@ -1056,6 +1129,8 @@ const Profile = (() => {
     $('pfPhotoDel').onclick = () => { pendingAvatar = ''; $('pfCrop').hidden = true; $('pfAvatar').hidden = false; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
     document.querySelector('[data-open=moderation]').addEventListener('click', loadReports);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshModBadge(); });
+    setInterval(refreshModBadge, 120000);
     document.querySelector('[data-open=errors]').addEventListener('click', loadErrors);
     $('errClear').onclick = async () => {
       if (!confirm('Alle Meldungen im Fehlerprotokoll löschen?')) return;
@@ -1087,7 +1162,7 @@ const Profile = (() => {
   // Wird vom Konto-Code nach dem Start (Gast oder angemeldet) aufgerufen
   async function start() {
     if (!started) { started = true; wire(); wireThread(); }
-    if (Cloud.user()) { loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); initAdmin(); }
+    if (Cloud.user()) { loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); initAdmin(); checkReportUpdates(); }
     await route();
   }
 

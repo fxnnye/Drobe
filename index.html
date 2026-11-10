@@ -574,7 +574,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
       <button class="set-row" type="button" id="backupOpen">Backup</button>
       <button class="set-row" type="button" data-open="legal">Rechtliches</button>
-      <button class="set-row" type="button" data-open="moderation" id="modRow" hidden>Moderation</button>
+      <button class="set-row" type="button" data-open="moderation" id="modRow" hidden>Moderation <span class="badge" id="modBadge"></span></button>
       <button class="set-row" type="button" data-open="errors" id="errRow" hidden>Fehlerprotokoll</button>
     </div>
 
@@ -610,8 +610,10 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     </div>
 
     <div class="set-panel" data-panel="moderation" data-title="Moderation" hidden>
-      <p class="muted small">Offene Meldungen. „Erledigt“ blendet sie aus.</p>
+      <p class="muted small">Offene Meldungen. „Teil verstecken“ macht den Eintrag privat (der Besitzer kann ihn nicht wieder freigeben), „Konto sperren“ meldet die Person ab und versteckt alles von ihr. Wer gemeldet hat, bekommt beim nächsten Start eine Rückmeldung.</p>
       <div id="modList"></div>
+      <h3 class="mod-head">Gesperrte Konten</h3>
+      <div id="modBanned"></div>
     </div>
 
 

@@ -95,9 +95,10 @@ function readDetails(p, kind, rec) {
 const visLabel = (rec, kind) => (visOf(rec) === 'private' ? '' : VIS[kind][visOf(rec)]);
 
 // Eigene Rückfrage statt confirm(), das in eingebetteten Browsern oft stumm „Nein“ liefert
-function askConfirm(text, yesLabel = 'Löschen') {
+function askConfirm(text, yesLabel = 'Löschen', info = false) { // info: nur ein Hinweis mit einem Knopf
   const d = $('confirmDialog');
   $('confirmText').textContent = text;
+  $('confirmNo').hidden = info;
   $('confirmYes').textContent = yesLabel;
   return new Promise((resolve) => {
     const done = (v) => {
