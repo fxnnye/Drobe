@@ -139,7 +139,7 @@ const Profile = (() => {
   async function render(name) {
     const box = $('publicView');
     box.replaceChildren();
-    const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück zu jawnz' : 'Zur Startseite');
+    const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück zu JAWNZ' : 'Zur Startseite');
     back.type = 'button';
     back.onclick = leave;
     box.append(back);
@@ -250,17 +250,7 @@ const Profile = (() => {
       const w = !own && me ? wishMatch(it) : null;
       const c = tile(it, itemSub(it), () => { location.hash = itemLink(data.username, it.id); });
       if (w) c.querySelector('.meta').append(el('span', 'pub-tag match', 'Passt zu deinem Wunsch: ' + w.name));
-      if (!own) { // kleines Herz unten rechts im Bild: Merken
-        const img = c.querySelector('.img');
-        const wrap = el('div', 'img-wrap');
-        img.replaceWith(wrap);
-        const hb = el('button', 'heart-btn');
-        hb.type = 'button';
-        hb.setAttribute('aria-label', 'Merken');
-        if (!me) { hb.textContent = '♡'; hb.onclick = askLogin; }
-        else toggle(hb, 'toggle_save', { p_username: data.username, p_item: it.id }, saved, data.username + '/' + it.id, ['♡', '♥']);
-        wrap.append(img, hb);
-      }
+      if (!own) withHeart(c, 'item', data.username, it.id);
       return c;
     };
     const paint = () => {
@@ -297,6 +287,37 @@ const Profile = (() => {
     paint();
   }
 
+
+  // Kleines Herz unten rechts im Bild: Teil oder Outfit eines anderen merken (Gast: Anmeldung)
+  const HEART = (on) => '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.5 8 3.4 5 6.5 5c2 0 3.5 1.1 4.5 2.6h2C14 6.1 15.5 5 17.5 5c3.1 0 5 3 3.8 6.3-1.8 4.6-9.3 9.2-9.3 9.2z" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+  function withHeart(c, kind, username, id) {
+    const img = c.querySelector('.img');
+    if (!img) return;
+    const wrap = el('div', 'img-wrap');
+    img.replaceWith(wrap);
+    const hb = el('button', 'heart-btn');
+    hb.type = 'button';
+    hb.setAttribute('aria-label', 'Merken');
+    const set = kind === 'outfit' ? savedOutfits : saved, key = username + '/' + id;
+    const rpcName = kind === 'outfit' ? 'toggle_outfit_save' : 'toggle_save';
+    const args = kind === 'outfit' ? { p_username: username, p_id: id } : { p_username: username, p_item: id };
+    const paintH = () => { const on = set.has(key); hb.innerHTML = HEART(on); hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+    paintH();
+    hb.onclick = async (e) => {
+      e.stopPropagation();
+      if (!Cloud.user()) return Cloud.showAuth(false);
+      hb.disabled = true;
+      try {
+        const { data, error } = await Cloud.client().rpc(rpcName, args);
+        if (error) throw error;
+        data ? set.add(key) : set.delete(key);
+        showCounts();
+        paintH();
+      } catch (err) { console.error(err); toast((err && err.message) || 'Das hat nicht geklappt.'); }
+      hb.disabled = false;
+    };
+    wrap.append(img, hb);
+  }
 
   // Ansicht eines fremden öffentlichen Inhalts mitschreiben (Grundlage für den Feed); stört nie die Anzeige
   function logView(kind, username, id) {
@@ -1318,6 +1339,8 @@ const Profile = (() => {
       meta.append(el('b', null, rec.name || 'Outfit'));
     }
     c.append(owner, img, meta);
+    const me3 = Cloud.user();
+    if (!me3 || me3.name !== rec.username) withHeart(c, kind === 'items' ? 'item' : 'outfit', rec.username, rec.id);
     return c;
   }
   async function showFeed(list, grid, kind) {
