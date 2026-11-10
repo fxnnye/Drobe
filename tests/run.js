@@ -271,6 +271,14 @@ test('Listen in der Datenbank stimmen mit der App überein (Kategorie, Zustand)'
   eq(conds.map((c) => c.key), W('CONDS'));
   ok([...cats, ...conds].every((x) => x.name_de && x.name_en), 'Name fehlt');
 });
+test('item_image ist ohne Anmeldung nicht lesbar und nicht beschreibbar', async () => {
+  const { url, key } = await api();
+  const g = await fetch(url + '/rest/v1/item_image?select=*&limit=1', { headers: { apikey: key } });
+  const gb = await g.json().catch(() => null);
+  ok(g.status >= 400 || (Array.isArray(gb) && gb.length === 0), 'item_image liefert Daten ohne Anmeldung');
+  const p = await fetch(url + '/rest/v1/item_image', { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify({ item_id: 'x', user_id: '00000000-0000-0000-0000-000000000000', role: 'main', path: 'x/x' }) });
+  ok(p.status >= 400, 'item_image ohne Anmeldung beschreibbar');
+});
 test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
   const r = await rpc('feed_stage', {});
   eq(r.status, 200); ok([0, 1, 2].includes(r.body), 'feed_stage: ' + JSON.stringify(r.body));
