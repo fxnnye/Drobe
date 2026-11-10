@@ -136,7 +136,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 .chip { border: 0; background: var(--gray); font-weight: 600; font-size: 14px; padding: 8px 16px; border-radius: 10px; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .chip:hover { background: var(--gray-hover); } }
 .chip.active { background: var(--text); color: var(--on-text); }
-.subchips { flex-basis: 100%; display: flex; gap: 8px; flex-wrap: wrap; }
+.subchips { flex-basis: 100%; display: flex; gap: 8px; flex-wrap: wrap; padding-left: 24px; }
 
 /* Raster: alle Karten stehen in einer Reihe, gleich große Bildfelder */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px 16px; align-items: start; }
