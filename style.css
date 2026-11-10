@@ -920,3 +920,14 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .thread-head { padding-top: 4px; margin-bottom: 16px; }
 .thread-head #threadBack { margin: 0; }
 
+
+/* Handy: Outfit-Seite kompakt – Foto oben, Teile als Liste (für eigene und fremde Outfits) */
+@media (max-width: 799px) {
+  .outfit-photo img { max-height: 46vh; width: auto; max-width: 100%; }
+  .outfit-items { grid-template-columns: 1fr; gap: 8px; }
+  .outfit-items .card { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 8px; border: 1px solid var(--gray-hover); border-radius: 12px; text-align: left; }
+  .outfit-items .card .img { width: 56px; height: 56px; flex: none; aspect-ratio: auto; border-radius: 8px; }
+  .outfit-items .card .img { --pad: 4px; }
+  .outfit-items .card .meta { padding: 0; min-width: 0; }
+  .outfit-items .card .meta b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+}
