@@ -1,7 +1,7 @@
 // Suche (Teil der App, Reihenfolge siehe index.html)
 /* Suche wie bei Vinted: Antippen öffnet ein eigenes Fenster (Rest ausgeblendet) mit Artikel/Mitglieder und Suchverlauf */
 let searchTimer = null;
-const HISTORY_KEY = 'drobe-search-history', HISTORY_MAX = 10;
+const HISTORY_KEY = 'jawnz-search-history', HISTORY_MAX = 10;
 const readHistory = () => { try { const h = JSON.parse(localStorage.getItem(HISTORY_KEY)); return Array.isArray(h) ? h.filter((x) => x && typeof x.q === 'string') : []; } catch { return []; } };
 const writeHistory = (h) => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, HISTORY_MAX))); } catch {} };
 function rememberSearch() {

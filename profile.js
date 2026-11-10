@@ -21,7 +21,7 @@ const Profile = (() => {
   let showcase = []; // IDs der eigenen angepinnten Teile
 
   /* ---------- Eigener Showcase ---------- */
-  const scKey = () => 'drobe-showcase-' + Cloud.user().id;
+  const scKey = () => 'jawnz-showcase-' + Cloud.user().id;
   const readLocal = () => { try { return JSON.parse(localStorage.getItem(scKey()) || 'null'); } catch (e) { return null; } };
   const writeLocal = (ids, dirty) => { try { localStorage.setItem(scKey(), JSON.stringify({ ids, dirty })); } catch (e) { /* nur lokal, egal */ } };
 

@@ -113,12 +113,12 @@ $('delGo').onclick = async () => {
 /* ---------- Willkommen (nur beim ersten Start ohne Inhalte) ---------- */
 function maybeWelcome() {
   try {
-    if (localStorage.getItem('drobe-welcomed') || items.length || outfits.length || wishlist.length) return;
+    if (localStorage.getItem('jawnz-welcomed') || items.length || outfits.length || wishlist.length) return;
     $('welcomeDialog').showModal();
   } catch (e) { /* ohne Speicher: kein Willkommen */ }
 }
 $('welcomeGo').onclick = () => {
-  try { localStorage.setItem('drobe-welcomed', '1'); } catch (e) { /* dann erscheint es nochmal */ }
+  try { localStorage.setItem('jawnz-welcomed', '1'); } catch (e) { /* dann erscheint es nochmal */ }
   $('welcomeDialog').close();
   showView('add');
 };
@@ -132,12 +132,12 @@ function applyTheme(mode) {
   document.querySelector('meta[name=theme-color]').content = dark ? '#121212' : '#ffffff';
 }
 let themeMode = 'system';
-try { themeMode = localStorage.getItem('drobe-theme') || 'system'; } catch (e) { /* ohne Speicher: automatisch */ }
+try { themeMode = localStorage.getItem('jawnz-theme') || 'system'; } catch (e) { /* ohne Speicher: automatisch */ }
 applyTheme(themeMode);
 document.querySelectorAll('#themeChips .chip').forEach((c) => {
   c.onclick = () => {
     themeMode = c.dataset.theme;
-    try { localStorage.setItem('drobe-theme', themeMode); } catch (e) { /* gilt dann nur bis zum Neuladen */ }
+    try { localStorage.setItem('jawnz-theme', themeMode); } catch (e) { /* gilt dann nur bis zum Neuladen */ }
     applyTheme(themeMode);
   };
 });

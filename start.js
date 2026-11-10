@@ -78,7 +78,6 @@ async function reloadAll() {
   outfits.sort((a, b) => a.created - b.created);
   renderCloset(); renderWishlist(); renderOutfits(); renderPicker();
   upgradeOutfitThumbs().catch((e) => console.error(e));
-  dropTrade().catch((e) => console.error(e));
   backfillColors();
   backfillTrim();
 }
@@ -108,7 +107,7 @@ function readLegacyDb() {
 }
 
 async function offerLegacy(userId) {
-  const flag = 'drobe-legacy-' + userId;
+  const flag = 'jawnz-legacy-' + userId;
   try { if (localStorage.getItem(flag)) return; } catch (e) { return; }
   const old = await readLegacyDb();
   if (!old) return;

@@ -52,8 +52,6 @@ const vis = (rec, v) => { const r = JSON.parse(JSON.stringify(rec)); W('applyVis
 test('applyVisibility: privat entfernt vis, Marke bleibt', () => eq(vis({ name: 'A', brand: 'Nike', vis: 'public' }, 'private'), { name: 'A', brand: 'Nike' }));
 test('applyVisibility: öffentlich setzt vis', () => eq(vis({ name: 'A' }, 'public').vis, 'public'));
 test('applyVisibility: Verkauf → öffentlich verwirft den Preis', () => { const r = vis({ name: 'A', vis: 'sale', price: 50 }, 'public'); eq([r.vis, r.price], ['public', undefined]); });
-test('applyVisibility: altes Tausch-Teil wird öffentlich', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'trade').vis, 'public'));
-test('applyVisibility: altes Tauschfeld swap wird entfernt', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'public').swap, undefined));
 
 group('Übernahme aus eigenem Text');
 const pl = (x) => W('parseListing')(x);
@@ -99,7 +97,6 @@ test('Preis nur bei Verkauf', () => eq(cd({ vis: 'public', price: 20 }), { vis: 
 test('Preis bei Verkauf', () => eq(cd({ vis: 'sale', price: 20 }), { vis: 'sale', price: 20 }));
 test('negativer Preis entfällt', () => eq(cd({ vis: 'sale', price: -1 }), { vis: 'sale' }));
 test('absurder Preis entfällt', () => eq(cd({ vis: 'sale', price: 1e9 }), { vis: 'sale' }));
-test('altes Tausch-Teil: vis trade wird public, swap entfällt', () => eq(cd({ vis: 'trade', swap: 'Größe L' }), { vis: 'public' }));
 test('Zustand nur aus der Liste', () => eq(cd({ cond: 'Neu / DS' }), { cond: 'Neu / DS' }) && eq(cd({ cond: 'Kaputt' }), {}));
 test('Marke wird auf 40 Zeichen gekürzt', () => eq(cd({ brand: 'x'.repeat(100) }).brand.length, 40));
 test('Farbe nur aus der Liste, hex nur gültig', () => {
@@ -247,6 +244,20 @@ test('Sprache umschalten: Chips für Deutsch und English vorhanden', () => {
   ok(frame.contentDocument.querySelector('#langChips .chip[data-lang=de]').classList.contains('active'));
 });
 
+test('alte Speicherschlüssel drobe-* werden zu jawnz-* übernommen', async () => {
+  localStorage.setItem('drobe-theme', 'dark'); localStorage.setItem('drobe-welcomed', '1'); localStorage.setItem('jawnz-showcase-x', 'neu'); localStorage.setItem('drobe-showcase-x', 'alt');
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:420px;height:700px;position:absolute;left:-9999px';
+  f.src = '../index.html';
+  document.body.append(f);
+  try {
+    await new Promise((res) => f.addEventListener('load', () => setTimeout(res, 800)));
+    eq([localStorage.getItem('jawnz-theme'), localStorage.getItem('jawnz-welcomed'), localStorage.getItem('drobe-theme'), localStorage.getItem('drobe-welcomed')], ['dark', '1', null, null]);
+    eq(localStorage.getItem('jawnz-showcase-x'), 'neu', 'vorhandener neuer Wert wird nicht überschrieben');
+    eq(localStorage.getItem('drobe-showcase-x'), null);
+  } finally { for (const k of ['jawnz-theme', 'jawnz-welcomed', 'jawnz-showcase-x', 'drobe-showcase-x', 'drobe-theme', 'drobe-welcomed']) localStorage.removeItem(k); f.remove(); }
+});
+
 /* ---------- Aufbau der App ---------- */
 group('Aufbau');
 test('sw.js hat genau 1500 Byte', async () => eq(new TextEncoder().encode(await text('sw.js')).length, 1500));
@@ -313,9 +324,9 @@ test('Tabellen sind direkt nicht lesbar', async () => {
 test('feed_public liefert eine Liste, nur freigegebene Felder', async () => {
   const r = await rpc('feed_public', { p_kind: 'items' });
   eq(r.status, 200); ok(Array.isArray(r.body));
-  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'swap', 'ts']);
+  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'ts']);
   for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld im Feed: ' + k);
-  for (const it of r.body) ok(['public', 'trade', 'sale'].includes(it.vis), 'privates Teil im Feed');
+  for (const it of r.body) ok(['public', 'sale'].includes(it.vis), 'privates Teil im Feed');
 });
 test('schema_version passt zur App und ist ohne Anmeldung lesbar', async () => {
   const r = await rpc('schema_version');
@@ -371,9 +382,9 @@ test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
 test('feed_ranked liefert nur freigegebene Felder', async () => {
   const r = await rpc('feed_ranked', { p_offset: 0 });
   eq(r.status, 200); ok(Array.isArray(r.body)); ok(r.body.length <= 30, 'mehr als 30 Einträge');
-  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'swap', 'ts', 'outfit']);
+  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'ts', 'outfit']);
   for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld: ' + k);
-  for (const it of r.body) ok(['public', 'trade', 'sale'].includes(it.vis), 'privater Eintrag');
+  for (const it of r.body) ok(['public', 'sale'].includes(it.vis), 'privater Eintrag');
 });
 test('public_profile: unbekannter Name → null, bekannter nur erlaubte Felder', async () => {
   eq((await rpc('public_profile', { p_username: 'gibt-es-nicht-xyz' })).body, null);

@@ -16,7 +16,7 @@ const Cloud = (() => {
   let lastSync = null;
 
   /* ---------- Offene Änderungen (überstehen Neustart und Offline) ---------- */
-  const pendKey = () => 'drobe-pending-' + user.id;
+  const pendKey = () => 'jawnz-pending-' + user.id;
   const readPending = () => { try { return JSON.parse(localStorage.getItem(pendKey()) || '{}'); } catch (e) { return {}; } };
   const writePending = (p) => { try { localStorage.setItem(pendKey(), JSON.stringify(p)); } catch (e) { /* Speicher voll oder gesperrt: dann gleicht der nächste Start alles ab */ } };
 
@@ -341,7 +341,7 @@ const Cloud = (() => {
     };
     $('logoutBtn').onclick = async () => {
       if (sb) { try { await sb.auth.signOut(); } catch (e) { /* offline: lokal abmelden reicht */ } }
-      try { localStorage.removeItem('drobe-last-user'); } catch (e) { /* egal */ }
+      try { localStorage.removeItem('jawnz-last-user'); } catch (e) { /* egal */ }
       location.reload();
     };
   }
@@ -364,7 +364,7 @@ const Cloud = (() => {
     try { await sb.auth.signOut(); } catch (e) { /* Konto ist ohnehin weg */ }
     try { if (typeof db !== 'undefined' && db) db.close(); indexedDB.deleteDatabase('kleiderschrank-u-' + id); } catch (e) { /* egal */ }
     try {
-      for (const k of ['drobe-last-user', 'drobe-pending-' + id, 'drobe-showcase-' + id]) localStorage.removeItem(k);
+      for (const k of ['jawnz-last-user', 'jawnz-pending-' + id, 'jawnz-showcase-' + id]) localStorage.removeItem(k);
     } catch (e) { /* egal */ }
     location.reload();
   }
@@ -379,7 +379,7 @@ const Cloud = (() => {
       try { const r = await sb.rpc('my_username'); if (r.data) name = r.data; } catch (e) { /* offline: gemerkter Name */ }
     }
     user = { id: u.id, name, email: u.email || '' };
-    try { localStorage.setItem('drobe-last-user', JSON.stringify(user)); } catch (e) { /* egal */ }
+    try { localStorage.setItem('jawnz-last-user', JSON.stringify(user)); } catch (e) { /* egal */ }
     $('auth').hidden = true;
     document.body.classList.remove('locked', 'guest');
     $('guestActions').hidden = true;
@@ -428,7 +428,7 @@ const Cloud = (() => {
     if (session) return enter(session.user);
     // Ohne Netz bleibt der zuletzt angemeldete Nutzer mit seinen lokalen Daten nutzbar
     let last = null;
-    try { last = JSON.parse(localStorage.getItem('drobe-last-user') || 'null'); } catch (e) { /* egal */ }
+    try { last = JSON.parse(localStorage.getItem('jawnz-last-user') || 'null'); } catch (e) { /* egal */ }
     if (last && last.id && (!sb || !navigator.onLine)) return enter(last);
     enterGuest();
   }

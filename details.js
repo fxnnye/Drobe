@@ -25,7 +25,6 @@ function cleanDetails(src, kind) {
     if (RARITIES.includes(src.rarity)) out.rarity = src.rarity;
     if (COLORS.includes(src.color)) { out.color = src.color; if (/^#[0-9a-f]{6}$/.test(src.hex || '')) out.hex = src.hex; }
   }
-  if (src.vis === 'trade') src = { ...src, vis: 'public' }; // früheres „Zum Tausch“ gibt es nicht mehr
   if (src.vis && src.vis !== 'private' && VIS[kind][src.vis]) out.vis = src.vis;
   if (kind === 'items' && out.vis === 'sale' && num(src.price) && src.price >= 0 && src.price <= PRICE_MAX) out.price = src.price;
   return out;
@@ -82,7 +81,7 @@ function parseListing(text) {
   return out;
 }
 
-const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'color', 'hex', 'vis', 'price', 'swap'];
+const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'color', 'hex', 'vis', 'price'];
 const setDetails = (rec, clean) => { for (const k of DETAIL_KEYS) delete rec[k]; Object.assign(rec, clean); };
 
 // Baut die ausklappbaren Detailfelder in einen Dialog (p = Präfix der Feld-IDs)

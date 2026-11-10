@@ -50,14 +50,6 @@ function renderCloset() {
 function applyVisibility(it, vis) {
   setDetails(it, cleanDetails({ ...it, vis }, 'items'));
 }
-// Früheres „Zum Tausch“ gibt es nicht mehr: solche Teile werden einmalig öffentlich, das Tauschfeld entfällt
-async function dropTrade() {
-  for (const it of items) {
-    if (it.vis !== 'trade' && it.swap === undefined) continue;
-    applyVisibility(it, it.vis);
-    try { await dbPut('items', it); } catch (e) { console.error(e); }
-  }
-}
 function updateBulk() {
   const n = closetSel ? closetSel.size : 0;
   $('bulkBar').hidden = !closetSel;
