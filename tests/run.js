@@ -55,6 +55,13 @@ test('applyVisibility: Verkauf → öffentlich verwirft den Preis', () => { cons
 test('applyVisibility: altes Tausch-Teil wird öffentlich', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'trade').vis, 'public'));
 test('applyVisibility: altes Tauschfeld swap wird entfernt', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'public').swap, undefined));
 
+group('IDs');
+test('uid liefert UUIDs (v4) und keine Doppelten', () => {
+  const ids = Array.from({ length: 500 }, () => W('uid')());
+  ok(ids.every((i) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(i)), 'kein UUID v4');
+  eq(new Set(ids).size, ids.length);
+});
+
 /* ---------- Farben ---------- */
 group('Farben');
 const NAMES = [
