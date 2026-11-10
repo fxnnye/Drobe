@@ -5,12 +5,12 @@ const DETAIL_TEXT = { brand: ['Marke', 40], size: ['Größe', 20], sku: ['Artike
 const CONDS = ['Neu / DS', 'Sehr gut', 'Gut', 'Getragen'];
 const RARITIES = ['Alltag', 'Rare', 'Grail'];
 const VIS = {
-  items: { private: 'Privat', public: 'Öffentlich', trade: 'Zum Tausch', sale: 'Zum Verkauf' },
+  items: { private: 'Privat', public: 'Öffentlich', sale: 'Zum Verkauf' },
   wishlist: { private: 'Privat', public: 'Öffentlich' },
   outfits: { private: 'Privat', public: 'Öffentlich' },
 };
 const visOf = (rec) => rec.vis || 'private';
-const PRICE_MAX = 100000, SWAP_MAX = 200;
+const PRICE_MAX = 100000;
 
 // Prüft und kürzt die Detailfelder eines Eintrags (für Backup-Import und Speichern): unbekannte oder ungültige Werte entfallen
 function cleanDetails(src, kind) {
@@ -25,9 +25,9 @@ function cleanDetails(src, kind) {
     if (RARITIES.includes(src.rarity)) out.rarity = src.rarity;
     if (COLORS.includes(src.color)) { out.color = src.color; if (/^#[0-9a-f]{6}$/.test(src.hex || '')) out.hex = src.hex; }
   }
+  if (src.vis === 'trade') src = { ...src, vis: 'public' }; // früheres „Zum Tausch“ gibt es nicht mehr
   if (src.vis && src.vis !== 'private' && VIS[kind][src.vis]) out.vis = src.vis;
   if (kind === 'items' && out.vis === 'sale' && num(src.price) && src.price >= 0 && src.price <= PRICE_MAX) out.price = src.price;
-  if (kind === 'items' && out.vis === 'trade' && typeof src.swap === 'string' && src.swap.trim()) out.swap = src.swap.trim().slice(0, SWAP_MAX);
   return out;
 }
 
@@ -47,8 +47,7 @@ function buildDetails(box, p, kind) {
     : '';
   const sale = kind === 'items'
     ? `<label class="field" id="${p}priceRow" hidden>Preis (€)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
-       <label class="field" id="${p}swapRow" hidden>Tauschwunsch<input type="text" id="${p}swap" maxlength="${SWAP_MAX}" placeholder="z. B. Größe M oder Nike Dunk Low"></label>
-       <label class="check" id="${p}pinRow" hidden><input type="checkbox" id="${p}pin"> Oben im Profil anpinnen (Showcase, max. 6)</label>`
+        <label class="check" id="${p}pinRow" hidden><input type="checkbox" id="${p}pin"> Oben im Profil anpinnen (Showcase, max. 6)</label>`
     : '';
   box.innerHTML = `<details class="more"><summary>Details und Sichtbarkeit</summary>
     <div class="more-grid">${text}${extra}</div>
@@ -59,7 +58,7 @@ function buildDetails(box, p, kind) {
 function syncVisRows(p) {
   const v = $(p + 'vis').value;
   if ($(p + 'priceRow')) {
-    $(p + 'priceRow').hidden = v !== 'sale'; $(p + 'swapRow').hidden = v !== 'trade';
+    $(p + 'priceRow').hidden = v !== 'sale';
     $(p + 'pinRow').hidden = v === 'private'; // Anpinnen nur bei Teilen, die andere überhaupt sehen
   }
 }
@@ -68,7 +67,7 @@ function fillDetails(p, rec) {
   if ($(p + 'cond')) { $(p + 'cond').value = rec.cond || ''; $(p + 'rarity').value = rec.rarity || ''; $(p + 'color').value = rec.color || ''; }
   $(p + 'vis').value = visOf(rec);
   if ($(p + 'price')) {
-    $(p + 'price').value = rec.price != null ? String(rec.price).replace('.', ',') : ''; $(p + 'swap').value = rec.swap || '';
+    $(p + 'price').value = rec.price != null ? String(rec.price).replace('.', ',') : '';
     $(p + 'pin').checked = typeof Profile !== 'undefined' && Profile.isPinned(rec.id);
   }
   syncVisRows(p);
@@ -87,7 +86,6 @@ function readDetails(p, kind, rec) {
       if (!Number.isFinite(n) || n < 0 || n > PRICE_MAX) { toast('Der Preis sieht nicht richtig aus'); return false; }
       src.price = Math.round(n * 100) / 100;
     }
-    src.swap = $(p + 'swap').value;
   }
   setDetails(rec, cleanDetails(src, kind));
   return true;

@@ -114,7 +114,6 @@ const Profile = (() => {
   const itemTags = (it) => {
     const t = [];
     if (it.vis === 'sale') t.push([it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf', 'hot']);
-    if (it.vis === 'trade') t.push(['Tausch' + (it.swap ? ' · sucht: ' + it.swap : ''), 'hot']);
     if (it.rarity && it.rarity !== 'Alltag') t.push([it.rarity, '']);
     if (it.cond) t.push([it.cond, '']);
     return t;
@@ -164,7 +163,7 @@ const Profile = (() => {
 
     const me = Cloud.user();
     const own = !!me && me.name === data.username;
-    if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches, zum Tausch oder zum Verkauf Freigegebenes ist sichtbar.'));
+    if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches oder zum Verkauf Freigegebenes ist sichtbar.'));
     const cnt = (k, one, many) => k + ' ' + (k === 1 ? one : many);
     const head = el('div', 'me-head');
     const av = el('span', 'avatar');
@@ -215,7 +214,7 @@ const Profile = (() => {
       if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
       const buy = it.vis === 'sale';
       const open = () => { location.hash = itemLink(data.username, it.id); };
-      return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: buy ? 'Anfrage senden' : 'Tauschanfrage', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) }, open);
+      return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: 'Anfrage senden', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) }, open);
     };
     const wishCard = (w) => {
       const m = !own && me ? itemMatch(w) : null;
@@ -245,7 +244,7 @@ const Profile = (() => {
       if (extra) { const b2 = extra.node || null; if (!b2) { const bt = el('button', 'btn pub-action', extra.label); bt.type = 'button'; bt.onclick = extra.fn; meta.append(bt); } }
       return c;
     };
-    const itemSub = (it) => [it.category, it.vis === 'sale' ? (it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf') : it.vis === 'trade' ? 'Tausch' : 'Öffentlich'].filter(Boolean).join(' · ');
+    const itemSub = (it) => [it.category, it.vis === 'sale' ? (it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf') : 'Öffentlich'].filter(Boolean).join(' · ');
     const itemTile = (it) => {
       const w = !own && me ? wishMatch(it) : null;
       const c = tile(it, itemSub(it), () => { location.hash = itemLink(data.username, it.id); });
@@ -383,7 +382,7 @@ const Profile = (() => {
     if (data.items.length) {
       const grid = el('div', 'grid outfit-items');
       for (const it of data.items) {
-        const tags = it.vis === 'sale' && it.price != null ? [[money(it.price), 'sale']] : it.vis === 'trade' ? [['Zum Tausch', 'trade']] : [];
+        const tags = it.vis === 'sale' && it.price != null ? [[money(it.price), 'sale']] : [];
         if (data.local) { const rec = itemById(it.id); grid.append(card(it, urls, [], null, () => openItemDialog(rec))); continue; }
         grid.append(card(it, urls, tags, null, () => { location.hash = itemLink(data.username, it.id); }));
       }
@@ -481,7 +480,6 @@ const Profile = (() => {
     const info = el('div', 'item-info');
     info.append(el('h2', 'item-name', it.name || 'Teil'));
     if (it.vis === 'sale' && it.price != null) info.append(el('p', 'item-price', money(it.price)));
-    else if (it.vis === 'trade') info.append(el('p', 'item-price', 'Zum Tausch' + (it.swap ? ' · sucht: ' + it.swap : '')));
 
     const facts = el('dl', 'item-facts');
     for (const [k, v] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : '']]) {
@@ -505,7 +503,7 @@ const Profile = (() => {
       if (it.vis === 'public') { // nur gezeigt, nicht angeboten: hier gibt es nichts zu erfragen, nur zu merken
         info.append(saveBtn(it, data.username, 'primary full'));
       } else {
-        const go = el('button', 'btn primary full', buy ? 'Kaufanfrage senden' : 'Tauschanfrage senden');
+        const go = el('button', 'btn primary full', 'Kaufanfrage senden');
         go.type = 'button';
         go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
         info.append(go);
@@ -638,7 +636,7 @@ const Profile = (() => {
   function askInterest(kind, to, rec, myItem) {
     intCtx = { kind, to, rec, ref: null };
     const buy = kind === 'interest' && rec.vis === 'sale';
-    $('intTitle').textContent = buy ? 'Kaufanfrage' : kind === 'interest' ? 'Tauschanfrage' : 'Hab ich';
+    $('intTitle').textContent = buy ? 'Kaufanfrage' : kind === 'interest' ? 'Anfrage' : 'Hab ich';
     $('intPayHint').hidden = !buy;
     $('intWhat').textContent = (kind === 'interest' ? to + ' · ' : to + ' sucht · ') + (rec.name || '');
     $('intMsg').value = '';
@@ -900,7 +898,7 @@ const Profile = (() => {
     box.replaceChildren();
     if (!list.length) return note('Noch keine passenden öffentlichen Teile.');
     for (const it of list) {
-      const b = el('button', 'member', it.username + ' · ' + (it.name || '') + (it.size ? ' · ' + it.size : '') + (it.vis === 'sale' && it.price != null ? ' · ' + money(it.price) : it.vis === 'trade' ? ' · Tausch' : ''));
+      const b = el('button', 'member', it.username + ' · ' + (it.name || '') + (it.size ? ' · ' + it.size : '') + (it.vis === 'sale' && it.price != null ? ' · ' + money(it.price) : ''));
       b.type = 'button';
       b.onclick = () => { if (onOpen) onOpen(); location.hash = '#/u/' + it.username; };
       box.append(b);
@@ -1334,7 +1332,6 @@ const Profile = (() => {
       if (rec.cond) meta.append(el('span', 'muted small', rec.cond));
       if (rec.color) meta.append(el('span', 'muted small', rec.color));
       if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
-      else if (rec.vis === 'trade') meta.append(el('b', 'feed-price', 'Tausch'));
     } else {
       meta.append(el('b', null, rec.name || 'Outfit'));
     }

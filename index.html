@@ -111,7 +111,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <div class="chips so-kind" id="fKind" role="group" aria-label="Angebot">
         <button class="chip active" type="button" data-kind="">Alle</button>
         <button class="chip" type="button" data-kind="public">Öffentlich</button>
-        <button class="chip" type="button" data-kind="trade">Tausch</button>
         <button class="chip" type="button" data-kind="sale">Kaufen</button>
       </div>
       <select id="fColor" aria-label="Farbe"><option value="">Farbe</option></select>
@@ -186,7 +185,6 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="btn" type="button" id="bulkAll">Alle</button>
       <button class="btn" type="button" data-vis="private">Privat</button>
       <button class="btn" type="button" data-vis="public">Öffentlich</button>
-      <button class="btn" type="button" data-vis="trade">Tausch</button>
       <button class="btn danger" type="button" id="bulkDelete">Löschen</button>
     </div>
   </section>
@@ -540,7 +538,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <canvas id="pfCanvas" width="256" height="256" aria-label="Ausschnitt des Profilbilds"></canvas>
       <p class="muted small">Ziehen zum Verschieben, mit zwei Fingern oder dem Mausrad zoomen.</p>
     </div>
-    <p class="muted small">Öffentlich ist nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst. Notizen und Shop-Links bleiben immer privat.</p>
+    <p class="muted small">Öffentlich ist nur, was du auf „Öffentlich“ oder „Zum Verkauf“ stellst. Notizen und Shop-Links bleiben immer privat.</p>
     <label class="field">Über mich
       <textarea id="profBio" rows="3" maxlength="160" placeholder="z. B. Streetwear, Vintage, Größe M"></textarea>
     </label>
@@ -668,7 +666,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <h3>Welche Daten verarbeitet werden</h3>
         <ul>
           <li><b>Konto:</b> E-Mail-Adresse, Benutzername und Passwort. Das Passwort wird nur als Hash gespeichert. Die E-Mail-Adresse dient zur Bestätigung und zum Zurücksetzen des Passworts und ist für andere nicht sichtbar. Der Benutzername ist für andere sichtbar.</li>
-          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen, Outfits und Wünschen sowie dein Profiltext (Über mich, Stadt) und dein Profilbild. Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“, „Zum Tausch“ oder „Zum Verkauf“ stellst.</li>
+          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen, Outfits und Wünschen sowie dein Profiltext (Über mich, Stadt) und dein Profilbild. Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“ oder „Zum Verkauf“ stellst.</li>
           <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
           <li><b>Fehlerprotokoll:</b> Tritt in der App ein unerwarteter Fehler auf, werden die Fehlermeldung, die Stelle im Programm, die Seite (ohne Benutzernamen) und die App-Version an den Betreiber gesendet. Es werden keine Inhalte deines Schranks oder deiner Nachrichten mitgeschickt. Die Meldungen werden nach 30 Tagen gelöscht.</li>
           <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
@@ -692,7 +690,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <div data-legal-page="nutzung" hidden>
         <h2>Nutzungsbedingungen</h2>
         <ol>
-          <li><b>Was JAWNZ ist.</b> JAWNZ ist ein digitaler Kleiderschrank mit einem Bereich, in dem du Teile zeigen und anfragen kannst. JAWNZ wickelt keine Zahlungen ab und ist nicht Vertragspartner von Käufen oder Tauschgeschäften zwischen Nutzern.</li>
+          <li><b>Was JAWNZ ist.</b> JAWNZ ist ein digitaler Kleiderschrank mit einem Bereich, in dem du Teile zeigen und anfragen kannst. JAWNZ wickelt keine Zahlungen ab und ist nicht Vertragspartner von Käufen zwischen Nutzern.</li>
           <li><b>Dein Konto.</b> Du bist für dein Passwort verantwortlich. Das Passwort kannst du über deine E-Mail-Adresse zurücksetzen. Du darfst nur Inhalte hochladen, an denen du die nötigen Rechte hast.</li>
           <li><b>Erlaubte Inhalte.</b> Keine Fälschungen, keine rechtswidrigen, beleidigenden, pornografischen oder diskriminierenden Inhalte, keine Fotos anderer Personen ohne deren Einwilligung, kein Spam und keine Betrugsversuche.</li>
           <li><b>Moderation.</b> Gemeldete oder offensichtlich regelwidrige Inhalte können entfernt, Konten können gesperrt werden.</li>
@@ -715,7 +713,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
     <h2>Willkommen bei JAWNZ</h2>
     <ol class="welcome-steps">
       <li><b>Teile hinzufügen.</b> Fotografiere Klamotten, JAWNZ schneidet sie frei. Alles ist zuerst privat.</li>
-      <li><b>Öffentlich stellen.</b> Teile auf „Öffentlich“, „Tausch“ oder „Verkauf“ erscheinen im Feed anderer.</li>
+      <li><b>Öffentlich stellen.</b> Teile auf „Öffentlich“ oder „Verkauf“ erscheinen im Feed anderer.</li>
       <li><b>Entdecken.</b> Folge Profilen, merke dir Teile und schreib Nachrichten, wenn dir etwas gefällt.</li>
     </ol>
     <div class="row">

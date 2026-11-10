@@ -40,7 +40,7 @@ function renderHistory() {
     box.append(row);
   });
 }
-// Angebot: Alle, Öffentlich, Tausch oder Kaufen (filtert die Treffer)
+// Angebot: Alle, Öffentlich oder Kaufen (filtert die Treffer)
 let searchKind = '';
 function setKind(k) {
   searchKind = k;

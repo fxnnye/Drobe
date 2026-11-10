@@ -52,8 +52,8 @@ const vis = (rec, v) => { const r = JSON.parse(JSON.stringify(rec)); W('applyVis
 test('applyVisibility: privat entfernt vis, Marke bleibt', () => eq(vis({ name: 'A', brand: 'Nike', vis: 'public' }, 'private'), { name: 'A', brand: 'Nike' }));
 test('applyVisibility: öffentlich setzt vis', () => eq(vis({ name: 'A' }, 'public').vis, 'public'));
 test('applyVisibility: Verkauf → öffentlich verwirft den Preis', () => { const r = vis({ name: 'A', vis: 'sale', price: 50 }, 'public'); eq([r.vis, r.price], ['public', undefined]); });
-test('applyVisibility: Tausch behält den Tauschwunsch', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'trade').swap, 'M'));
-test('applyVisibility: Tausch → öffentlich verwirft den Tauschwunsch', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'public').swap, undefined));
+test('applyVisibility: altes Tausch-Teil wird öffentlich', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'trade').vis, 'public'));
+test('applyVisibility: altes Tauschfeld swap wird entfernt', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'public').swap, undefined));
 
 /* ---------- Farben ---------- */
 group('Farben');
@@ -84,7 +84,7 @@ test('Preis nur bei Verkauf', () => eq(cd({ vis: 'public', price: 20 }), { vis: 
 test('Preis bei Verkauf', () => eq(cd({ vis: 'sale', price: 20 }), { vis: 'sale', price: 20 }));
 test('negativer Preis entfällt', () => eq(cd({ vis: 'sale', price: -1 }), { vis: 'sale' }));
 test('absurder Preis entfällt', () => eq(cd({ vis: 'sale', price: 1e9 }), { vis: 'sale' }));
-test('Tausch-Wunsch nur bei Tausch', () => eq(cd({ vis: 'trade', swap: 'Größe L' }), { vis: 'trade', swap: 'Größe L' }));
+test('altes Tausch-Teil: vis trade wird public, swap entfällt', () => eq(cd({ vis: 'trade', swap: 'Größe L' }), { vis: 'public' }));
 test('Zustand nur aus der Liste', () => eq(cd({ cond: 'Neu / DS' }), { cond: 'Neu / DS' }) && eq(cd({ cond: 'Kaputt' }), {}));
 test('Marke wird auf 40 Zeichen gekürzt', () => eq(cd({ brand: 'x'.repeat(100) }).brand.length, 40));
 test('Farbe nur aus der Liste, hex nur gültig', () => {
