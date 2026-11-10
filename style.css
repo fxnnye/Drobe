@@ -931,3 +931,6 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
   .outfit-items .card .meta { padding: 0; min-width: 0; }
   .outfit-items .card .meta b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 }
+
+.outfit-actions { display: flex; gap: 8px; margin: 0 0 12px; }
+.outfit-actions .btn { flex: 1; }

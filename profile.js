@@ -311,11 +311,17 @@ const Profile = (() => {
     } else if (hidden > 0 && data.items.length) info.append(el('p', 'muted small', hidden === 1 ? 'Ein weiteres Teil ist privat.' : hidden + ' weitere Teile sind privat.'));
     const me2 = Cloud.user();
     if (!data.local && !(me2 && me2.name === data.username)) { // fremdes Outfit: mit eigenen Teilen nachbauen
-      const cp = el('button', 'btn primary full', 'Outfit nachbauen');
+      const acts = el('div', 'outfit-actions');
+      const sv = el('button', 'btn save-btn');
+      sv.type = 'button';
+      if (!Cloud.user()) { sv.textContent = '♡ Outfit merken'; sv.onclick = () => Cloud.showAuth(false); }
+      else toggle(sv, 'toggle_outfit_save', { p_username: data.username, p_id: data.id }, savedOutfits, data.username + '/' + data.id, ['♡ Outfit merken', '♥ Gemerkt']);
+      const cp = el('button', 'btn primary', 'Outfit nachbauen');
       cp.type = 'button';
+      acts.append(sv, cp);
       cp.onclick = me2 ? () => rebuildOutfit(data) : () => Cloud.showAuth(false);
       const hint = el('p', 'muted small', 'Setzt passende Teile aus deinem Schrank ein. Danach kannst du sie in der Liste austauschen.');
-      info.insertBefore(hint, h); info.insertBefore(cp, hint);
+      info.insertBefore(hint, h); info.insertBefore(acts, hint);
     }
     page.append(photo, info);
     box.append(page);
@@ -431,7 +437,8 @@ const Profile = (() => {
 
   /* ---------- Folgen und Merken ---------- */
   const follows = new Set(); // Benutzernamen, denen ich folge
-  const saved = new Set();   // „benutzername/teil-id“ der gemerkten Teile
+  const saved = new Set();
+  const savedOutfits = new Set();   // „benutzername/teil-id“ der gemerkten Teile
   let followerCount = 0;
   function showCounts() {
     $('meFollowers').textContent = followerCount + ' Follower';
@@ -444,6 +451,7 @@ const Profile = (() => {
       const [f, v, fr] = await Promise.all([sb.rpc('my_follows'), sb.rpc('my_save_ids'), sb.rpc('my_followers')]);
       if (!f.error) { follows.clear(); (f.data || []).forEach((n) => follows.add(n)); }
       if (!v.error) { saved.clear(); (v.data || []).forEach((n) => saved.add(n)); }
+      sb.rpc('my_outfit_save_ids').then((r) => { if (!r.error) { savedOutfits.clear(); (r.data || []).forEach((n) => savedOutfits.add(n)); } }, () => {});
       if (!fr.error) followerCount = (fr.data || []).length;
       showCounts();
     } catch (e) { console.error(e); /* Funktionen fehlen noch oder kein Netz: dann gilt der letzte Stand */ }
@@ -1118,7 +1126,9 @@ const Profile = (() => {
       if (before) return [];
       const { data, error } = await sb.rpc('my_saves');
       if (error) throw error;
-      return Array.isArray(data) ? data : [];
+      const list = Array.isArray(data) ? data.slice() : [];
+      try { const o = await sb.rpc('my_outfit_saves'); if (!o.error && Array.isArray(o.data)) list.push(...o.data); } catch (e) { /* Funktion fehlt noch */ }
+      return list.sort((a, b) => String(b.ts || '').localeCompare(String(a.ts || '')));
     }
     const args = { p_kind: kind === 'outfits' ? 'outfits' : 'items', p_before: before || null, p_color: color || null };
     if (kind === 'following') args.p_mode = 'following';
@@ -1158,7 +1168,7 @@ const Profile = (() => {
     const sb = Cloud.client();
     const urls = list.length ? await signedUrls(sb, list.map((r) => r.path)) : {};
     const shape = kind === 'outfits' ? 'outfits' : 'items';
-    for (const rec of list) grid.append(feedCard(rec, urls, shape));
+    for (const rec of list) grid.append(feedCard(rec, urls, rec.outfit ? 'outfits' : shape));
   }
 
   return { paintOwnAvatars, matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, showFeed, loadInbox, leaveThread };
