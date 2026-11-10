@@ -298,6 +298,7 @@ for (const [fn, args] of [
   ['update_my_profile', { p_bio: 'x', p_city: 'y' }], ['toggle_follow', { p_username: 'fxnnye' }], ['toggle_save', { p_username: 'fxnnye', p_item: 'x' }],
   ['send_interest', { p_to: 'fxnnye', p_kind: 'interest', p_record_id: 'x' }], ['report_user', { p_username: 'fxnnye', p_reason: 'spam' }],
   ['set_block', { p_username: 'fxnnye', p_block: true }], ['send_reply', { p_interest: '00000000-0000-0000-0000-000000000000', p_body: 'x' }],
+  ['item_vis', { p_id: 'x' }], ['item_price', { p_id: 'x' }], ['apply_row', { p_user: '00000000-0000-0000-0000-000000000000', p_kind: 'items', p_id: 'x', d: {}, p_updated: '2026-01-01T00:00:00Z' }],
   ['sync_pull', {}], ['sync_push', { p_kind: 'items', p_id: 'x', p_data: {} }], ['similar_public_items', { p_emb: '[]' }], ['find_public_items', { p_brand: 'a', p_query: 'b' }],
 ]) test('ohne Anmeldung gesperrt: ' + fn, async () => { const r = await rpc(fn, args); ok(denied(r), fn + ' ist ohne Anmeldung erreichbar: ' + r.status + ' ' + JSON.stringify(r.body).slice(0, 120)); });
 
