@@ -73,6 +73,19 @@ async function addFiles(files, target = 'closet') {
   upTotal += imgs.length;
   if (!upCur) nextUpload();
 }
+// Angaben aus dem eingefügten Text in den Dialog übernehmen (Nutzer prüft und ändert alles vor dem Speichern)
+function applyImport(imp) {
+  if (imp.name) $('upName').value = imp.name;
+  if (imp.category && CATEGORIES.includes(imp.category)) $('upCategory').value = imp.category;
+  if (imp.brand) $('upBrand').value = imp.brand;
+  if (imp.size) $('upSize').value = imp.size;
+  if (imp.cond) $('upCond').value = imp.cond;
+  if (imp.price != null) {
+    $('upVisSale').hidden = false;
+    $('upImportHint').textContent = 'Preis aus deinem Text: ' + String(imp.price).replace('.', ',') + ' €. Er gilt, wenn du „Zum Verkauf“ wählst.';
+    $('upImportHint').hidden = false;
+  }
+}
 const nameFromFile = (f) => f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 60) || 'Neues Teil';
 
 async function nextUpload() {
@@ -100,6 +113,9 @@ async function nextUpload() {
     $('upBrand').value = ''; $('upSize').value = ''; $('upCond').value = ''; $('upColor').value = '';
     $('upNote').value = '';
     $('upLink').value = '';
+    $('upVis').value = 'public'; $('upVisSale').hidden = true; $('upImportHint').hidden = true;
+    upCur.imp = f.imp || null;
+    if (upCur.imp) applyImport(upCur.imp);
     upDone++;
     refreshUpload();
     if (!upDlg.open) upDlg.showModal();
@@ -612,7 +628,7 @@ function upItemDetails() {
   if (upTarget === 'wish') return {};
   const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
   if (need) { toast('Bitte gib ' + need[1] + ' an'); $(need[0]).focus(); return null; }
-  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, color: $('upColor').value, vis: $('upVis').value }, 'items');
+  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, color: $('upColor').value, vis: $('upVis').value, price: upCur && upCur.imp ? upCur.imp.price : undefined }, 'items');
 }
 $('upAdd').addEventListener('click', async () => {
   const u = upCur;
@@ -628,6 +644,7 @@ $('upAdd').addEventListener('click', async () => {
     blob: res.blob, created: Date.now(),
   };
   if (res.source) { rec.source = res.source; rec.srcBox = res.srcBox; }
+  if (u.imp && upTarget !== 'wish') rec.origin = 'vinted'; // kam aus eigenem Foto und Text des Nutzers
   const note = $('upNote').value.trim().slice(0, 120);
   if (upTarget === 'wish' && note) rec.note = note;
   if (link) rec.link = link;
@@ -637,6 +654,29 @@ $('upAdd').addEventListener('click', async () => {
   coll.list.push(rec);
   upAdded++;
   nextUpload();
+});
+/* ---------- Von Vinted übernehmen: nur eigenes Foto und eingefügter Text, kein Einlesen von Links ---------- */
+const vintedDlg = $('vintedDialog');
+let vintedPicked = null;
+$('vintedOpen').addEventListener('click', () => {
+  vintedPicked = null;
+  $('vintedFile').value = ''; $('vintedText').value = '';
+  $('vintedFileName').textContent = 'Foto oder Screenshot wählen';
+  $('vintedGo').disabled = true;
+  vintedDlg.showModal();
+});
+$('vintedFile').addEventListener('change', (e) => {
+  vintedPicked = [...e.target.files].find((f) => f.type.startsWith('image/')) || null;
+  $('vintedFileName').textContent = vintedPicked ? vintedPicked.name : 'Foto oder Screenshot wählen';
+  $('vintedGo').disabled = !vintedPicked;
+});
+$('vintedCancel').addEventListener('click', () => vintedDlg.close());
+$('vintedGo').addEventListener('click', () => {
+  if (!vintedPicked) return;
+  vintedPicked.imp = parseListing($('vintedText').value);
+  const f = vintedPicked;
+  vintedDlg.close();
+  addFiles([f]);
 });
 $('upSkip').addEventListener('click', () => nextUpload());
 

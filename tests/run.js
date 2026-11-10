@@ -55,6 +55,14 @@ test('applyVisibility: Verkauf → öffentlich verwirft den Preis', () => { cons
 test('applyVisibility: altes Tausch-Teil wird öffentlich', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'trade').vis, 'public'));
 test('applyVisibility: altes Tauschfeld swap wird entfernt', () => eq(vis({ name: 'A', vis: 'trade', swap: 'M' }, 'public').swap, undefined));
 
+group('Übernahme aus eigenem Text');
+const pl = (x) => W('parseListing')(x);
+test('parseListing: Anzeige mit Feldern', () => eq(pl('Nike Air Max 90\nMarke: Nike\nGröße: 42 / 8\nZustand: Sehr gut\n55,00 €'), { name: 'Nike Air Max 90', brand: 'Nike', size: '42', cond: 'Sehr gut', price: 55, category: 'Schuhe' }));
+test('parseListing: Felder auf getrennten Zeilen, Zustand „Neu mit Etikett“', () => eq(pl("Levi's 501 Jeans\nMarke\nLevi's\nGröße\nM\nZustand\nNeu mit Etikett\n€ 30"), { name: "Levi's 501 Jeans", brand: "Levi's", size: 'M', cond: 'Neu / DS', price: 30, category: 'Hosen' }));
+test('parseListing: Preis mit Tausenderpunkt, absurder Preis entfällt', () => eq(pl('Mantel\nPreis: 1.299,00 €').price, 1299) && eq(pl('Mantel\n9999999 €').price, undefined));
+test('parseListing: „Gut“ zählt nur als Wert hinter Zustand, „Zufriedenstellend“ wird Getragen', () => eq(pl('Hose\nZustand: Gut').cond, 'Gut') && eq(pl('Hose gut sitzend').cond, undefined) && eq(pl('Hose\nZustand: Zufriedenstellend').cond, 'Getragen'));
+test('parseListing: leer oder Unsinn ergibt nichts Falsches', () => eq(pl(''), {}) && eq(pl('   \n  ').name, undefined));
+
 group('IDs');
 test('uid liefert UUIDs (v4) und keine Doppelten', () => {
   const ids = Array.from({ length: 500 }, () => W('uid')());

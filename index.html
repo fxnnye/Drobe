@@ -230,6 +230,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
           Fotos auswählen
           <input type="file" id="fileInput" accept="image/*" multiple hidden>
         </label>
+        <button class="btn" type="button" id="vintedOpen">Von Vinted übernehmen</button>
       </div>
     </div>
     <div class="upload" id="wishDrop">
@@ -395,6 +396,25 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
+<dialog id="vintedDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2>Von Vinted übernehmen</h2>
+    <p class="muted small">Lade ein eigenes Foto oder einen Screenshot deines Artikels hoch und füge den Text deiner Anzeige ein. JAWNZ liest keine Links und ruft nichts von Vinted ab. Du prüfst alles, bevor es gespeichert wird.</p>
+    <label class="btn full">
+      <span id="vintedFileName">Foto oder Screenshot wählen</span>
+      <input type="file" id="vintedFile" accept="image/*" hidden>
+    </label>
+    <label class="field">Text deiner Anzeige (optional)
+      <textarea id="vintedText" rows="7" maxlength="4000" placeholder="Titel, Marke, Größe, Zustand, Preis: einfach hineinkopieren"></textarea>
+    </label>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="vintedCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="vintedGo" disabled>Weiter</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="uploadDialog">
   <form method="dialog" onsubmit="return false">
     <p class="muted small" id="upProgress"></p>
@@ -442,8 +462,9 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
         <select id="upColor"><option value="">Automatisch, wenn freigestellt</option></select>
       </label>
       <label class="field">Sichtbarkeit
-        <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="private">Privat</option></select>
+        <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="sale" id="upVisSale" hidden>Zum Verkauf</option><option value="private">Privat</option></select>
       </label>
+      <p class="muted small" id="upImportHint" hidden></p>
     </div>
     <div id="upWish" hidden>
       <label class="field">Preis / Notiz
