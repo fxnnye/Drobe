@@ -138,7 +138,7 @@ const Profile = (() => {
   async function render(name) {
     const box = $('publicView');
     box.replaceChildren();
-    const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück zu JAWNZ' : 'Zur Startseite');
+    const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück' : 'Zur Startseite');
     back.type = 'button';
     back.onclick = leave;
     box.append(back);
