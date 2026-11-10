@@ -249,6 +249,13 @@ test('feed_public liefert eine Liste, nur freigegebene Felder', async () => {
   for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld im Feed: ' + k);
   for (const it of r.body) ok(['public', 'trade', 'sale'].includes(it.vis), 'privates Teil im Feed');
 });
+test('schema_version passt zur App und ist ohne Anmeldung lesbar', async () => {
+  const r = await rpc('schema_version');
+  eq(r.status, 200); eq(r.body, W('Cloud').SCHEMA);
+  const { url, key } = await api();
+  const t = await fetch(url + '/rest/v1/schema_info?select=*', { headers: { apikey: key } });
+  ok(t.status >= 400 || (await t.json()).length === 0, 'schema_info direkt lesbar');
+});
 test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
   const r = await rpc('feed_stage', {});
   eq(r.status, 200); ok([0, 1, 2].includes(r.body), 'feed_stage: ' + JSON.stringify(r.body));

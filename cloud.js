@@ -401,6 +401,20 @@ const Cloud = (() => {
     });
   }
 
+  // Die App ist für genau diesen Datenbankstand gebaut. Ist die Datenbank neuer, läuft hier eine alte App-Version: neu laden.
+  const SCHEMA = 22;
+  async function checkSchema() {
+    try {
+      const { data, error } = await sb.rpc('schema_version');
+      if (error || typeof data !== 'number') return;
+      if (data > SCHEMA) {
+        if (typeof toast === 'function') toast('Neue Version verfügbar, die App lädt neu …');
+        try { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.update(); } catch (e) { /* egal */ }
+        setTimeout(() => location.reload(), 2500);
+      } else if (data < SCHEMA) console.error(new Error('Datenbank veraltet: ' + data + ', App erwartet ' + SCHEMA));
+    } catch (e) { /* offline */ }
+  }
+
   async function boot() {
     bindAuthUi();
     setMode(false);
@@ -410,6 +424,7 @@ const Cloud = (() => {
     } catch (e) { sb = null; }
     let session = null;
     if (sb) { try { session = (await sb.auth.getSession()).data.session; } catch (e) { /* offline */ } }
+    if (sb) checkSchema();
     if (session) return enter(session.user);
     // Ohne Netz bleibt der zuletzt angemeldete Nutzer mit seinen lokalen Daten nutzbar
     let last = null;
@@ -425,5 +440,5 @@ const Cloud = (() => {
   // Handy-Browser melden das Zurückkehren nicht immer: solange die App offen ist, regelmäßig nachsehen
   setInterval(() => { if (document.visibilityState === 'visible') syncSoon(); }, 60000);
 
-  return { boot, queue, client: () => sb, user: () => user, sync, showAuth, deleteAccount };
+  return { boot, queue, SCHEMA, client: () => sb, user: () => user, sync, showAuth, deleteAccount };
 })();
