@@ -919,3 +919,13 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 /* Chat-Kopf: Zurück-Knopf und Name mittig auf einer Linie (Knopf ohne eigenen Außenabstand, der Kopf trägt Rand oben und unten) */
 .thread-head { padding-top: 4px; margin-bottom: 16px; }
 .thread-head #threadBack { margin: 0; }
+
+#outfitViewDialog .ov-img{aspect-ratio:9/16;max-height:46vh;margin:0 auto 12px;border-radius:12px;overflow:hidden;background:#f2f2f2;display:flex;justify-content:center}
+#outfitViewDialog .ov-img img{height:100%;width:auto;object-fit:contain}
+#outfitViewDialog h2{margin:0 0 4px}
+#outfitViewDialog .ov-list{display:flex;flex-direction:column;gap:8px;margin:12px 0 16px}
+.ov-row{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--line,#e5e5e5);border-radius:12px;background:transparent;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.ov-row img{width:56px;height:56px;object-fit:contain;border-radius:8px;background:#f2f2f2;flex:none}
+.ov-row span{display:flex;flex-direction:column;min-width:0}
+.ov-row b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-row i{font-style:normal;font-size:13px;opacity:.6}
