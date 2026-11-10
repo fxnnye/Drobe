@@ -963,7 +963,7 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .heart-btn:disabled { opacity: .6; }
 
 /* =====================================================================
-   jawnz: Schrift Unbounded und ein festes Abstandsraster
+   jawnz: Unbounded nur fürs Logo und ein festes Abstandsraster
    Raster: 4 · 8 · 12 · 16 · 24 · 32 · 48 px. Kleinste Abstände 4/8 (innerhalb einer Gruppe),
    16 zwischen Blöcken, 24 zwischen Abschnitten, 32/48 für große Pausen. Kein Wert außerhalb.
    ===================================================================== */
@@ -974,16 +974,14 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
   src: url(fonts/unbounded-latin.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 :root {
-  --font: 'Unbounded', 'Helvetica Neue', Helvetica, Arial, -apple-system, sans-serif;
+  --font: 'Helvetica Neue', Helvetica, Arial, -apple-system, sans-serif;
+  --font-logo: 'Unbounded', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
   --gap: var(--s-4);
 }
 body { font-synthesis: none; }
-/* Unbounded ist sehr breit und kräftig: Gewichte eine Stufe leichter, Zeilen etwas luftiger */
-b, strong, dt, .more summary, .thread-who, .msg-tab { font-weight: 600; }
-.btn, .chip, .tab, .set-row, .subtab, .member, select, .dropbox, .brand-opt { font-weight: 500; }
-.item-price { font-weight: 700; }
-h1, h2, h3 { line-height: 1.25; }
+/* Unbounded nur für den Schriftzug JAWNZ (Kopfzeile und Anmeldung), alles andere Helvetica */
+.top h1, .auth-card h1 { font-family: var(--font-logo); }
 
 /* Kopfzeile und Seitenränder */
 .top { padding: var(--s-4) var(--pad-page); gap: var(--s-3); }
