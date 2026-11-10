@@ -62,8 +62,8 @@ function setSearchMode(mode, showResults = false) {
 }
 // Vorschläge beim Tippen: passende Marken und Artikelnamen; ein Tipp zeigt alle Teile, bei denen Marke oder Beschreibung passt
 function renderSuggestions(list, t, box) {
-  const words = t.toLowerCase().split(/\s+/).filter(Boolean);
-  const hit = (s) => words.every((w) => String(s || '').toLowerCase().includes(w));
+  const variants = expandQuery(t).map((v) => v.split(' ').filter(Boolean));
+  const hit = (s) => variants.some((words) => words.every((w) => String(s || '').toLowerCase().includes(w)));
   const brands = new Map(), names = new Map();
   for (const it of list) {
     if (it.brand && hit(it.brand)) { const k = it.brand.toLowerCase(); brands.set(k, { text: it.brand, n: (brands.get(k)?.n || 0) + 1 }); }
@@ -91,6 +91,14 @@ function renderSuggestions(list, t, box) {
 }
 // Filter für Artikel: Farbe (automatisch erkannt), Größe, Marke
 const searchFilters = () => ({ color: $('fColor').value, size: $('fSize').value.trim(), brand: $('fBrand').value.trim() });
+// Artikel suchen: auch mit verwandten Begriffen (siehe begriffe.js), Treffer der eigenen Eingabe stehen vorn, doppelte fallen weg
+async function fetchRelated(t, filters) {
+  const variants = t ? expandQuery(t) : [''];
+  const lists = await Promise.all(variants.map((v, i) => Profile.fetchItems(v, filters).catch((e) => { if (i === 0) throw e; return []; }))); // fehlt nur eine Erweiterung, bleibt die Suche gültig
+  const seen = new Set(), out = [];
+  for (const r of lists.flat()) { const k = r.username + '/' + r.id; if (!seen.has(k)) { seen.add(k); out.push(r); } }
+  return out;
+}
 const filtersActive = () => state.searchMode === 'items' && Object.values(searchFilters()).some(Boolean);
 async function runSearch() {
   syncFilters();
@@ -110,7 +118,7 @@ async function runSearch() {
     if (t.length < 2 && !hasFilter) return note('Gib mindestens 2 Zeichen ein.');
     if (state.showResults || hasFilter) { const g = document.createElement('div'); g.className = 'grid'; box.append(g); skeletons(g, 4); }
     try {
-      const list = await Profile.fetchItems(t.length >= 2 ? t : '', filters);
+      const list = await fetchRelated(t.length >= 2 ? t : '', filters);
       if (stale()) return;
       if (state.showResults || hasFilter) return await Profile.showItems(byKind(list), box, stale);
       renderSuggestions(list, t, box);

@@ -35,6 +35,17 @@ test('sizeMatches: xl findet XL zuerst', () => eq(W('sizeMatches')('xl', 'Jacken
 test('sizeMatches: 42 findet nur Schuhgröße', () => eq(W('sizeMatches')('42', 'Jacken'), [['Schuhe', ['42']]]));
 test('sizeMatches: Unsinn findet nichts', () => eq(W('sizeMatches')('qqq', 'Jacken'), []));
 
+/* ---------- Verwandte Suchbegriffe ---------- */
+group('Verwandte Suchbegriffe');
+test('expandQuery: sneaker findet Schuhe und Jordan', () => { const v = W('expandQuery')('sneaker'); eq(v[0], 'sneaker'); ok(v.includes('schuhe') && v.includes('jordan'), v.join(', ')); });
+test('expandQuery: hoodie findet Pullover', () => ok(W('expandQuery')('Hoodie').includes('pullover')));
+test('expandQuery: Mehrzahl und Anfang des Wortes', () => { ok(W('expandQuery')('sneakers').includes('schuhe')); ok(W('expandQuery')('hoodi').includes('pullover')); });
+test('expandQuery: Marke bleibt erhalten', () => ok(W('expandQuery')('nike sneaker').includes('nike schuhe')));
+test('expandQuery: Modell mit Leerzeichen', () => ok(W('expandQuery')('air force 1').includes('schuhe 1') || W('expandQuery')('air force 1').some((x) => x.includes('schuhe'))));
+test('expandQuery: Unbekanntes bleibt unverändert', () => eq(W('expandQuery')('qqxzvv'), ['qqxzvv']));
+test('expandQuery: höchstens 5 Anfragen', () => ok(W('expandQuery')('sneaker hoodie jacke').length <= 5));
+test('expandQuery: keine doppelten Anfragen', () => { const v = W('expandQuery')('schuhe'); eq(v.length, new Set(v).size); });
+
 /* ---------- Farben ---------- */
 group('Farben');
 const NAMES = [

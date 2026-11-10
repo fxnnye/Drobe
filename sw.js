@@ -1,6 +1,6 @@
-// Offline-Cache. Bei jeder Änderung die Version anheben (Datei bleibt 1500 Byte).
-const CACHE = 'drobe-v143';
-const JS = ['colors', 'profile', 'cloud', 'core', 'details', 'imaging', 'feed', 'closet', 'search', 'upload', 'item', 'outfits', 'wishlist', 'settings', 'start', 'errors'].map((n) => n + '.js');
+// Offline-Cache. Bei Änderung die Version anheben (Datei bleibt 1500 Byte).
+const CACHE = 'drobe-v144';
+const JS = ['colors', 'begriffe', 'profile', 'cloud', 'core', 'details', 'imaging', 'feed', 'closet', 'search', 'upload', 'item', 'outfits', 'wishlist', 'settings', 'start', 'errors'].map((n) => n + '.js');
 const FILES = [
   './', 'index.html', 'style.css', ...JS, 'vendor/supabase.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -19,7 +19,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Eigene Dateien: erst Netzwerk, offline Cache. Fremde Server bleiben außen vor.
+// Eigene Dateien: erst Netz, offline Cache. Fremde Server bleiben draußen.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
