@@ -195,6 +195,58 @@ test('meldet Fehler gekürzt, ohne Adressteil, ohne Doppelte; ignoriert Rauschen
   } finally { w.__real = realClient; w.eval('Cloud.client = window.__real'); }
 });
 
+/* ---------- Sprache ---------- */
+group('Sprache');
+test('Standardsprache ist Deutsch, t() lässt deutschen Text unverändert', () => {
+  eq(W('LANG'), 'de');
+  eq(W("t('Abbrechen')"), 'Abbrechen');
+  eq(W("t('{n} Teile', { n: 3 })"), '3 Teile');
+});
+test('Sprachliste: nur Einträge mit Text, Muster sind gültig', () => {
+  const d = W('I18N').en;
+  const bad = Object.entries(d).filter(([k, v]) => !k.trim() || typeof v !== 'string' || !v.trim());
+  eq(bad, []);
+  ok(Object.keys(d).length > 100, 'zu wenige Einträge');
+  for (const [re, rep] of W('I18N_PATTERNS').en) ok(Object.prototype.toString.call(re) === '[object RegExp]' && typeof rep === 'string');
+});
+test('Sprachliste: Kategorien, Zustände und Farben der App sind übersetzt', () => {
+  const d = W('I18N').en;
+  const need = [...W('COLORS'), ...['Neu / DS', 'Sehr gut', 'Gut', 'Getragen'], ...W('CATEGORIES').filter((c) => typeof c === 'string')];
+  eq(need.filter((x) => d[x] === undefined), []);
+});
+test('Englisch: Texte werden übersetzt, Auswahlwerte bleiben deutsch', async () => {
+  localStorage.setItem('jawnz-lang', 'en');
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:420px;height:700px;position:absolute;left:-9999px';
+  f.src = '../index.html';
+  document.body.append(f);
+  try {
+    await new Promise((res) => f.addEventListener('load', () => setTimeout(res, 1200)));
+    localStorage.removeItem('jawnz-lang');
+    const w = f.contentWindow, d = w.document;
+    eq(w.eval('LANG'), 'en');
+    eq(d.documentElement.lang, 'en');
+    eq(d.querySelector('[data-open=theme]').textContent.trim(), 'Appearance');
+    eq(d.querySelector('[data-open=lang]').textContent.trim(), 'Language');
+    const opts = [...d.querySelectorAll('#upCond option')].map((o) => [o.textContent.trim(), o.value]);
+    eq(opts.slice(1), [['New / DS', 'Neu / DS'], ['Very good', 'Sehr gut'], ['Good', 'Gut'], ['Worn', 'Getragen']]);
+    // später eingefügte Texte und Listeneinträge werden auch übersetzt
+    const sel = d.createElement('select');
+    d.body.append(sel);
+    sel.append(new w.Option('Schwarz'));
+    await new Promise((r) => setTimeout(r, 50));
+    eq([sel.options[0].textContent, sel.value], ['Black', 'Schwarz']);
+    sel.remove();
+    // Rechtstexte bleiben deutsch
+    const legal = d.getElementById('legalBody');
+    ok(legal.hasAttribute('data-no-i18n') && legal.textContent.includes('Angaben gemäß § 5 DDG'), 'Rechtstexte müssen deutsch bleiben');
+  } finally { localStorage.removeItem('jawnz-lang'); f.remove(); }
+});
+test('Sprache umschalten: Chips für Deutsch und English vorhanden', () => {
+  eq([...frame.contentDocument.querySelectorAll('#langChips .chip')].map((c) => c.dataset.lang), ['de', 'en']);
+  ok(frame.contentDocument.querySelector('#langChips .chip[data-lang=de]').classList.contains('active'));
+});
+
 /* ---------- Aufbau der App ---------- */
 group('Aufbau');
 test('sw.js hat genau 1500 Byte', async () => eq(new TextEncoder().encode(await text('sw.js')).length, 1500));

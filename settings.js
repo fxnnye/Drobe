@@ -142,6 +142,12 @@ document.querySelectorAll('#themeChips .chip').forEach((c) => {
   };
 });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(themeMode));
+
+/* ---------- Sprache (Liste und Umschalter stehen in i18n.js) ---------- */
+document.querySelectorAll('#langChips .chip').forEach((c) => {
+  c.classList.toggle('active', c.dataset.lang === LANG);
+  c.onclick = () => { if (c.dataset.lang !== LANG) setLang(c.dataset.lang); };
+});
 $('backupClose').onclick = () => backupDlg.close();
 
 $('backupExport').onclick = async () => {

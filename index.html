@@ -592,6 +592,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="set-row" type="button" data-open="account">Konto</button>
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
+      <button class="set-row" type="button" data-open="lang">Sprache</button>
       <button class="set-row" type="button" id="backupOpen">Backup</button>
       <button class="set-row" type="button" data-open="legal">Rechtliches</button>
       <button class="set-row" type="button" data-open="moderation" id="modRow" hidden>Moderation <span class="badge" id="modBadge"></span></button>
@@ -657,6 +658,14 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <p class="muted small">Automatisch richtet sich nach der Einstellung deines Geräts.</p>
     </div>
 
+    <div class="set-panel" data-panel="lang" data-title="Sprache" hidden>
+      <div class="chips" id="langChips">
+        <button class="chip" type="button" data-lang="de">Deutsch</button>
+        <button class="chip" type="button" data-lang="en">English</button>
+      </div>
+      <p class="muted small">Die Rechtstexte gibt es nur auf Deutsch, verbindlich ist die deutsche Fassung.</p>
+    </div>
+
     <div class="row">
       <span class="spacer"></span>
       <button class="btn" type="button" id="settingsClose">Schließen</button>
@@ -671,7 +680,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
       <button class="chip" type="button" data-legal-tab="datenschutz">Datenschutz</button>
       <button class="chip" type="button" data-legal-tab="nutzung">Nutzung</button>
     </div>
-    <div class="legal-body" id="legalBody">
+    <div class="legal-body" id="legalBody" data-no-i18n>
       <div data-legal-page="impressum">
         <h2>Impressum</h2>
         <p>Angaben gemäß § 5 DDG</p>
@@ -776,6 +785,7 @@ try { var t = localStorage.getItem('drobe-theme'); if (t === 'light' || t === 'd
 
 <div id="toast" class="toast" role="status"></div>
 <script src="errors.js"></script>
+<script src="i18n.js"></script>
 <script src="colors.js"></script>
 <script src="begriffe.js"></script>
 <script src="profile.js"></script>
