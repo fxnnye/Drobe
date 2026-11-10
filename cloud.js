@@ -402,7 +402,7 @@ const Cloud = (() => {
   }
 
   // Die App ist für genau diesen Datenbankstand gebaut. Ist die Datenbank neuer, läuft hier eine alte App-Version: neu laden.
-  const SCHEMA = 32;
+  const SCHEMA = 34;
   async function checkSchema() {
     try {
       const { data, error } = await sb.rpc('schema_version');

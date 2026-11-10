@@ -753,10 +753,69 @@ const Profile = (() => {
     document.querySelector('#view-messages .page-title').hidden = false;
   }
   function closeThread() { leaveThread(); loadInbox(true); }
+  // Angebot der Unterhaltung als Karte: Verkäufer nimmt an oder lehnt ab, Käufer zieht zurück, nach der Annahme „verkauft“ oder wieder anbieten
+  const OFFER_STATUS = { open: 'offen', accepted: 'angenommen', declined: 'abgelehnt', withdrawn: 'zurückgezogen' };
+  function renderOffer(o) {
+    const box = $('threadOffer');
+    box.replaceChildren();
+    box.hidden = !o;
+    if (!o) return;
+    const price = Number(o.amount).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+    box.append(el('b', null, 'Angebot'), el('span', null, price), el('span', 'offer-status', o.listing === 'sold' ? 'verkauft' : OFFER_STATUS[o.status] || o.status));
+    const actions = el('div', 'offer-actions');
+    const act = (label, cls, fn) => {
+      const b = el('button', cls, label); b.type = 'button';
+      b.onclick = async () => {
+        b.disabled = true;
+        try { await fn(); } catch (e) { console.error(e); toast((e && e.message) || 'Das hat nicht geklappt'); }
+        refreshThread(true);
+      };
+      actions.append(b);
+    };
+    const rpc = async (name, args) => { const { error } = await Cloud.client().rpc(name, args); if (error) throw error; };
+    if (o.listing === 'sold') {
+      box.append(el('p', 'muted small offer-note', 'Dieses Teil ist verkauft.'));
+    } else if (o.status === 'open' && o.seller) {
+      act('Annehmen', 'btn primary', () => rpc('answer_offer', { p_offer: o.id, p_action: 'accept' }));
+      act('Ablehnen', 'btn', () => rpc('answer_offer', { p_offer: o.id, p_action: 'decline' }));
+    } else if (o.status === 'open' && o.buyer) {
+      box.append(el('p', 'muted small offer-note', 'Der Verkäufer hat noch nicht geantwortet.'));
+      act('Zurückziehen', 'btn', () => rpc('answer_offer', { p_offer: o.id, p_action: 'withdraw' }));
+    } else if (o.status === 'accepted') {
+      box.append(el('p', 'muted small offer-note', 'Die Bezahlung läuft direkt zwischen euch. Empfohlen: PayPal „Waren und Dienstleistungen“, sonst gibt es bei Betrug kein Geld zurück.'));
+      if (o.seller) {
+        act('Als verkauft markieren', 'btn primary', async () => {
+          if (!(await askConfirm('Als verkauft markieren? Das Teil wird danach privat gestellt.', 'Verkauft'))) return;
+          await rpc('mark_sold', { p_item: o.item_id });
+          const it = typeof itemById === 'function' ? itemById(o.item_id) : null;
+          if (it) {
+            applyVisibility(it, 'private');
+            setPinned(it.id, false);
+            await dbPut('items', it);
+            if (typeof renderCloset === 'function') renderCloset();
+          }
+          toast('Als verkauft markiert');
+        });
+        act('Wieder anbieten', 'btn', async () => { await rpc('release_listing', { p_item: o.item_id }); toast('Wieder im Angebot'); });
+      }
+    }
+    if (actions.children.length) box.append(actions);
+  }
+  async function refreshOffer() {
+    const sb = Cloud.client();
+    if (!thread || !sb) return;
+    const id = thread.id;
+    try {
+      const { data, error } = await sb.rpc('thread_offer', { p_thread: id });
+      if (error) throw error;
+      if (thread && thread.id === id) renderOffer(data);
+    } catch (e) { console.error(e); }
+  }
   async function refreshThread(scroll) {
     const sb = Cloud.client();
     if (!thread || !sb) return;
     const id = thread.id;
+    refreshOffer();
     let msgs;
     try {
       const { data, error } = await sb.rpc('thread_messages', { p_interest: id });
@@ -822,6 +881,7 @@ const Profile = (() => {
     const box = $('threadItemBox');
     box.disabled = !(m.kind === 'interest' && m.record_id && owner);
     box.onclick = () => { if (!box.disabled) location.hash = itemLink(owner, m.record_id); };
+    $('threadOffer').hidden = true;
     $('threadErr').hidden = true;
     $('threadInput').value = '';
     const tl = el('div', 'loading'); tl.append(el('span', 'spinner'), el('span', null, 'Lade …'));

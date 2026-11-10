@@ -239,6 +239,30 @@ test('Englisch: Texte werden übersetzt, Auswahlwerte bleiben deutsch', async ()
     ok(legal.hasAttribute('data-no-i18n') && legal.textContent.includes('Angaben gemäß § 5 DDG'), 'Rechtstexte müssen deutsch bleiben');
   } finally { localStorage.removeItem('jawnz-lang'); f.remove(); }
 });
+test('Englisch: Sätze mit Zahlen, Namen und Serverfehler', async () => {
+  localStorage.setItem('jawnz-lang', 'en');
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:420px;height:700px;position:absolute;left:-9999px';
+  f.src = '../index.html';
+  document.body.append(f);
+  try {
+    await new Promise((res) => f.addEventListener('load', () => setTimeout(res, 1200)));
+    localStorage.removeItem('jawnz-lang');
+    const w = f.contentWindow;
+    const tr = (x) => w.eval('trText(' + JSON.stringify(x) + ')');
+    eq(tr('3 Teile hinzugefügt'), '3 items added');
+    eq(tr('1 Teil'), '1 item'); eq(tr('5 Teile'), '5 items');
+    eq(tr('Foto 2 von 4'), 'Photo 2 of 4');
+    eq(tr('Wird hinzugefügt … 1/3'), 'Adding … 1/3');
+    eq(tr('Passt zu deinem Wunsch: Jacke'), 'Matches your wish: Jacke');
+    eq(tr('Kein Zugriff.'), 'No access.');
+    eq(tr('Das bist du selbst.'), 'That is you.');
+    eq(tr('Annehmen'), 'Accept'); eq(tr('Als verkauft markieren'), 'Mark as sold');
+    eq(tr('Angebot abgelehnt.'), 'Offer declined.');
+    eq(tr('Aktuell gespeichert: 4 Teile, 2 Outfits, 1 Wünsche.'), 'Currently saved: 4 items, 2 outfits, 1 wishes.');
+  } finally { localStorage.removeItem('jawnz-lang'); f.remove(); }
+});
+
 test('Sprache umschalten: Chips für Deutsch und English vorhanden', () => {
   eq([...frame.contentDocument.querySelectorAll('#langChips .chip')].map((c) => c.dataset.lang), ['de', 'en']);
   ok(frame.contentDocument.querySelector('#langChips .chip[data-lang=de]').classList.contains('active'));
@@ -309,7 +333,7 @@ for (const [fn, args] of [
   ['update_my_profile', { p_bio: 'x', p_city: 'y' }], ['toggle_follow', { p_username: 'fxnnye' }], ['toggle_save', { p_username: 'fxnnye', p_item: 'x' }],
   ['send_interest', { p_to: 'fxnnye', p_kind: 'interest', p_record_id: 'x' }], ['report_user', { p_username: 'fxnnye', p_reason: 'spam' }],
   ['set_block', { p_username: 'fxnnye', p_block: true }], ['send_reply', { p_interest: '00000000-0000-0000-0000-000000000000', p_body: 'x' }],
-  ['item_vis', { p_id: 'x' }], ['item_price', { p_id: 'x' }], ['apply_row', { p_user: '00000000-0000-0000-0000-000000000000', p_kind: 'items', p_id: 'x', d: {}, p_updated: '2026-01-01T00:00:00Z' }],
+  ['thread_offer', { p_thread: '00000000-0000-0000-0000-000000000000' }], ['mark_sold', { p_item: 'x' }], ['release_listing', { p_item: 'x' }], ['answer_offer', { p_offer: '00000000-0000-0000-0000-000000000000', p_action: 'accept' }], ['item_vis', { p_id: 'x' }], ['item_price', { p_id: 'x' }], ['apply_row', { p_user: '00000000-0000-0000-0000-000000000000', p_kind: 'items', p_id: 'x', d: {}, p_updated: '2026-01-01T00:00:00Z' }],
   ['sync_pull', {}], ['sync_push', { p_kind: 'items', p_id: 'x', p_data: {} }], ['similar_public_items', { p_emb: '[]' }], ['find_public_items', { p_brand: 'a', p_query: 'b' }],
 ]) test('ohne Anmeldung gesperrt: ' + fn, async () => { const r = await rpc(fn, args); ok(denied(r), fn + ' ist ohne Anmeldung erreichbar: ' + r.status + ' ' + JSON.stringify(r.body).slice(0, 120)); });
 
