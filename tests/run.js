@@ -234,7 +234,7 @@ const rpc = async (name, args = {}) => {
 const denied = (r) => r.status === 401 || r.status === 403 || r.status === 404 || (r.body && (r.body.code === '42501' || r.body.code === 'PGRST202'));
 for (const [fn, args] of [
   ['my_threads', {}], ['my_follows', {}], ['my_followers', {}], ['my_username', {}], ['my_saves', {}], ['my_save_ids', {}], ['my_blocks', {}], ['my_interests', {}],
-  ['is_admin', {}], ['has_role', { p_role: 'admin' }], ['admin_reports', {}], ['admin_errors', {}], ['delete_my_account', {}], ['my_profile_text', {}],
+  ['is_admin', {}], ['has_role', { p_role: 'admin' }], ['answer_offer', { p_offer: '00000000-0000-0000-0000-000000000000', p_action: 'accept' }], ['admin_reports', {}], ['admin_errors', {}], ['delete_my_account', {}], ['my_profile_text', {}],
   ['update_my_profile', { p_bio: 'x', p_city: 'y' }], ['toggle_follow', { p_username: 'fxnnye' }], ['toggle_save', { p_username: 'fxnnye', p_item: 'x' }],
   ['send_interest', { p_to: 'fxnnye', p_kind: 'interest', p_record_id: 'x' }], ['report_user', { p_username: 'fxnnye', p_reason: 'spam' }],
   ['set_block', { p_username: 'fxnnye', p_block: true }], ['send_reply', { p_interest: '00000000-0000-0000-0000-000000000000', p_body: 'x' }],
@@ -243,7 +243,7 @@ for (const [fn, args] of [
 
 test('Tabellen sind direkt nicht lesbar', async () => {
   const { url, key } = await api();
-  for (const t of ['records', 'items', 'outfits', 'wishlist', 'profiles', 'interests', 'replies', 'reports', 'follows', 'saves', 'blocks', 'admins', 'client_errors']) {
+  for (const t of ['records', 'items', 'outfits', 'wishlist', 'profiles', 'interests', 'replies', 'thread', 'message', 'offer', 'offer_item', 'reports', 'follows', 'saves', 'blocks', 'admins', 'client_errors']) {
     const r = await fetch(url + '/rest/v1/' + t + '?select=*&limit=1', { headers: { apikey: key } });
     const b = await r.json().catch(() => null);
     ok(r.status >= 400 || (Array.isArray(b) && b.length === 0), t + ' liefert Daten ohne Anmeldung');
