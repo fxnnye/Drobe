@@ -83,7 +83,7 @@ dialog.wide h2 { margin: 0; }
 .combo b { display: block; margin-top: 8px; font-size: 15px; }
 .combo p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 .top .backup { margin-left: auto; }
-.top .menu { margin-left: auto; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; }
+.menu { margin-left: auto; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; }
 .pw-msg { font-size: 14px; min-height: 20px; margin: 0 0 8px; }
 .pw-msg.err { color: #c4202e; }
 .set-head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
@@ -239,7 +239,7 @@ dialog { max-height: 92vh; max-height: 92dvh; overflow: auto; }
   /* Kopfzeile: Titel links, Sicherung rechts; Tabs wandern als Leiste nach unten */
   .top { padding: 8px 16px; flex-wrap: nowrap; }
   .top h1 { margin: 0; font-size: 22px; }
-  .top .menu { width: 40px; height: 40px; }
+  .menu { width: 40px; height: 40px; }
   .tabs {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; gap: 0;
     background: var(--bg); border-top: 1px solid var(--gray-hover);
@@ -422,7 +422,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .pub-action { margin-top: 8px; padding: 8px 12px; font-size: 13px; }
 .pub-tag.match { background: #1f7a3d; color: #fff; }
 .pub-banner.match { background: #1f7a3d; color: #fff; }
-.top .menu { position: relative; }
+.menu { position: relative; }
 .menu.has-unread::after, .menu.has-reports::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--bg); }
 .inbox-item { padding: 12px 0; border-bottom: 1px solid var(--gray-hover); display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .inbox-item.unread b::before { content: '● '; color: var(--red); }
@@ -598,7 +598,7 @@ dialog .field input, dialog .field select, dialog .field textarea { width: 100%;
 .panel .row .btn, .up-draw-row .btn { padding: 0 16px; }
 .icon { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
 .rotate .icon { width: var(--h-ctrl); height: var(--h-ctrl); }
-.top .menu, .top .menu.icon { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
+.menu, .menu.icon { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
 .tab { border-radius: var(--r-ctrl); }
 .set-row { border-radius: var(--r-ctrl); min-height: var(--h-ctrl); padding: 0 16px; margin-bottom: 8px; }
 
@@ -755,13 +755,13 @@ mark.todo { background: #ffe066; color: #3d3000; padding: 0 4px; border-radius: 
 .err-stack { margin: 8px 0 0; padding: 8px; border-radius: 8px; background: var(--gray); font-size: 11px; white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow: auto; }
 
 /* Sehr schmale Handys (320 px): Kopfzeile bleibt in einer Reihe, das Menü wird nie zusammengedrückt */
-.top .menu, .top .menu.icon { flex-shrink: 0; }
+.menu, .menu.icon { flex-shrink: 0; }
 @media (max-width: 360px) {
   .top { gap: 8px; padding-left: 12px; padding-right: 12px; }
   .top h1 { font-size: 22px; margin-right: 0; }
   .guest-actions { gap: 8px; }
   .guest-actions .btn { padding: 0 8px; font-size: 13px; }
-  .top .menu, .top .menu.icon { width: 40px; }
+  .menu, .menu.icon { width: 40px; }
 }
 
 /* Lange Namen und Texte: umbrechen statt aus dem Rahmen laufen, Bilder und Symbole bleiben rund */
@@ -1100,15 +1100,13 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 @media (max-width: 700px) { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
 @media (prefers-reduced-motion: reduce) { .subchips.leave { animation: none !important; display: none; } }
 /* Einstellungs-Knopf nur im Profil */
-.not-me .top .menu { visibility: hidden; pointer-events: none; } /* Platz bleibt, damit die Kopfzeile überall gleich hoch ist und das Logo nicht springt */
 
 /* Hinzufügen-Seite: eigene Kopfzeile (Schließen, Titel) ohne Logo, Abschnitte mit Überschriften */
 /* Logo nur im Feed; abseits von Feed und Profil gibt es keine sichtbare Kopfzeile mehr (Gäste behalten ihre Anmelde-Knöpfe) */
 .not-feed .top h1 { display: none; }
 /* Am Handy bleibt von der Kopfzeile nur der Streifen für die Statusleiste; die untere Leiste gehört zur Kopfzeile und muss bleiben */
 @media (max-width: 700px) {
-  .not-feed.not-me:not(.guest) .top { padding: env(safe-area-inset-top, 0px) 0 0; min-height: 0; gap: 0; }
-  .not-feed.not-me:not(.guest) .top .menu { display: none; }
+  .not-feed:not(.guest) .top { padding: env(safe-area-inset-top, 0px) 0 0; min-height: 0; gap: 0; }
 }
 .add-bar { position: relative; display: flex; align-items: center; justify-content: center; min-height: 56px; margin: 0 0 var(--s-4, 16px); }
 .add-bar h2 { margin: 0; font-size: 17px; font-weight: 700; }
@@ -1123,3 +1121,5 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 .add-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 16px; border: 1px solid var(--field); border-radius: 12px; font-weight: 600; }
 .add-field select { flex: 1; max-width: 60%; min-width: 0; border: 0; background-color: transparent; text-align: right; font-weight: 500; }
 @media (min-width: 701px) { #view-add { max-width: 560px; margin-left: auto; margin-right: auto; } }
+.me-head .menu { margin-left: 0; flex: none; padding: 0; display: inline-grid; place-items: center; }
+@media (max-width: 700px) { .me-head { gap: 10px; } .me-head #meProfile { padding: 0 14px; } .me-head .menu { width: 44px; height: 44px; } }

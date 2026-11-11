@@ -20,9 +20,7 @@ function showView(name) {
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
   document.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('active', t.dataset.sub === (name === 'builder' ? 'outfits' : name)));
   $('meBar').hidden = !ME_VIEWS.includes(name);
-  document.body.classList.toggle('not-me', topTab(name) !== 'me'); // Einstellungen nur im Profil
   document.body.classList.toggle('not-feed', name !== 'feed'); // Logo nur im Feed
-  document.body.classList.toggle('is-add', name === 'add'); // Hinzufügen-Seite hat eine eigene Kopfzeile ohne Logo
   if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
