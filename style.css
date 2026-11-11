@@ -1086,5 +1086,5 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 /* iPhone-App (Kamerainsel/Statusleiste): Kopfzeile beginnt unterhalb des sicheren Bereichs */
 @media (max-width: 900px) { .top { padding-top: calc(var(--s-3) + env(safe-area-inset-top, 0px)); } }
 
-/* Am Handy: Unterkategorien sitzen in der Reihe hinter der Hauptkategorie, leicht abgesetzt */
-.chips .chip.sub:not(.active) { background: var(--bg); box-shadow: inset 0 0 0 1px var(--gray-hover); }
+/* Am Handy: Unterkategorien stehen als Block untereinander rechts neben der Hauptkategorie */
+@media (max-width: 700px) { .filter-row .chips .subchips { flex: none; flex-basis: auto; flex-direction: column; flex-wrap: nowrap; padding-left: 0; } }

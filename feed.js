@@ -149,10 +149,8 @@ function renderChips(el, key, onChange) {
   chip(sub, 'Alle ' + group, group);
   GROUPS[group].forEach((c) => chip(sub, c, c));
   if (window.matchMedia('(max-width: 700px)').matches) {
-    // Am Handy stehen die Unterkategorien in derselben Reihe direkt hinter der gewählten Hauptkategorie
-    const kids = [...sub.children];
-    kids.forEach((k) => k.classList.add('sub'));
-    chips[group].after(...kids);
+    // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
+    chips[group].after(sub);
     el.scrollLeft = Math.max(0, chips[group].offsetLeft - 12);
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
