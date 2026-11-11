@@ -12,7 +12,7 @@ const I18N = {
     'Farbe': 'Color', 'Zurück': 'Back', 'Senden': 'Send', 'Marke oder Teil suchen': 'Search brand or item', 'Benutzername suchen': 'Search username',
     // Profil, Schrank
     'Bearbeiten': 'Edit', 'Schrank': 'Closet', 'Auswählen': 'Select', 'Fertig': 'Done', 'Keine': 'None', 'Privat': 'Private',
-    'Löschen': 'Delete', 'Nichts ausgewählt': 'Nothing selected', 'Tippe Teile an': 'Tap items', 'Hinzufügen': 'Add', 'Speichern': 'Save', 'Abbrechen': 'Cancel',
+    'Löschen': 'Delete', 'Nichts ausgewählt': 'Nothing selected', 'Tippe Teile an': 'Tap items', 'Tippe weitere Teile an': 'Tap more items', 'Hinzufügen': 'Add', 'Speichern': 'Save', 'Abbrechen': 'Cancel',
     'Schließen': 'Close', 'Überspringen': 'Skip', 'Weiter': 'Next', 'Neu': 'New', 'Entfernen': 'Remove', 'Melden': 'Report', 'Foto ändern': 'Change photo',
     'Profil bearbeiten': 'Edit profile', 'Profil-Link kopieren': 'Copy profile link', 'So sehen andere mein Profil': 'How others see my profile',
     'Zum Profil': 'Open profile', 'Ansehen': 'View', 'Merken': 'Save', 'Gemerkt ': 'Saved ',

@@ -913,7 +913,6 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .chip[hidden] { display: none; }
 
 /* Auswahlmodus im Schrank: Kreis oben rechts am Foto, unten eine Leiste mit den Sammelaktionen */
-#closetSelect { flex: none; }
 .selecting .card .img::after { content: ''; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--text); background: var(--bg); }
 .selecting .card.selected .img { outline: 3px solid var(--red); outline-offset: -3px; }
 .selecting .card.selected .img::after { content: '✓'; display: grid; place-items: center; background: var(--red); border-color: var(--red); color: #fff; font-size: 13px; line-height: 1; }
@@ -1053,11 +1052,9 @@ dialog h2 { margin: 0 0 var(--s-2); }
 .so-history-head button { padding-right: 0; }
 
 /* Schrank-Kopfzeile: „Auswählen“ gleich hoch wie die Chips; auf dem Handy bekommen die Chips eine eigene Zeile */
-#closetSelect { height: var(--h-chip); min-height: var(--h-chip); padding-top: 0; padding-bottom: 0; }
 @media (max-width: 599px) {
   #view-closet .filter-row { flex-wrap: wrap; row-gap: 12px; }
   #view-closet .filter-row .chips { flex: 1 1 100%; }
-  #view-closet .filter-row #closetSelect { margin-left: auto; }
 }
 
 /* Hinzufügen: Kategorie-Feld schrumpft, der Knopf bleibt innerhalb des Rahmens */

@@ -1,7 +1,7 @@
 // Schrank (Teil der App, Reihenfolge siehe index.html)
 /* ---------- Schrank ---------- */
 // Auswahlmodus: `closetSel` ist null (aus) oder die Menge der ausgewählten Teile; es zählen nur Teile, die gerade sichtbar sind
-let closetSel = null, closetShown = [];
+let closetSel = null, closetShown = [], closetLpAt = 0;
 function renderCloset() {
   renderChips($('closetFilter'), 'closetFilter', renderCloset);
   // Beim Hochladen gleich die Kategorie vorauswählen, die gerade angezeigt wird
@@ -26,7 +26,24 @@ function renderCloset() {
     card.querySelector('b').textContent = it.name;
     card.querySelector('span').textContent = [it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');
     card.querySelector('.note').textContent = it.note || '';
+    // Lange drücken wählt das Teil aus und startet die Auswahl
+    let lp = null, sx = 0, sy = 0;
+    const stopLp = () => { clearTimeout(lp); lp = null; };
+    card.addEventListener('pointerdown', (e) => {
+      if (closetSel || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      sx = e.clientX; sy = e.clientY;
+      lp = setTimeout(() => {
+        lp = null; closetLpAt = Date.now();
+        if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) { /* egal */ }
+        closetSel = new Set([it.id]);
+        renderCloset();
+      }, 500);
+    });
+    card.addEventListener('pointermove', (e) => { if (lp && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) stopLp(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => card.addEventListener(ev, stopLp));
+    card.addEventListener('contextmenu', (e) => e.preventDefault());
     card.onclick = () => {
+      if (Date.now() - closetLpAt < 600) return; // Klick direkt nach dem langen Drücken ignorieren
       if (!closetSel) return openItemDialog(it);
       const on = !closetSel.has(it.id);
       if (on) closetSel.add(it.id); else closetSel.delete(it.id);
@@ -53,18 +70,15 @@ function applyVisibility(it, vis) {
 function updateBulk() {
   const n = closetSel ? closetSel.size : 0;
   $('bulkBar').hidden = !closetSel;
-  $('bulkCount').textContent = n ? n + (n === 1 ? ' Teil ausgewählt' : ' Teile ausgewählt') : 'Tippe Teile an';
+  $('bulkCount').textContent = n ? n + (n === 1 ? ' Teil ausgewählt' : ' Teile ausgewählt') : 'Tippe weitere Teile an';
   $('bulkBar').querySelectorAll('[data-vis], #bulkDelete').forEach((b) => { b.disabled = !n; });
   $('bulkAll').textContent = closetSel && closetShown.length && n === closetShown.length ? 'Keine' : 'Alle';
 }
 function setSelectMode(on) {
   closetSel = on ? new Set() : null;
-  $('closetSelect').textContent = on ? 'Fertig' : 'Auswählen';
-  $('closetSelect').classList.toggle('on', on);
-  $('closetSelect').setAttribute('aria-pressed', on);
   renderCloset();
 }
-$('closetSelect').onclick = () => setSelectMode(!closetSel);
+$('bulkDone').onclick = () => setSelectMode(false);
 $('bulkAll').onclick = () => {
   if (!closetSel) return;
   if (closetSel.size === closetShown.length) closetSel.clear(); else closetShown.forEach((i) => closetSel.add(i.id));
