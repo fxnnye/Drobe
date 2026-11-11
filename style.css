@@ -1100,4 +1100,4 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 @media (max-width: 700px) { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
 @media (prefers-reduced-motion: reduce) { .subchips.leave { animation: none !important; display: none; } }
 /* Einstellungs-Knopf nur im Profil */
-.not-me .top .menu { display: none; }
+.not-me .top .menu { visibility: hidden; pointer-events: none; } /* Platz bleibt, damit die Kopfzeile überall gleich hoch ist und das Logo nicht springt */
