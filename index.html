@@ -241,8 +241,25 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <p class="muted">Fotos hierher ziehen oder auswählen. Am besten vor hellem, ruhigem Hintergrund fotografiert.</p>
     </div>
     <h3 class="add-h">Artikeldetails</h3>
-    <label class="add-field">Kategorie
+    <label class="field">Kategorie
       <select id="uploadCategory"></select>
+    </label>
+    <label class="field">Marke *
+      <input type="text" id="upBrand" maxlength="40" autocomplete="off">
+    </label>
+    <div class="row2">
+      <label class="field">Größe *
+        <input type="text" id="upSize" maxlength="20" autocomplete="off">
+      </label>
+      <label class="field">Zustand *
+        <select id="upCond"><option value="">Wählen …</option><option>Neu / DS</option><option>Sehr gut</option><option>Gut</option><option>Getragen</option></select>
+      </label>
+    </div>
+    <label class="field">Farbe (optional)
+      <select id="upColor"><option value="">Automatisch, wenn freigestellt</option></select>
+    </label>
+    <label class="field">Sichtbarkeit
+      <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="sale" id="upVisSale" hidden>Zum Verkauf</option><option value="private">Privat</option></select>
     </label>
   </section>
 
@@ -392,28 +409,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <label class="field">Name
       <input type="text" id="upName" maxlength="60">
     </label>
-    <label class="field">Kategorie
-      <select id="upCategory"></select>
-    </label>
-    <div id="upItem">
-      <label class="field">Marke *
-        <input type="text" id="upBrand" maxlength="40" autocomplete="off">
-      </label>
-      <div class="row2">
-        <label class="field">Größe *
-          <input type="text" id="upSize" maxlength="20" autocomplete="off">
-        </label>
-        <label class="field">Zustand *
-          <select id="upCond"><option value="">Wählen …</option><option>Neu / DS</option><option>Sehr gut</option><option>Gut</option><option>Getragen</option></select>
-        </label>
-      </div>
-      <label class="field">Farbe (optional)
-        <select id="upColor"><option value="">Automatisch, wenn freigestellt</option></select>
-      </label>
-      <label class="field">Sichtbarkeit
-        <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="sale" id="upVisSale" hidden>Zum Verkauf</option><option value="private">Privat</option></select>
-      </label>
-    </div>
     <div class="batch" id="upBatch" hidden>
       <label class="check"><input type="checkbox" id="upAllBg"> Bei allen den Hintergrund entfernen</label>
       <button class="btn full" type="button" id="upAll">Alle hinzufügen</button>

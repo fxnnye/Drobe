@@ -64,9 +64,18 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
 const upColl = () => ({ store: 'items', list: items });
 const renderLists = () => { renderCloset(); };
 
+// Marke, Größe und Zustand stehen jetzt auf der Hinzufügen-Seite und müssen vor den Fotos ausgefüllt sein
+function missingDetail() {
+  const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
+  if (!need) return false;
+  toast('Bitte gib ' + need[1] + ' an');
+  $(need[0]).focus();
+  return true;
+}
 async function addFiles(files) {
   const imgs = [...files].filter((f) => f.type.startsWith('image/'));
   if (!imgs.length) return;
+  if (!upCur && missingDetail()) return;
   upQueue.push(...imgs);
   upTotal += imgs.length;
   if (!upCur) nextUpload();
@@ -92,9 +101,6 @@ async function nextUpload() {
     upCur = { file: f, orig, src: orig, cut: null, useCut: false, busy: false, url: null, angle: 0 };
     $('upAngle').value = 0;
     $('upName').value = nameFromFile(f);
-    $('upCategory').value = $('uploadCategory').value;
-    $('upBrand').value = ''; $('upSize').value = ''; $('upCond').value = ''; $('upColor').value = '';
-    $('upVis').value = 'public'; $('upVisSale').hidden = true;
     upDone++;
     refreshUpload();
     if (!upDlg.open) upDlg.showModal();
@@ -615,7 +621,7 @@ $('upAdd').addEventListener('click', async () => {
   if (!det) return;
   const res = await upResult(u);
   const rec = {
-    id: uid(), name: $('upName').value.trim() || 'Neues Teil', category: $('upCategory').value,
+    id: uid(), name: $('upName').value.trim() || 'Neues Teil', category: $('uploadCategory').value,
     blob: res.blob, created: Date.now(),
   };
   if (res.source) { rec.source = res.source; rec.srcBox = res.srcBox; }
@@ -634,7 +640,7 @@ $('upAll').addEventListener('click', async () => {
   if (u.busy) return;
   const det = upItemDetails();
   if (!det) return;
-  const category = $('upCategory').value;
+  const category = $('uploadCategory').value;
   const bgAll = $('upAllBg').checked;
   const jobs = [
     { name: $('upName').value.trim() || nameFromFile(u.file), res: await upResult(u), cut: u.useCut },
@@ -677,6 +683,7 @@ upDlg.addEventListener('close', () => { // Esc: Rest der Warteschlange verwerfen
   leaveAddPage();
   upAdded = 0;
 });
+$('fileInput').addEventListener('click', (e) => { if (missingDetail()) e.preventDefault(); }); // Fotos erst wählen, wenn die Angaben stehen
 $('fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
 const dz = $('dropzone');
 ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));

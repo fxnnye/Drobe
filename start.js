@@ -2,10 +2,9 @@
 /* ---------- Start ---------- */
 fillSelect($('uploadCategory'));
 fillSelect($('itemCategory'));
-fillSelect($('upCategory'));
 buildDetails($('itemMore'), 'itd', 'items');
 ['upBrand', 'itdbrand'].forEach((id) => brandSuggest($(id)));
-[['upSize', 'upCategory'], ['itdsize', 'itemCategory']].forEach(([id, cat]) => sizeSuggest($(id), cat));
+[['upSize', 'uploadCategory'], ['itdsize', 'itemCategory']].forEach(([id, cat]) => sizeSuggest($(id), cat));
 
 // Alte Kategorien umsortieren (z. B. Outerwear → Jacken, Oberteile → Shirts, Accessoires → Taschen)
 async function migrateCategories() {

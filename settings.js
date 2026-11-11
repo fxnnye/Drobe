@@ -68,6 +68,12 @@ function showSetPanel(name) {
 }
 document.querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => showSetPanel(b.dataset.open); });
 $('setBack').onclick = () => showSetPanel('main');
+// Computer: Knopf oben rechts in der Kopfzeile; Handy: neben „Bearbeiten“
+{
+  const mq = matchMedia('(min-width: 701px)');
+  const place = () => (mq.matches ? document.querySelector('header.top') : document.querySelector('.me-head')).append($('menuBtn'));
+  place(); mq.addEventListener('change', place);
+}
 $('menuBtn').onclick = () => { showSetPanel('main'); settingsDlg.showModal(); };
 $('settingsClose').onclick = () => settingsDlg.close();
 $('backupOpen').onclick = () => {
