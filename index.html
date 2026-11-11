@@ -227,23 +227,23 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 
   <!-- HINZUFÜGEN -->
   <section id="view-add" class="view">
-    <button class="btn builder-back back-btn" type="button" id="addBack">Zurück</button>
-    <h2 class="page-title">Hinzufügen</h2>
-    <div class="upload" id="dropzone">
-      <div>
-        <strong>Klamotten hochladen</strong>
-        <p class="muted">Fotos hierher ziehen oder auswählen. Am besten vor hellem, ruhigem Hintergrund fotografiert.</p>
-      </div>
-      <div class="upload-actions">
-        <label class="field-inline">Kategorie
-          <select id="uploadCategory"></select>
-        </label>
-        <label class="btn primary">
-          Fotos auswählen
-          <input type="file" id="fileInput" accept="image/*" multiple hidden>
-        </label>
-      </div>
+    <div class="add-bar">
+      <button class="add-close" type="button" id="addBack" aria-label="Schließen"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+      <h2>Teil hinzufügen</h2>
     </div>
+    <h3 class="add-h">Fotos</h3>
+    <div class="add-drop" id="dropzone">
+      <label class="add-up-btn">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Fotos hochladen
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      </label>
+      <p class="muted">Fotos hierher ziehen oder auswählen. Am besten vor hellem, ruhigem Hintergrund fotografiert.</p>
+    </div>
+    <h3 class="add-h">Artikeldetails</h3>
+    <label class="add-field">Kategorie
+      <select id="uploadCategory"></select>
+    </label>
   </section>
 
   <!-- BUILDER -->
