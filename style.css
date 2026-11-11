@@ -1099,3 +1099,5 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 .subchips.leave { animation: subOut-y .24s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; pointer-events: none; }
 @media (max-width: 700px) { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
 @media (prefers-reduced-motion: reduce) { .subchips.leave { animation: none !important; display: none; } }
+/* Einstellungs-Knopf nur im Profil */
+.not-me .top .menu { display: none; }
