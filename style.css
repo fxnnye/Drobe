@@ -1088,3 +1088,8 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 
 /* Am Handy: Unterkategorien stehen als Block untereinander rechts neben der Hauptkategorie */
 @media (max-width: 700px) { .filter-row .chips .subchips { flex: none; flex-basis: auto; flex-direction: column; flex-wrap: nowrap; padding-left: 0; } }
+
+/* Feed: Teile und Outfits gleich groß, am Handy über die ganze Breite */
+.feed-switch { gap: 8px; max-width: 420px; }
+.feed-switch .chip { flex: 1 1 0; min-width: 0; text-align: center; padding-top: 14px; padding-bottom: 14px; font-size: 15px; }
+@media (max-width: 700px) { .feed-switch { max-width: none; } }
