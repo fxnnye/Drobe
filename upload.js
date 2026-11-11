@@ -64,40 +64,9 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
 const upColl = () => ({ store: 'items', list: items });
 const renderLists = () => { renderCloset(); };
 
-// Marke, Größe und Zustand stehen auf der Hinzufügen-Seite; Fotos und Angaben gehen in beliebiger Reihenfolge.
-// Fehlen Angaben, warten die Fotos, bis „Weiter“ gedrückt wird.
-let upPending = [];
-function missingDetail() {
-  const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
-  if (!need) return false;
-  toast('Bitte gib ' + need[1] + ' an');
-  $(need[0]).focus();
-  return true;
-}
-const addOn = (id) => $(id).getAttribute('aria-pressed') === 'true';
-['addAutoBg', 'addOpenErase'].forEach((id) => $(id).addEventListener('click', () => {
-  const on = !addOn(id); $(id).setAttribute('aria-pressed', on); $(id).classList.toggle('active', on);
-}));
-let upThumbs = [];
-function showPending() {
-  const n = upPending.length;
-  upThumbs.forEach((x) => URL.revokeObjectURL(x));
-  upThumbs = upPending.map((f) => URL.createObjectURL(f));
-  $('addGo').hidden = !n; $('addOpts').hidden = !n;
-  $('addPendingText').textContent = n ? (n === 1 ? '1 Foto ausgewählt' : n + ' Fotos ausgewählt') : '';
-  const box = $('addThumbs');
-  box.replaceChildren(...upPending.map((f, i) => {
-    const w = document.createElement('div'); w.className = 'add-thumb';
-    const im = document.createElement('img'); im.alt = ''; im.src = upThumbs[i];
-    const x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', 'Foto entfernen'); x.textContent = '×';
-    x.onclick = () => { upPending.splice(i, 1); showPending(); };
-    w.append(im, x); return w;
-  }));
-}
-async function addFiles(files, forceGo) {
+async function addFiles(files) {
   const imgs = [...files].filter((f) => f.type.startsWith('image/'));
   if (!imgs.length) return;
-  if (!upCur && !forceGo) { upPending.push(...imgs); showPending(); return; }
   upQueue.push(...imgs);
   upTotal += imgs.length;
   if (!upCur) nextUpload();
@@ -125,10 +94,8 @@ async function nextUpload() {
     $('upName').value = nameFromFile(f);
     upDone++;
     refreshUpload();
-    if (!upDlg.open) upDlg.showModal();
-    // Optionen von der Hinzufügen-Seite: Hintergrund gleich entfernen, danach ggf. den Radierer öffnen
-    if (addOn('addAutoBg')) await doRemoveBg();
-    if (addOn('addOpenErase') && !upCur.busy) $('upErase').click();
+    if (!upDlg.open) upDlg.show(); // steht als Bearbeitungsbereich direkt auf der Hinzufügen-Seite
+    upDlg.scrollIntoView({ block: 'start', behavior: 'smooth' });
   } catch (e) {
     console.error(e);
     toast('Konnte ' + f.name + ' nicht laden');
@@ -667,7 +634,7 @@ $('upAll').addEventListener('click', async () => {
   const det = upItemDetails();
   if (!det) return;
   const category = $('uploadCategory').value;
-  const bgAll = $('upAllBg').checked || addOn('addAutoBg');
+  const bgAll = $('upAllBg').checked;
   const jobs = [
     { name: $('upName').value.trim() || nameFromFile(u.file), res: await upResult(u), cut: u.useCut },
     ...upQueue.map((file) => ({ file, name: nameFromFile(file) })),
@@ -709,10 +676,7 @@ upDlg.addEventListener('close', () => { // Esc: Rest der Warteschlange verwerfen
   leaveAddPage();
   upAdded = 0;
 });
-$('addGo').addEventListener('click', () => {
-  if (missingDetail()) return;
-  const f = upPending; upPending = []; showPending(); addFiles(f, true);
-});
+$('addBack').addEventListener('click', () => { if (upDlg.open && !(upCur && upCur.busy)) upDlg.close(); }); // X verwirft die Warteschlange
 $('fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
 const dz = $('dropzone');
 ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
