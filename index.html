@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>JAWNZ</title>
+<style>
+/* Startbildschirm: Logo und Ladekreis, bis die App bereit ist */
+#splash { position: fixed; inset: 0; z-index: 99999; background: #fff; transition: opacity .25s ease; }
+#splash.gone { opacity: 0; pointer-events: none; }
+#splash .splash-logo { position: absolute; left: 0; right: 0; top: 38%; transform: translateY(-50%); text-align: center; font-family: 'Unbounded', system-ui, sans-serif; font-weight: 800; font-size: 44px; line-height: 1; letter-spacing: -.02em; color: #e60023; }
+#splash .splash-spin { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -19px 0 0 -19px; border: 4px solid #e2e2e2; border-top-color: #e60023; border-radius: 50%; animation: splash-spin .8s linear infinite; }
+@keyframes splash-spin { to { transform: rotate(360deg); } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #splash { background: #121212; } :root:not([data-theme="light"]) #splash .splash-spin { border-color: #333; border-top-color: #e60023; } }
+:root[data-theme="dark"] #splash { background: #121212; }
+:root[data-theme="dark"] #splash .splash-spin { border-color: #333; border-top-color: #e60023; }
+</style>
 <meta name="theme-color" content="#ffffff">
 <script>
 // Gewähltes Erscheinungsbild vor dem ersten Zeichnen setzen, damit nichts aufblitzt
@@ -21,6 +32,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="locked">
+<div id="splash" aria-hidden="true"><div class="splash-logo">JAWNZ</div><div class="splash-spin"></div></div>
 <dialog id="resetDialog">
   <form method="dialog" id="resetForm">
     <h2>Neues Passwort</h2>

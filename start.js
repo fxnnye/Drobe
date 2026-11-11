@@ -151,7 +151,16 @@ async function startApp(userId) {
   backfillTrim();
 }
 
-Cloud.boot();
+// Startbildschirm ausblenden, sobald die App bereit ist (spätestens nach 12 Sekunden)
+function hideSplash() {
+  try { window.Capacitor?.Plugins?.SplashScreen?.hide(); } catch (e) { /* kein iOS-App-Rahmen */ }
+  const sp = document.getElementById('splash');
+  if (!sp || sp.classList.contains('gone')) return;
+  sp.classList.add('gone');
+  setTimeout(() => sp.remove(), 400);
+}
+setTimeout(hideSplash, 12000);
+Cloud.boot().then(hideSplash, hideSplash);
 
 // Tipp auf den abgedunkelten Bereich neben einem Fenster schließt es (außer beim Hochladen, damit nichts verloren geht)
 document.querySelectorAll('dialog').forEach((d) => {

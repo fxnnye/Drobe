@@ -1,5 +1,16 @@
 {
   "appId": "de.jawnz.app",
   "appName": "JAWNZ",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "launchShowDuration": 0,
+      "launchFadeOutDuration": 250,
+      "backgroundColor": "#ffffff",
+      "showSpinner": true,
+      "iosSpinnerStyle": "large",
+      "spinnerColor": "#e60023"
+    }
+  }
 }
