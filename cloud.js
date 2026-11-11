@@ -99,6 +99,7 @@ const Cloud = (() => {
   }
 
   /* ---------- Holen ---------- */
+  let dlRetries = 0;
   async function pull() {
     const { data: rows, error } = await sb.rpc('sync_pull');
     if (error) throw error;
@@ -106,7 +107,7 @@ const Cloud = (() => {
     const local = {};
     for (const k of KINDS) local[k] = new Map((await dbAll(k)).map((r) => [r.id, r]));
     const seen = new Set();
-    let changed = false;
+    let changed = false, failedDl = 0;
     for (const row of rows) {
       if (!KINDS.includes(row.kind)) continue;
       const key = row.kind + '/' + row.id;
@@ -119,8 +120,13 @@ const Cloud = (() => {
         continue;
       }
       if (!l || (l.updated || 0) < d.updated) {
-        const { data: blob, error: dlErr } = await sb.storage.from('images').download(`${user.id}/${row.kind}-${row.id}`);
-        if (dlErr || !blob) continue;
+        let blob = null;
+        for (let t = 0; t < 3 && !blob; t++) { // kurzer Netzfehler: noch zweimal versuchen
+          if (t) await new Promise((r) => setTimeout(r, 700 * t));
+          const res = await sb.storage.from('images').download(`${user.id}/${row.kind}-${row.id}`);
+          blob = res.error ? null : res.data;
+        }
+        if (!blob) { failedDl++; continue; }
         const rec = { ...d, [imgKey(row.kind)]: blob, _fp: d.fp };
         delete rec.fp;
         if (d.sfp) {
@@ -138,6 +144,8 @@ const Cloud = (() => {
       for (const id of local[k].keys()) if (!seen.has(k + '/' + id) && !pend[k + '/' + id]) queue(k, id, 'put');
     }
     if (changed) await reloadAll();
+    if (failedDl && dlRetries++ < 3) setTimeout(sync, 8000); // nicht geladene Bilder bald noch einmal holen (höchstens 3-mal)
+    else if (!failedDl) dlRetries = 0;
   }
 
   let syncing = false;

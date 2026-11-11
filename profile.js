@@ -60,9 +60,16 @@ const Profile = (() => {
   /* ---------- Öffentliche Ansicht ---------- */
   async function signedUrls(sb, paths) {
     const out = {};
-    for (let i = 0; i < paths.length; i += 200) {
-      const { data } = await sb.storage.from('images').createSignedUrls(paths.slice(i, i + 200), 3600);
-      for (const r of data || []) if (r.signedUrl) out[r.path] = r.signedUrl;
+    for (let attempt = 0; attempt < 3; attempt++) { // fehlende Links (kurzer Netzfehler) werden noch zweimal angefragt
+      const todo = [...new Set(paths)].filter((x) => x && !out[x]);
+      if (!todo.length) break;
+      if (attempt) await new Promise((r) => setTimeout(r, 600 * attempt));
+      for (let i = 0; i < todo.length; i += 200) {
+        try {
+          const { data } = await sb.storage.from('images').createSignedUrls(todo.slice(i, i + 200), 3600);
+          for (const r of data || []) if (r.signedUrl) out[r.path] = r.signedUrl;
+        } catch (e) { /* nächster Versuch */ }
+      }
     }
     return out;
   }

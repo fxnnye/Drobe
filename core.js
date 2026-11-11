@@ -97,6 +97,27 @@ const state = {
   editingItem: null,
 };
 const itemById = (id) => items.find((i) => i.id === id);
+
+/* ---------- Bilder aus dem Netz: schlägt ein Abruf kurz fehl (Funkloch, Server ausgelastet), wird er bis zu 3-mal wiederholt ---------- */
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  const src = img.currentSrc || img.src;
+  if (!/^https?:/.test(src)) return; // Bilder vom Gerät (blob:) sind nicht betroffen
+  const n = Number(img.dataset.retry || 0);
+  if (n >= 3) return;
+  img.dataset.retry = String(n + 1);
+  setTimeout(() => {
+    if (!img.isConnected) return;
+    try { const u = new URL(src); u.searchParams.set('r', String(n + 1)); img.src = u.toString(); } catch (err) { img.src = src; }
+  }, [800, 2000, 4000][n]);
+}, true);
+// Kommt die Verbindung zurück, werden kaputte Bilder sofort neu geladen
+window.addEventListener('online', () => {
+  document.querySelectorAll('img').forEach((img) => {
+    if (img.complete && img.naturalWidth === 0 && /^https?:/.test(img.src)) { img.dataset.retry = '0'; const u = new URL(img.src); u.searchParams.set('r', String(Date.now())); img.src = u.toString(); }
+  });
+});
 function urlFor(rec) {
   if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
   return urls.get(rec.id);

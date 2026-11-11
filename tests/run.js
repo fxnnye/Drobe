@@ -263,6 +263,17 @@ test('Englisch: Sätze mit Zahlen, Namen und Serverfehler', async () => {
   } finally { localStorage.removeItem('jawnz-lang'); f.remove(); }
 });
 
+test('Bilder aus dem Netz werden bei Fehlern neu versucht', async () => {
+  const d = frame.contentWindow.document;
+  const i = d.createElement('img');
+  i.src = '../nicht-da-' + Date.now() + '.png';
+  d.body.append(i);
+  await new Promise((r) => setTimeout(r, 1800));
+  const n = Number(i.dataset.retry || 0);
+  i.remove();
+  ok(n >= 1, 'kaputtes Bild wurde nicht neu versucht');
+});
+
 test('Sprache umschalten: Chips für Deutsch und English vorhanden', () => {
   eq([...frame.contentDocument.querySelectorAll('#langChips .chip')].map((c) => c.dataset.lang), ['de', 'en']);
   ok(frame.contentDocument.querySelector('#langChips .chip[data-lang=de]').classList.contains('active'));
