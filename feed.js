@@ -127,11 +127,11 @@ function renderChips(el, key, onChange) {
   const idx = ['Alle', ...TOP].indexOf(inGroup(state[key]) || state[key]);
   el._idx = idx;
   // Wechselt die Hauptkategorie, rückt die Reihe (am Handy) in Klickrichtung so weit, dass die Nachbarn links und rechts der gewählten Kategorie noch ganz zu sehen und anzutippen sind
-  const nudge = (sel) => {
+  const nudge = (sel, after) => {
     el.scrollLeft = prevScroll;
     if (!window.matchMedia('(max-width: 700px)').matches || !sel || idx === prevIdx && prevIdx != null) return;
     const x = (n) => n.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
-    const prev = sel.previousElementSibling, next = sel.nextElementSibling;
+    const prev = sel.previousElementSibling, next = after !== undefined ? after : sel.nextElementSibling; // mit Unterkategorien ist der rechte Nachbar die nächste Hauptkategorie hinter dem Block
     const gap = 12, view = el.clientWidth;
     const L = Math.max(0, x(prev || sel) - gap), R = x(next || sel) + (next || sel).offsetWidth + gap;
     let t = prevScroll;
@@ -161,7 +161,7 @@ function renderChips(el, key, onChange) {
   if (window.matchMedia('(max-width: 700px)').matches) {
     // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
     chips[group].after(sub);
-    nudge(chips[group]);
+    nudge(chips[group], sub.nextElementSibling);
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
