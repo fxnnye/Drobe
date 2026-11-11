@@ -74,15 +74,26 @@ function missingDetail() {
   $(need[0]).focus();
   return true;
 }
+let upThumbs = [];
 function showPending() {
   const n = upPending.length;
+  upThumbs.forEach((x) => URL.revokeObjectURL(x));
+  upThumbs = upPending.map((f) => URL.createObjectURL(f));
   $('addGo').hidden = !n;
   $('addPendingText').textContent = n ? (n === 1 ? '1 Foto ausgewählt' : n + ' Fotos ausgewählt') : '';
+  const box = $('addThumbs');
+  box.replaceChildren(...upPending.map((f, i) => {
+    const w = document.createElement('div'); w.className = 'add-thumb';
+    const im = document.createElement('img'); im.alt = ''; im.src = upThumbs[i];
+    const x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', 'Foto entfernen'); x.textContent = '×';
+    x.onclick = () => { upPending.splice(i, 1); showPending(); };
+    w.append(im, x); return w;
+  }));
 }
-async function addFiles(files) {
+async function addFiles(files, forceGo) {
   const imgs = [...files].filter((f) => f.type.startsWith('image/'));
   if (!imgs.length) return;
-  if (!upCur && [['upBrand'], ['upSize'], ['upCond']].some(([id]) => !$(id).value.trim())) { upPending.push(...imgs); showPending(); return; }
+  if (!upCur && !forceGo) { upPending.push(...imgs); showPending(); return; }
   upQueue.push(...imgs);
   upTotal += imgs.length;
   if (!upCur) nextUpload();
@@ -111,6 +122,9 @@ async function nextUpload() {
     upDone++;
     refreshUpload();
     if (!upDlg.open) upDlg.showModal();
+    // Optionen von der Hinzufügen-Seite: Hintergrund gleich entfernen, danach ggf. den Radierer öffnen
+    if ($('addAutoBg').checked) await doRemoveBg();
+    if ($('addOpenErase').checked && !upCur.busy) $('upErase').click();
   } catch (e) {
     console.error(e);
     toast('Konnte ' + f.name + ' nicht laden');
@@ -592,7 +606,7 @@ function refreshUpload() {
   $('upBatch').hidden = upQueue.length === 0; 
   if (!u.busy) $('upAll').textContent = `Alle ${upQueue.length + 1} Fotos hinzufügen`;
 }
-bindTool('remove', async () => {
+async function doRemoveBg() {
   const u = cur();
   if (u.busy) return;
   stopDraw();
@@ -614,7 +628,8 @@ bindTool('remove', async () => {
   }
   u.busy = false;
   if (cur() === u) activeCtx.refresh();
-});
+}
+bindTool('remove', doRemoveBg);
 // Marke, Größe und Zustand sind bei Teilen Pflicht; Sichtbarkeit ist vorausgewählt „Öffentlich“
 function upItemDetails() {
   const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
@@ -648,7 +663,7 @@ $('upAll').addEventListener('click', async () => {
   const det = upItemDetails();
   if (!det) return;
   const category = $('uploadCategory').value;
-  const bgAll = $('upAllBg').checked;
+  const bgAll = $('upAllBg').checked || $('addAutoBg').checked;
   const jobs = [
     { name: $('upName').value.trim() || nameFromFile(u.file), res: await upResult(u), cut: u.useCut },
     ...upQueue.map((file) => ({ file, name: nameFromFile(file) })),
@@ -692,7 +707,7 @@ upDlg.addEventListener('close', () => { // Esc: Rest der Warteschlange verwerfen
 });
 $('addGo').addEventListener('click', () => {
   if (missingDetail()) return;
-  const f = upPending; upPending = []; showPending(); addFiles(f);
+  const f = upPending; upPending = []; showPending(); addFiles(f, true);
 });
 $('fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
 const dz = $('dropzone');
