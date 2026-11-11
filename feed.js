@@ -161,7 +161,7 @@ function renderChips(el, key, onChange) {
   if (window.matchMedia('(max-width: 700px)').matches) {
     // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
     chips[group].after(sub);
-    nudge(chips[group], sub.nextElementSibling);
+    nudge(chips[group], sub.nextElementSibling || sub); // ohne Nachbarn rechts: der Unterkategorien-Block selbst
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
