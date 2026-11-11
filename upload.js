@@ -74,12 +74,16 @@ function missingDetail() {
   $(need[0]).focus();
   return true;
 }
+const addOn = (id) => $(id).getAttribute('aria-pressed') === 'true';
+['addAutoBg', 'addOpenErase'].forEach((id) => $(id).addEventListener('click', () => {
+  const on = !addOn(id); $(id).setAttribute('aria-pressed', on); $(id).classList.toggle('active', on);
+}));
 let upThumbs = [];
 function showPending() {
   const n = upPending.length;
   upThumbs.forEach((x) => URL.revokeObjectURL(x));
   upThumbs = upPending.map((f) => URL.createObjectURL(f));
-  $('addGo').hidden = !n;
+  $('addGo').hidden = !n; $('addOpts').hidden = !n;
   $('addPendingText').textContent = n ? (n === 1 ? '1 Foto ausgewählt' : n + ' Fotos ausgewählt') : '';
   const box = $('addThumbs');
   box.replaceChildren(...upPending.map((f, i) => {
@@ -123,8 +127,8 @@ async function nextUpload() {
     refreshUpload();
     if (!upDlg.open) upDlg.showModal();
     // Optionen von der Hinzufügen-Seite: Hintergrund gleich entfernen, danach ggf. den Radierer öffnen
-    if ($('addAutoBg').checked) await doRemoveBg();
-    if ($('addOpenErase').checked && !upCur.busy) $('upErase').click();
+    if (addOn('addAutoBg')) await doRemoveBg();
+    if (addOn('addOpenErase') && !upCur.busy) $('upErase').click();
   } catch (e) {
     console.error(e);
     toast('Konnte ' + f.name + ' nicht laden');
@@ -663,7 +667,7 @@ $('upAll').addEventListener('click', async () => {
   const det = upItemDetails();
   if (!det) return;
   const category = $('uploadCategory').value;
-  const bgAll = $('upAllBg').checked || $('addAutoBg').checked;
+  const bgAll = $('upAllBg').checked || addOn('addAutoBg');
   const jobs = [
     { name: $('upName').value.trim() || nameFromFile(u.file), res: await upResult(u), cut: u.useCut },
     ...upQueue.map((file) => ({ file, name: nameFromFile(file) })),

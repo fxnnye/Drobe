@@ -18,7 +18,7 @@ const I18N = {
     'Zum Profil': 'Open profile', 'Ansehen': 'View', 'Merken': 'Save', 'Gemerkt ': 'Saved ',
     // Hinzufügen und Hochladen
     'Hinzufügen ': 'Add ', 'Klamotten hochladen': 'Upload clothes', 'Fotos auswählen': 'Choose photos',
-    'Kategorie': 'Category', 'Name': 'Name', 'Marke *': 'Brand *', 'Hintergrund automatisch entfernen': 'Remove background automatically', 'Radierer zum Nachbessern direkt öffnen': 'Open eraser to touch up right away', 'Foto entfernen': 'Remove photo', '1 Foto ausgewählt': '1 photo selected', 'Größe *': 'Size *', 'Zustand *': 'Condition *',
+    'Kategorie': 'Category', 'Name': 'Name', 'Marke *': 'Brand *',  'Foto entfernen': 'Remove photo', '1 Foto ausgewählt': '1 photo selected', 'Größe *': 'Size *', 'Zustand *': 'Condition *',
     'Farbe (optional)': 'Color (optional)', 'Sichtbarkeit': 'Visibility', 'Öffentlich (im Feed sichtbar)': 'Public (visible in the feed)', 'Zum Verkauf': 'For sale',
     'Hintergrund entfernen': 'Remove background', 'Bereich einzeichnen': 'Mark area', 'Radierer': 'Eraser', 'Zurückholen': 'Restore', 'Pinselgröße': 'Brush size',
     'Alle hinzufügen': 'Add all', 'Bei allen den Hintergrund entfernen': 'Remove background on all', 'Wählen …': 'Choose …', 'Automatisch, wenn freigestellt': 'Automatic when cut out',

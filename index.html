@@ -240,9 +240,9 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       </label>
       <p class="muted">Fotos hierher ziehen oder auswählen. Am besten vor hellem, ruhigem Hintergrund fotografiert.</p>
       <div class="add-thumbs" id="addThumbs"></div>
-      <div class="add-opts">
-        <label class="check"><input type="checkbox" id="addAutoBg"> Hintergrund automatisch entfernen</label>
-        <label class="check"><input type="checkbox" id="addOpenErase"> Radierer zum Nachbessern direkt öffnen</label>
+      <div class="add-opts" id="addOpts" hidden>
+        <button type="button" class="chip" id="addAutoBg" aria-pressed="false">Hintergrund entfernen</button>
+        <button type="button" class="chip" id="addOpenErase" aria-pressed="false">Radierer</button>
       </div>
       <p class="muted" id="addPendingText"></p>
     </div>
