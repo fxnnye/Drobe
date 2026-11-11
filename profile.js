@@ -1379,8 +1379,6 @@ const Profile = (() => {
       meta.append(el('span', 'feed-name', rec.name || ''));
       const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
       if (sub) meta.append(el('span', 'muted small', sub));
-      if (rec.cond) meta.append(el('span', 'muted small', rec.cond));
-      if (rec.color) meta.append(el('span', 'muted small', rec.color));
       if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
     } else {
       meta.append(el('b', null, rec.name || 'Outfit'));
