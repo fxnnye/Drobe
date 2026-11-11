@@ -29,57 +29,6 @@ function cleanDetails(src, kind) {
   return out;
 }
 
-// Übernahme von Angaben aus eigenem Text (z. B. von der eigenen Vinted-Anzeige, die der Nutzer selbst einfügt):
-// JAWNZ liest keine Links und ruft nichts von außen ab, hier wird nur der eingefügte Text von Hand ausgewertet.
-const LISTING_LABELS = /^(marke|brand|größe|groesse|size|zustand|condition|preis|price|farbe|colou?r|kategorie|category)(?=$|[\s:\-–])/i;
-const LISTING_COND = [
-  [/neu mit etikett|new with tags?/i, 'Neu / DS', true],
-  [/neu ohne etikett|new without tags?/i, 'Sehr gut', true],
-  [/sehr gut|very good/i, 'Sehr gut', true],
-  [/zufriedenstellend|satisfactory|getragen|worn/i, 'Getragen', true],
-  [/^\s*(gut|good)\s*$/i, 'Gut', false], // nur, wenn es allein als Wert hinter „Zustand“ steht
-];
-function listingField(lines, labels) {
-  const re = new RegExp('^(?:' + labels + ')(?=$|[\\s:\\-–])\\s*[:\\-–]?\\s*(.*)$', 'i');
-  for (let i = 0; i < lines.length; i++) {
-    const m = re.exec(lines[i]);
-    if (!m) continue;
-    const next = lines[i + 1] && !LISTING_LABELS.test(lines[i + 1]) ? lines[i + 1] : '';
-    const v = m[1].trim() || next;
-    if (v) return v;
-  }
-  return '';
-}
-function parseListing(text) {
-  const lines = String(text || '').replace(/\r/g, '').slice(0, 4000).split('\n').map((l) => l.trim()).filter(Boolean);
-  const out = {};
-  if (!lines.length) return out;
-  const title = lines.find((l) => !LISTING_LABELS.test(l) && !/^[€\d.,\s]+(€|eur)?$/i.test(l));
-  if (title) out.name = title.slice(0, 60);
-  const brand = listingField(lines, 'marke|brand');
-  if (brand) out.brand = brand.slice(0, 40);
-  const size = listingField(lines, 'größe|groesse|size').split(/\s+\/\s+/)[0].trim();
-  if (size) out.size = size.slice(0, 20);
-  const condText = listingField(lines, 'zustand|condition');
-  const whole = lines.join('\n');
-  for (const [re, val, free] of LISTING_COND) {
-    if (re.test(condText) || (free && re.test(whole))) { out.cond = val; break; }
-  }
-  const priceText = listingField(lines, 'preis|price');
-  const money = /(?:€\s*([\d.,]{1,9}))|(?:([\d.,]{1,9})\s*(?:€|eur\b))/i.exec(priceText || whole);
-  if (money) {
-    let n = (money[1] || money[2]).replace(/[.,]+$/, '');
-    n = n.includes(',') ? n.replace(/\./g, '').replace(',', '.') : /^\d+\.\d{3}$/.test(n) ? n.replace('.', '') : n;
-    const p = parseFloat(n);
-    if (Number.isFinite(p) && p > 0 && p <= PRICE_MAX) out.price = Math.round(p * 100) / 100;
-  }
-  // Kategorie nur bei genauem Wort (die Suche trifft auch Wortanfänge, „jeans“ würde sonst bei „Jeansjacke“ landen)
-  const exact = (q) => termHits(q).find((h) => h.group.terms.includes(h.matched));
-  const hit = exact(out.name || '') || exact(whole); // erst der Titel, dann der ganze Text
-  if (hit && hit.group && CATEGORIES.includes(hit.group.cat)) out.category = hit.group.cat;
-  return out;
-}
-
 const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'color', 'hex', 'vis', 'price'];
 const setDetails = (rec, clean) => { for (const k of DETAIL_KEYS) delete rec[k]; Object.assign(rec, clean); };
 

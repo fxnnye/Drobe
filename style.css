@@ -432,8 +432,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .filter-row { display: flex; align-items: center; gap: 12px; }
 .filter-row .chips { flex: 1; min-width: 0; margin-bottom: 0; }
 .filter-row { margin-bottom: 16px; }
-.add-btn { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--gray); display: grid; place-items: center; padding: 0; color: var(--text); cursor: pointer; }
-@media (hover: hover) and (pointer: fine) { .add-btn:hover { background: var(--gray-hover); } }
 @media (max-width: 700px) {
   /* Am Handy scrollen die Kategorien seitwärts, damit das Plus rechts daneben Platz hat */
   .filter-row .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
@@ -600,7 +598,6 @@ dialog .field input, dialog .field select, dialog .field textarea { width: 100%;
 .panel .row .btn, .up-draw-row .btn { padding: 0 16px; }
 .icon { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
 .rotate .icon { width: var(--h-ctrl); height: var(--h-ctrl); }
-.add-btn { width: var(--h-chip); height: var(--h-chip); }
 .top .menu, .top .menu.icon { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
 .tab { border-radius: var(--r-ctrl); }
 .set-row { border-radius: var(--r-ctrl); min-height: var(--h-ctrl); padding: 0 16px; margin-bottom: 8px; }

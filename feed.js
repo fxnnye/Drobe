@@ -1,6 +1,5 @@
 // Navigation, Feed und Filter-Chips (Teil der App, Reihenfolge siehe index.html)
 /* ---------- Navigation ---------- */
-document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien
 $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
 // Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Gemerkt sind Unterseiten von „Profil“.
 const ME_VIEWS = ['closet', 'outfits', 'saved', 'followers', 'following'];
@@ -10,7 +9,7 @@ const isGuest = () => document.body.classList.contains('guest');
 async function loginGate(what) {
   if (await askConfirm('Um ' + what + ' zu nutzen, musst du dich anmelden.', 'Anmelden')) $('guestLogin').click();
 }
-const GATE_TEXT = { messages: 'Nachrichten', me: 'dein Profil' };
+const GATE_TEXT = { messages: 'Nachrichten', me: 'dein Profil', add: 'das Hinzufügen' };
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';

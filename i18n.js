@@ -17,12 +17,12 @@ const I18N = {
     'Profil bearbeiten': 'Edit profile', 'Profil-Link kopieren': 'Copy profile link', 'So sehen andere mein Profil': 'How others see my profile',
     'Zum Profil': 'Open profile', 'Ansehen': 'View', 'Merken': 'Save', 'Gemerkt ': 'Saved ',
     // Hinzufügen und Hochladen
-    'Hinzufügen ': 'Add ', 'Klamotten hochladen': 'Upload clothes', 'Fotos auswählen': 'Choose photos', 'Von Vinted übernehmen': 'Import from Vinted',
-    'Foto oder Screenshot wählen': 'Choose a photo or screenshot', 'Kategorie': 'Category', 'Name': 'Name', 'Marke *': 'Brand *', 'Größe *': 'Size *', 'Zustand *': 'Condition *',
+    'Hinzufügen ': 'Add ', 'Klamotten hochladen': 'Upload clothes', 'Fotos auswählen': 'Choose photos',
+    'Kategorie': 'Category', 'Name': 'Name', 'Marke *': 'Brand *', 'Größe *': 'Size *', 'Zustand *': 'Condition *',
     'Farbe (optional)': 'Color (optional)', 'Sichtbarkeit': 'Visibility', 'Öffentlich (im Feed sichtbar)': 'Public (visible in the feed)', 'Zum Verkauf': 'For sale',
     'Hintergrund entfernen': 'Remove background', 'Bereich einzeichnen': 'Mark area', 'Radierer': 'Eraser', 'Zurückholen': 'Restore', 'Pinselgröße': 'Brush size',
     'Alle hinzufügen': 'Add all', 'Bei allen den Hintergrund entfernen': 'Remove background on all', 'Wählen …': 'Choose …', 'Automatisch, wenn freigestellt': 'Automatic when cut out',
-    'Text deiner Anzeige (optional)': 'Text of your listing (optional)', 'Foto ersetzen': 'Replace photo', 'Ähnliche Teile von anderen': 'Similar items from others',
+    'Foto ersetzen': 'Replace photo', 'Ähnliche Teile von anderen': 'Similar items from others',
     'Passende Teile finden': 'Find matching items', 'Gekauft: in den Schrank legen': 'Bought: move to closet',
     // Outfits
     'PNG': 'PNG', 'Farben': 'Colors', 'Farben, die zusammenpassen': 'Colors that go together',
@@ -77,8 +77,6 @@ const I18N = {
     'Drehen, wenn das Foto schief ist': 'Rotate if the photo is crooked',
     'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.': 'Roughly draw around the item with your finger. Everything outside is removed. Zoom: two fingers or mouse wheel.',
     'Ziehen zum Verschieben, mit zwei Fingern oder dem Mausrad zoomen.': 'Drag to move, zoom with two fingers or the mouse wheel.',
-    'Lade ein eigenes Foto oder einen Screenshot deines Artikels hoch und füge den Text deiner Anzeige ein. JAWNZ liest keine Links und ruft nichts von Vinted ab. Du prüfst alles, bevor es gespeichert wird.':
-      'Upload your own photo or a screenshot of your item and paste the text of your listing. JAWNZ does not read links and does not fetch anything from Vinted. You check everything before it is saved.',
     'Auswahl ändern': 'Change selection', 'Foto senden': 'Send photo', 'Nach hinten': 'Send backward', 'Nach vorne': 'Bring forward', 'Drehen': 'Rotate',
     '90° nach links': '90° left', '90° nach rechts': '90° right', 'Eigene Farbe': 'Custom color',
     'Größe für dieses Teil merken': 'Remember size for this item', 'Ausschnitt des Profilbilds': 'Profile photo crop',
@@ -175,7 +173,6 @@ const I18N_PATTERNS = {
   en: [
     [/^(\d+) Teil ausgewählt$/, '$1 item selected'], [/^(\d+) Teile ausgewählt$/, '$1 items selected'],
     [/^(\d+) Teile hinzugefügt$/, '$1 items added'], [/^von (.+)$/, 'by $1'], [/^Mehr von (.+)$/, 'More from $1'],
-    [/^Preis aus deinem Text: (.+) €\. Er gilt, wenn du „Zum Verkauf“ wählst\.$/, 'Price from your text: €$1. It applies if you choose “For sale”.'],
     [/^Marke · (\d+) Teil$/, 'Brand · $1 item'], [/^Marke · (\d+) Teile$/, 'Brand · $1 items'],
     [/^(\d+) Teile wurden aus dem Schrank gelöscht\.$/, '$1 items were deleted from the closet.'],
     [/^(\d+) weitere Teile sind privat\.$/, '$1 more items are private.'],

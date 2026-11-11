@@ -83,6 +83,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="feed" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span class="tab-label">Feed</span></button>
     <button class="tab" data-view="search" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="tab-label">Suche</span></button>
+    <button class="tab" data-view="add" role="tab" aria-label="Teil hinzufügen"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span class="tab-label">Hinzufügen</span></button>
     <button class="tab" data-view="messages" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/></svg><span class="tab-label">Nachrichten</span><span class="badge tab-badge" id="inboxBadge"></span></button>
     <button class="tab" data-view="me" role="tab"><svg class="tab-ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="tab-label">Profil</span></button>
   </nav>
@@ -191,7 +192,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="filter-row">
       <div class="chips" id="closetFilter"></div>
       <button class="btn" type="button" id="closetSelect" aria-pressed="false">Auswählen</button>
-      <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="grid" id="closetGrid"></div>
     <div class="empty" id="closetEmpty"></div>
@@ -241,7 +241,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
           Fotos auswählen
           <input type="file" id="fileInput" accept="image/*" multiple hidden>
         </label>
-        <button class="btn" type="button" id="vintedOpen">Von Vinted übernehmen</button>
       </div>
     </div>
   </section>
@@ -364,25 +363,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
-<dialog id="vintedDialog">
-  <form method="dialog" onsubmit="return false">
-    <h2>Von Vinted übernehmen</h2>
-    <p class="muted small">Lade ein eigenes Foto oder einen Screenshot deines Artikels hoch und füge den Text deiner Anzeige ein. JAWNZ liest keine Links und ruft nichts von Vinted ab. Du prüfst alles, bevor es gespeichert wird.</p>
-    <label class="btn full">
-      <span id="vintedFileName">Foto oder Screenshot wählen</span>
-      <input type="file" id="vintedFile" accept="image/*" hidden>
-    </label>
-    <label class="field">Text deiner Anzeige (optional)
-      <textarea id="vintedText" rows="7" maxlength="4000" placeholder="Titel, Marke, Größe, Zustand, Preis: einfach hineinkopieren"></textarea>
-    </label>
-    <div class="row">
-      <span class="spacer"></span>
-      <button class="btn" type="button" id="vintedCancel">Abbrechen</button>
-      <button class="btn primary" type="button" id="vintedGo" disabled>Weiter</button>
-    </div>
-  </form>
-</dialog>
-
 <dialog id="uploadDialog">
   <form method="dialog" onsubmit="return false">
     <p class="muted small" id="upProgress"></p>
@@ -432,7 +412,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <label class="field">Sichtbarkeit
         <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="sale" id="upVisSale" hidden>Zum Verkauf</option><option value="private">Privat</option></select>
       </label>
-      <p class="muted small" id="upImportHint" hidden></p>
     </div>
     <div class="batch" id="upBatch" hidden>
       <label class="check"><input type="checkbox" id="upAllBg"> Bei allen den Hintergrund entfernen</label>
