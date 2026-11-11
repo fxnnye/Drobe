@@ -1094,3 +1094,8 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 .subchips.enter { animation: subIn-y .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; }
 @media (max-width: 700px) { .filter-row .chips .subchips.enter { animation: subIn-x .3s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; } }
 @media (prefers-reduced-motion: reduce) { .subchips.enter { animation: none !important; } }
+@keyframes subOut-x { from { max-width: 140px; opacity: 1; transform: none; } to { max-width: 0; opacity: 0; transform: translateX(-10px); } }
+@keyframes subOut-y { from { opacity: 1; max-height: 200px; transform: none; } to { opacity: 0; max-height: 0; transform: translateY(-6px); } }
+.subchips.leave { animation: subOut-y .24s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; pointer-events: none; }
+@media (max-width: 700px) { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
+@media (prefers-reduced-motion: reduce) { .subchips.leave { animation: none !important; display: none; } }

@@ -124,6 +124,7 @@ const inGroup = (f) => GROUPS[f] ? f : Object.keys(GROUPS).find((g) => GROUPS[g]
 
 function renderChips(el, key, onChange) {
   const prevScroll = el.scrollLeft, prevIdx = el._idx;
+  const oldSub = el.querySelector(':scope > .subchips'), oldGroup = el._group; // wird beim Wechsel weich ausgeblendet
   const idx = ['Alle', ...TOP].indexOf(inGroup(state[key]) || state[key]);
   el._idx = idx;
   // Wechselt die Hauptkategorie, rückt die Reihe (am Handy) in Klickrichtung so weit, dass die Nachbarn links und rechts der gewählten Kategorie noch ganz zu sehen und anzutippen sind
@@ -148,6 +149,13 @@ function renderChips(el, key, onChange) {
     };
     requestAnimationFrame(step);
   };
+  // Der alte Unterkategorien-Block bleibt kurz als Kopie stehen und blendet aus, statt plötzlich zu verschwinden
+  const leave = (chips, group) => {
+    if (!oldSub || !oldGroup || oldGroup === group) return;
+    oldSub.classList.remove('enter'); oldSub.classList.add('leave'); oldSub.setAttribute('inert', ''); oldSub.style.animation = '';
+    if (window.matchMedia('(max-width: 700px)').matches && chips[oldGroup]) chips[oldGroup].after(oldSub); else el.appendChild(oldSub);
+    setTimeout(() => oldSub.remove(), 380);
+  };
   el.innerHTML = '';
   const chip = (parent, label, value) => {
     const b = document.createElement('button');
@@ -164,7 +172,7 @@ function renderChips(el, key, onChange) {
   const group = inGroup(state[key]);
   const fresh = el._group !== group; // Block nur beim Öffnen einblenden, nicht bei jedem Antippen einer Unterkategorie
   el._group = group || null;
-  if (!group) { nudge(chips[state[key]]); return; }
+  if (!group) { nudge(chips[state[key]]); leave(chips, null); return; }
   const sub = document.createElement('div');
   sub.className = 'subchips' + (fresh ? ' enter' : '');
   chip(sub, 'Alle ' + group, group);
@@ -178,6 +186,7 @@ function renderChips(el, key, onChange) {
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
+  leave(chips, group);
 }
 // Kategorie, die beim Hochladen zum aktuellen Filter passt
 const uploadCategoryFor = (f) => DEFAULT_SUB[f] || f;
