@@ -181,7 +181,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="subtabs" role="tablist">
       <button class="subtab active" type="button" data-sub="closet">Schrank</button>
       <button class="subtab" type="button" data-sub="outfits">Outfits <span id="outfitCount" class="badge">0</span></button>
-      <button class="subtab" type="button" data-sub="wishlist">Wunschliste</button>
+      <button class="subtab" type="button" data-sub="wishlist">Gemerkt</button>
 
     </div>
   </div>
@@ -204,14 +204,14 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
   </section>
 
-  <!-- WUNSCHLISTE -->
+  <!-- GEMERKT: Teile und Outfits anderer, die ich mit „Merken“ gespeichert habe -->
   <section id="view-wishlist" class="view">
-    <div class="filter-row">
-      <div class="chips" id="wishFilter"></div>
-      <button class="add-btn" type="button" aria-label="Hinzufügen" title="Hinzufügen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="chips feed-switch" id="savedSwitch">
+      <button class="chip active" type="button" data-kind="items">Teile</button>
+      <button class="chip" type="button" data-kind="outfits">Outfits</button>
     </div>
-    <div class="grid" id="wishGrid"></div>
-    <div class="empty" id="wishEmpty"></div>
+    <div class="grid" id="savedGrid"></div>
+    <div class="empty" id="savedEmpty"></div>
   </section>
 
   <!-- FOLLOWER UND FOLGE ICH -->

@@ -161,6 +161,12 @@ const I18N = {
     'Ein Teil wurde aus dem Schrank gelöscht.': 'One item was deleted from the closet.',
     'Ein weiteres Teil ist privat.': 'One more item is private.',
     'Ein Teil fehlt, es wurde aus dem Schrank gelöscht': 'One item is missing, it was deleted from the closet',
+    'Noch keine Outfits gemerkt': 'No outfits saved yet',
+    'Noch keine Teile gemerkt': 'No items saved yet',
+    'Auf der Seite eines Outfits kannst du es mit „Merken“ speichern.': 'On an outfit’s page you can save it with “Save”.',
+    'Gemerktes ist gerade nicht verfügbar': 'Saved items are not available right now',
+    'Für Gemerktes brauchst du eine Internetverbindung.': 'You need an internet connection for saved items.',
+    'Auf der Seite eines Teils kannst du es mit „Merken“ speichern.': 'On an item’s page you can save it with “Save”.',
     'Offene Meldungen. „Teil verstecken“ macht den Eintrag privat (der Besitzer kann ihn nicht wieder freigeben), „Konto sperren“ meldet die Person ab und versteckt alles von ihr. Wer gemeldet hat, bekommt beim nächsten Start eine Rückmeldung.':
       'Open reports. “Hide item” makes the entry private (the owner cannot release it again), “Block account” logs the person out and hides everything from them. Whoever reported gets feedback on their next start.',
   },

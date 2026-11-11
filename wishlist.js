@@ -14,43 +14,44 @@ function cleanLink(v) {
 }
 const hostOf = (href) => { try { return new URL(href).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
 
-function renderWishlist() {
-  renderChips($('wishFilter'), 'wishFilter', renderWishlist);
-  const f = state.wishFilter;
-  if (f !== 'Alle' && !(GROUPS[f] && GROUPS[f].includes($('wishUploadCategory').value))) {
-    $('wishUploadCategory').value = uploadCategoryFor(f);
-  }
-  const grid = $('wishGrid');
-  grid.innerHTML = '';
-  const list = wishlist.filter((w) => matchesFilter(w, f));
-  list.forEach((w) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = '<div class="img" tabindex="0" role="button"><img alt=""></div><div class="meta"><b></b><span></span><i class="note"></i></div>';
-    card.querySelector('img').src = urlFor(w);
-    card.querySelector('b').textContent = w.name;
-    card.querySelector('span').textContent = [w.category, visLabel(w, 'wishlist')].filter(Boolean).join(' · ');
-    card.querySelector('.note').textContent = w.note || '';
-    if (w.link && cleanLink(w.link)) {
-      const a = document.createElement('a');
-      a.className = 'shop';
-      a.href = w.link;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.textContent = 'Zum Shop · ' + hostOf(w.link) + ' ↗';
-      card.querySelector('.meta').appendChild(a);
+// Reiter „Gemerkt“ im eigenen Profil: gespeicherte Teile oder Outfits anderer (Hülle heißt noch view-wishlist)
+const saved = { kind: 'items', token: 0 };
+async function renderWishlist() {
+  if (state.view !== 'wishlist') return; // wird nur beim Öffnen des Reiters geladen
+  const grid = $('savedGrid'), empty = $('savedEmpty');
+  const token = ++saved.token;
+  grid.replaceChildren();
+  empty.classList.remove('show');
+  const done = skeletons(grid, 6);
+  try {
+    const all = await Profile.feed('saved');
+    if (token !== saved.token) return;
+    done();
+    const list = all.filter((r) => !!r.outfit === (saved.kind === 'outfits'));
+    await Profile.showFeed(list, grid, saved.kind);
+    empty.classList.toggle('show', list.length === 0);
+    if (!list.length) {
+      setEmpty(empty, saved.kind === 'outfits'
+        ? { ic: 'outfit', title: 'Noch keine Outfits gemerkt', text: 'Auf der Seite eines Outfits kannst du es mit „Merken“ speichern.' }
+        : { ic: 'heart', title: 'Noch keine Teile gemerkt', text: 'Auf der Seite eines Teils kannst du es mit „Merken“ speichern.' });
     }
-    card.onclick = (e) => { if (!e.target.closest('a')) openWishDialog(w); };
-    card.querySelector('.img').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openWishDialog(w); } };
-    grid.appendChild(card);
-  });
-  $('wishEmpty').classList.toggle('show', list.length === 0);
-  if (!list.length) {
-    setEmpty($('wishEmpty'), wishlist.length === 0
-      ? { ic: 'heart', title: 'Deine Wunschliste ist noch leer', text: 'Sammle Teile, die du dir noch kaufen willst.', cta: 'Wunsch hinzufügen', fn: () => document.querySelector('#view-wishlist .add-btn').click() }
-      : { ic: 'heart', title: 'Keine Teile in dieser Kategorie' });
+  } catch (e) {
+    if (token !== saved.token) return;
+    console.error(e);
+    done();
+    empty.classList.add('show');
+    setEmpty(empty, navigator.onLine
+      ? { ic: 'search', title: 'Gemerktes ist gerade nicht verfügbar', text: 'Bitte versuche es gleich noch einmal.' }
+      : { ic: 'wifi', title: 'Keine Verbindung', text: 'Für Gemerktes brauchst du eine Internetverbindung.' });
   }
 }
+document.querySelectorAll('#savedSwitch .chip').forEach((c) => {
+  c.onclick = () => {
+    saved.kind = c.dataset.kind;
+    document.querySelectorAll('#savedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
+    renderWishlist();
+  };
+});
 
 const wishDlg = $('wishDialog');
 let wishEditing = null;

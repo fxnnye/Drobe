@@ -31,6 +31,7 @@ function showView(name) {
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
   if (name === 'feed') loadFeed(true);
+  if (name === 'wishlist') renderWishlist();
   if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
   if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
   if (name === 'followers' || name === 'following') Profile.loadPeople(name, $(name === 'followers' ? 'followersList' : 'followingList'));
@@ -54,7 +55,7 @@ function renderMeHead() {
   $('meName').textContent = name;
   Profile.paintOwnAvatars();
   const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
-  $('meCounts').textContent = [n(items.length, 'Teil', 'Teile'), n(outfits.length, 'Outfit', 'Outfits'), n(wishlist.length, 'Wunsch', 'Wünsche')].join(' · ');
+  $('meCounts').textContent = [n(items.length, 'Teil', 'Teile'), n(outfits.length, 'Outfit', 'Outfits')].join(' · ');
   $('meProfile').hidden = !u;
 }
 
