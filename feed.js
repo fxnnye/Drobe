@@ -126,11 +126,18 @@ function renderChips(el, key, onChange) {
   const prevScroll = el.scrollLeft, prevIdx = el._idx;
   const idx = ['Alle', ...TOP].indexOf(inGroup(state[key]) || state[key]);
   el._idx = idx;
-  // Wechselt die Hauptkategorie, rückt die Reihe leicht in die Richtung weiter, in die man geklickt hat (am Handy)
-  const nudge = () => {
-    if (!window.matchMedia('(max-width: 700px)').matches || prevIdx == null || idx === prevIdx) { el.scrollLeft = prevScroll; return; }
+  // Wechselt die Hauptkategorie, rückt die Reihe (am Handy) in Klickrichtung so weit, dass die Nachbarn links und rechts der gewählten Kategorie noch ganz zu sehen und anzutippen sind
+  const nudge = (sel) => {
     el.scrollLeft = prevScroll;
-    el.scrollTo({ left: Math.max(0, prevScroll + (idx > prevIdx ? 70 : -70)), behavior: 'smooth' });
+    if (!window.matchMedia('(max-width: 700px)').matches || !sel || idx === prevIdx && prevIdx != null) return;
+    const x = (n) => n.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
+    const prev = sel.previousElementSibling, next = sel.nextElementSibling;
+    const gap = 12, view = el.clientWidth;
+    const L = Math.max(0, x(prev || sel) - gap), R = x(next || sel) + (next || sel).offsetWidth + gap;
+    let t = prevScroll;
+    if (prevIdx == null || idx > prevIdx) { if (L < t) t = L; if (R > t + view) t = R - view; }
+    else { if (R > t + view) t = R - view; if (L < t) t = L; }
+    if (t !== prevScroll) el.scrollTo({ left: Math.max(0, t), behavior: 'smooth' });
   };
   el.innerHTML = '';
   const chip = (parent, label, value) => {
@@ -146,7 +153,7 @@ function renderChips(el, key, onChange) {
   const chips = {};
   ['Alle', ...TOP].forEach((c) => { chips[c] = chip(el, c, c); });
   const group = inGroup(state[key]);
-  if (!group) { nudge(); return; }
+  if (!group) { nudge(chips[state[key]]); return; }
   const sub = document.createElement('div');
   sub.className = 'subchips';
   chip(sub, 'Alle ' + group, group);
@@ -154,7 +161,7 @@ function renderChips(el, key, onChange) {
   if (window.matchMedia('(max-width: 700px)').matches) {
     // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
     chips[group].after(sub);
-    nudge();
+    nudge(chips[group]);
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
