@@ -331,13 +331,6 @@ select:focus-visible { outline: 0; box-shadow: 0 0 0 2px #0074e8; }
 /* Beschriftung „Kategorie“ im Upload-Bereich kräftiger */
 .upload .field-inline { font-size: 14px; font-weight: 700; }
 
-/* Wunschliste: Link zum Shop unter dem Teil */
-.card .meta .shop {
-  display: inline-block; max-width: 100%; margin-top: 8px; padding: 4px 8px; border-radius: 10px;
-  background: var(--gray); color: var(--text); font-size: 12px; font-weight: 600; text-decoration: none;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top;
-}
-@media (hover: hover) and (pointer: fine) { .card .meta .shop:hover { background: var(--gray-hover); } }
 @media (max-width: 700px) { .tab { font-size: 13px; padding: 12px 4px; } }
 
 /* Anmeldung */
@@ -434,8 +427,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .inbox-item { padding: 12px 0; border-bottom: 1px solid var(--gray-hover); display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .inbox-item.unread b::before { content: '● '; color: var(--red); }
 .inbox-item p { margin: 0; }
-#wishMatches { margin-bottom: 12px; }
-#wishMatches .member { width: 100%; margin-bottom: 8px; }
 
 /* ---------- Plus neben den Kategorien (Computer und Handy) ---------- */
 .filter-row { display: flex; align-items: center; gap: 12px; }
@@ -637,7 +628,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, sel
 /* Karten und Flächen */
 .card .img, .pick, .up-preview, .palette, .dropbox, dialog img, .up-draw { border-radius: var(--r-card); }
 .account { border-radius: var(--r-card); }
-.member, .pub-banner, .pay-hint, .card .meta .shop { border-radius: var(--r-ctrl); }
+.member, .pub-banner, .pay-hint { border-radius: var(--r-ctrl); }
 .panel, .upload, .stage, dialog { border-radius: var(--r-panel); }
 .grid { gap: 24px var(--gap); }
 .outfits { gap: 24px var(--gap); }
@@ -849,7 +840,7 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .outfit-sub { font-size: 16px; }
 .outfit-items { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 @media (min-width: 800px) { .outfit-page { grid-template-columns: 360px 1fr; align-items: start; } .outfit-photo img { margin: 0; } }
-#outfitsEmpty { margin-top: calc(var(--h-chip) + var(--gap)); } /* gleiche Höhe wie bei Schrank und Wunschliste (dort steht darüber die Kategorienzeile) */
+#outfitsEmpty { margin-top: calc(var(--h-chip) + var(--gap)); } /* gleiche Höhe wie beim Schrank (dort steht darüber die Kategorienzeile) */
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } /* nur für Screenreader, damit die Liste oben bündig mit den anderen Ansichten startet */
 .thread-head { margin-bottom: 16px; }
 
@@ -994,7 +985,7 @@ main { padding: var(--s-2) var(--pad-page) var(--s-7); }
 
 /* Karten */
 .card .meta { padding: var(--s-2) var(--s-1) 0; }
-.card .meta .note, .card .meta .shop { margin-top: var(--s-1); }
+.card .meta .note { margin-top: var(--s-1); }
 .card-actions { padding: var(--s-2) 0 0; }
 .feed-owner { padding: 0 0 var(--s-2); gap: var(--s-2); }
 .feed-card .meta { gap: var(--s-1); }

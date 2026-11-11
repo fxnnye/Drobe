@@ -6,7 +6,6 @@ const CONDS = ['Neu / DS', 'Sehr gut', 'Gut', 'Getragen'];
 const RARITIES = ['Alltag', 'Rare', 'Grail'];
 const VIS = {
   items: { private: 'Privat', public: 'Öffentlich', sale: 'Zum Verkauf' },
-  wishlist: { private: 'Privat', public: 'Öffentlich' },
   outfits: { private: 'Privat', public: 'Öffentlich' },
 };
 const visOf = (rec) => rec.vis || 'private';
@@ -249,7 +248,7 @@ function brandSuggest(input) {
   list.hidden = true;
   input.after(list);
   let accepted = null; // Schreibweise, die der Nutzer bestätigt hat: dazu erscheint keine Liste mehr
-  const used = () => [...(typeof items !== 'undefined' ? items : []), ...(typeof wishlist !== 'undefined' ? wishlist : [])].map((r) => r.brand).filter(Boolean);
+  const used = () => [...(typeof items !== 'undefined' ? items : [])].map((r) => r.brand).filter(Boolean);
   const hide = () => { list.hidden = true; list.replaceChildren(); };
   const take = (value) => { input.value = value; accepted = value; hide(); };
   const row = (label, value, cls) => {

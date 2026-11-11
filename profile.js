@@ -75,20 +75,6 @@ const Profile = (() => {
   }
   const money = (n) => Number(n).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
-  /* ---------- Treffer: passt ein Wunsch zu einem Teil? ---------- */
-  const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').trim();
-  const words = (s) => norm(s).split(/\s+/).filter((t) => t.length >= 3);
-  // Gleiche Artikelnummer ist ein sicherer Treffer; sonst müssen Marke gleich sein, die Größe (falls beide angegeben) passen
-  // und mindestens die Hälfte der Wörter aus dem Wunschnamen im Namen des Teils vorkommen.
-  function matches(wish, item) {
-    if (wish.sku && item.sku && norm(wish.sku).replace(/ /g, '') === norm(item.sku).replace(/ /g, '')) return true;
-    if (!wish.brand || !item.brand || norm(wish.brand) !== norm(item.brand)) return false;
-    if (wish.size && item.size && norm(wish.size) !== norm(item.size)) return false;
-    const a = words(wish.name), b = new Set(words(item.name));
-    return !a.length || a.filter((t) => b.has(t)).length >= Math.ceil(a.length / 2);
-  }
-  const mine = (k) => (k === 'items' ? (typeof items !== 'undefined' ? items : []) : (typeof wishlist !== 'undefined' ? wishlist : []));
-
   function card(rec, urls, tags, action, open) {
     const c = el('div', 'card');
     const img = el(open ? 'button' : 'div', 'img');
@@ -158,7 +144,7 @@ const Profile = (() => {
       if (res.error) throw res.error;
       data = res.data;
       if (data && Cloud.user()) await loadBlocks(sb);
-      if (data) urls = await signedUrls(sb, [...data.items, ...data.outfits, ...data.wishlist].map((r) => r.path));
+      if (data) urls = await signedUrls(sb, [...data.items, ...data.outfits].map((r) => r.path));
     } catch (e) {
       console.error(e);
       if (name === parseHash()) message(box, 'Das Profil konnte nicht geladen werden.', { retry: () => render(name) });
@@ -177,7 +163,7 @@ const Profile = (() => {
     paintAvatar(av, own ? ownAvatar : null, data.username);
     const info = el('div', 'me-info');
     info.append(el('strong', null, data.username));
-    info.append(el('span', 'muted small', [cnt(data.items.length, 'Teil', 'Teile'), cnt(data.outfits.length, 'Outfit', 'Outfits'), cnt(data.wishlist.length, 'Wunsch', 'Wünsche')].join(' · ')));
+    info.append(el('span', 'muted small', [cnt(data.items.length, 'Teil', 'Teile'), cnt(data.outfits.length, 'Outfit', 'Outfits')].join(' · ')));
     const about = [data.city, data.followers ? cnt(data.followers, 'Follower', 'Follower') : ''].filter(Boolean).join(' · ');
     if (about) info.append(el('span', 'muted small', about));
     if (data.bio) info.append(el('span', 'small pub-bio', data.bio));
@@ -211,37 +197,24 @@ const Profile = (() => {
       box.append(bar);
     }
 
-    // Bei fremden Profilen: „Interesse“ an Teilen, „Hab ich“ bei Wünschen und Treffer mit der eigenen Liste
+    // Bei fremden Profilen: „Interesse“ an Teilen
     const askLogin = () => Cloud.showAuth(false);
     const rep = (rec) => ({ label: 'Melden', fn: me ? () => askReport(data.username, rec) : askLogin });
-    const wishMatch = (it) => mine('wishlist').find((w) => matches(w, it));
-    const itemMatch = (w) => mine('items').find((i) => matches(w, i));
     const itemCard = (it) => {
-      const tags = itemTags(it), w = !own && me ? wishMatch(it) : null;
-      if (w) tags.unshift(['Passt zu deinem Wunsch: ' + w.name, 'match']);
+      const tags = itemTags(it);
       const buy = it.vis === 'sale';
       const open = () => { location.hash = itemLink(data.username, it.id); };
       return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: 'Anfrage senden', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) }, open);
     };
-    const wishCard = (w) => {
-      const m = !own && me ? itemMatch(w) : null;
-      const tags = m ? [['Du hast: ' + m.name, 'match']] : [];
-      return card(w, urls, tags, own ? null : { label: 'Hab ich', fn: me ? () => askInterest('have', data.username, w, m) : askLogin, alt: rep(w) });
-    };
-    if (!own && me) {
-      const n = data.items.filter(wishMatch).length;
-      if (n) box.append(el('p', 'pub-banner match', n === 1 ? 'Ein Teil hier passt zu deiner Wunschliste.' : n + ' Teile hier passen zu deiner Wunschliste.'));
-    }
-
-    // Gleicher Aufbau wie das eigene Profil: Reiter Schrank, Outfits, Wunschliste; im Schrank Kategorie-Chips
+    // Gleicher Aufbau wie das eigene Profil: Reiter Schrank und Outfits; im Schrank Kategorie-Chips
     const byId = new Map(data.items.map((i) => [i.id, i]));
     const pinned = data.showcase.map((id) => byId.get(id)).filter(Boolean);
-    if (!data.items.length && !data.outfits.length && !data.wishlist.length) { box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.')); return; }
+    if (!data.items.length && !data.outfits.length) { box.append(el('p', 'muted', 'Hier ist noch nichts öffentlich.')); return; }
     const tabs = el('div', 'subtabs');
     tabs.setAttribute('role', 'tablist');
     const pane = el('div');
     let tab = data.items.length || !data.outfits.length ? 'closet' : 'outfits', cat = 'Alle';
-    const tabDefs = [['closet', 'Schrank'], ['outfits', 'Outfits', data.outfits.length], ['wishlist', 'Wunschliste']];
+    const tabDefs = [['closet', 'Schrank'], ['outfits', 'Outfits', data.outfits.length]];
     const grid = (cards, cls) => { const g = el('div', 'grid' + (cls ? ' ' + cls : '')); g.append(...cards); return g; };
     const tile = (rec, sub, open, extra) => {
       const c = card(rec, urls, null, extra || null, open);
@@ -253,9 +226,7 @@ const Profile = (() => {
     };
     const itemSub = (it) => [it.category, it.vis === 'sale' ? (it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf') : 'Öffentlich'].filter(Boolean).join(' · ');
     const itemTile = (it) => {
-      const w = !own && me ? wishMatch(it) : null;
       const c = tile(it, itemSub(it), () => { location.hash = itemLink(data.username, it.id); });
-      if (w) c.querySelector('.meta').append(el('span', 'pub-tag match', 'Passt zu deinem Wunsch: ' + w.name));
       if (!own) withHeart(c, 'item', data.username, it.id);
       return c;
     };
@@ -285,8 +256,6 @@ const Profile = (() => {
         pane.append(list.length ? grid(list.map(itemTile)) : el('p', 'muted', 'Nichts in dieser Kategorie.'));
       } else if (tab === 'outfits') {
         pane.append(data.outfits.length ? grid(data.outfits.map((o) => { const c = tile(o, 'Öffentlich', () => { location.hash = outfitLink(data.username, o.id); }); return c; }), 'outfits') : el('p', 'muted', 'Keine öffentlichen Outfits.'));
-      } else {
-        pane.append(data.wishlist.length ? grid(data.wishlist.map(wishCard)) : el('p', 'muted', 'Keine Wünsche.'));
       }
     };
     box.append(tabs, pane);
@@ -640,21 +609,17 @@ const Profile = (() => {
     } finally { $('repSend').disabled = false; }
   }
 
-  /* ---------- Interesse und „Hab ich“ ---------- */
+  /* ---------- Interesse / Kaufanfrage ---------- */
   let intCtx = null;
-  function askInterest(kind, to, rec, myItem) {
-    intCtx = { kind, to, rec, ref: null };
-    const buy = kind === 'interest' && rec.vis === 'sale';
-    $('intTitle').textContent = buy ? 'Kaufanfrage' : kind === 'interest' ? 'Anfrage' : 'Hab ich';
+  function askInterest(kind, to, rec) {
+    intCtx = { kind, to, rec };
+    const buy = rec.vis === 'sale';
+    $('intTitle').textContent = buy ? 'Kaufanfrage' : 'Anfrage';
     $('intPayHint').hidden = !buy;
-    $('intWhat').textContent = (kind === 'interest' ? to + ' · ' : to + ' sucht · ') + (rec.name || '');
+    $('intWhat').textContent = to + ' · ' + (rec.name || '');
     $('intMsg').value = '';
     $('intError').textContent = '';
-    // Ein passendes eigenes Teil lässt sich anhängen, wenn es öffentlich ist (sonst könnte die Person es nicht sehen)
-    const pub = kind === 'have' && myItem && myItem.vis && myItem.vis !== 'private';
-    $('intRefRow').hidden = !pub;
-    if (pub) { intCtx.ref = myItem.id; $('intRefText').textContent = 'Mein Teil anhängen: ' + myItem.name; $('intRef').checked = true; }
-    $('intMsg').placeholder = kind === 'interest' ? 'z. B. Ist es noch da?' : 'z. B. Habe ich in Größe L';
+    $('intMsg').placeholder = 'z. B. Ist es noch da?';
     $('interestDialog').showModal();
   }
   async function sendInterest() {
@@ -664,16 +629,14 @@ const Profile = (() => {
     try {
       const { error } = await sb.rpc('send_interest', {
         p_to: c.to, p_kind: c.kind, p_record_id: c.rec.id,
-        p_message: $('intMsg').value.trim() || null, p_ref_item: c.ref && $('intRef').checked ? c.ref : null,
+        p_message: $('intMsg').value.trim() || null, p_ref_item: null,
       });
       if (error) throw error;
       $('interestDialog').close();
-      toast(c.kind === 'interest' ? 'Anfrage gesendet' : 'Gesendet');
-      if (c.kind === 'interest') { // weiter zu den Nachrichten, dort läuft die Unterhaltung
-        history.pushState(null, '', location.pathname + location.search);
-        await route();
-        showView('messages');
-      }
+      toast('Anfrage gesendet');
+      history.pushState(null, '', location.pathname + location.search); // weiter zu den Nachrichten, dort läuft die Unterhaltung
+      await route();
+      showView('messages');
     } catch (e) {
       console.error(e);
       $('intError').textContent = (e && e.message) || 'Das hat nicht geklappt.';
@@ -948,30 +911,6 @@ const Profile = (() => {
     $('threadWho').onclick = () => { if (thread) location.hash = '#/u/' + thread.other; };
     $('threadForm').onsubmit = (e) => sendReply(e);
     $('threadPhoto').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) sendReply(null, f); };
-  }
-
-  // Zu einem Wunsch passende öffentliche Teile anderer suchen
-  async function findFor(w, box, onOpen) {
-    box.replaceChildren();
-    const note = (t) => box.append(el('p', 'muted small', t));
-    const sb = Cloud.client();
-    if (!w.brand.trim()) return note('Trag zuerst unter „Details und Sichtbarkeit“ eine Marke ein, dann kann ich passende Teile suchen.');
-    if (!sb || !navigator.onLine) return note('Dafür brauchst du eine Internetverbindung.');
-    note('Suche …');
-    let list;
-    try {
-      const { data, error } = await sb.rpc('find_public_items', { p_brand: w.brand, p_query: w.name, p_size: w.size || null });
-      if (error) throw error;
-      list = data || [];
-    } catch (e) { console.error(e); box.replaceChildren(); return note('Die Suche ist gerade nicht verfügbar.'); }
-    box.replaceChildren();
-    if (!list.length) return note('Noch keine passenden öffentlichen Teile.');
-    for (const it of list) {
-      const b = el('button', 'member', it.username + ' · ' + (it.name || '') + (it.size ? ' · ' + it.size : '') + (it.vis === 'sale' && it.price != null ? ' · ' + money(it.price) : ''));
-      b.type = 'button';
-      b.onclick = () => { if (onOpen) onOpen(); location.hash = '#/u/' + it.username; };
-      box.append(b);
-    }
   }
 
   /* ---------- Eigenes Profil: Foto, Text, Stadt ---------- */
@@ -1458,5 +1397,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, rec.outfit ? 'outfits' : shape));
   }
 
-  return { paintOwnAvatars, matches, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, findFor, feed, feedStage, showFeed, showFlex, loadInbox, leaveThread };
+  return { paintOwnAvatars, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, feed, feedStage, showFeed, showFlex, loadInbox, leaveThread };
 })();

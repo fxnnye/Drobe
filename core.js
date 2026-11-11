@@ -48,7 +48,7 @@ function openDb(name) {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(name, 2);
     req.onupgradeneeded = () => {
-      for (const name of ['items', 'outfits', 'wishlist']) {
+      for (const name of ['items', 'outfits']) {
         if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, { keyPath: 'id' });
       }
     };
@@ -83,14 +83,12 @@ async function dbDel(s, id) {
 /* ---------- Zustand ---------- */
 let items = [];
 let outfits = [];
-let wishlist = [];
 const urls = new Map(); // id -> Object-URL
 const state = {
   view: 'feed',
   search: '',
   searchMode: 'items',
   closetFilter: 'Alle',
-  wishFilter: 'Alle',
   pickerFilter: 'Alle',
   outfit: { id: null, name: '', layers: [] }, // layers: {uid,itemId,x,y,w}
   selected: null,

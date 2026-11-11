@@ -72,7 +72,7 @@ $('menuBtn').onclick = () => { showSetPanel('main'); settingsDlg.showModal(); };
 $('settingsClose').onclick = () => settingsDlg.close();
 $('backupOpen').onclick = () => {
   settingsDlg.close();
-  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits, ${wishlist.length} Wünsche.`;
+  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits.`;
   backupDlg.showModal();
 };
 
@@ -113,7 +113,7 @@ $('delGo').onclick = async () => {
 /* ---------- Willkommen (nur beim ersten Start ohne Inhalte) ---------- */
 function maybeWelcome() {
   try {
-    if (localStorage.getItem('jawnz-welcomed') || items.length || outfits.length || wishlist.length) return;
+    if (localStorage.getItem('jawnz-welcomed') || items.length || outfits.length) return;
     $('welcomeDialog').showModal();
   } catch (e) { /* ohne Speicher: kein Willkommen */ }
 }
@@ -151,7 +151,7 @@ document.querySelectorAll('#langChips .chip').forEach((c) => {
 $('backupClose').onclick = () => backupDlg.close();
 
 $('backupExport').onclick = async () => {
-  if (!items.length && !outfits.length && !wishlist.length) return toast('Es gibt noch nichts zu sichern');
+  if (!items.length && !outfits.length) return toast('Es gibt noch nichts zu sichern');
   const btn = $('backupExport');
   btn.disabled = true;
   try {
@@ -161,10 +161,6 @@ $('backupExport').onclick = async () => {
         id: i.id, name: i.name, category: i.category, created: i.created, scale: i.scale, note: i.note, image: await blobToDataUrl(i.blob),
         ...cleanDetails(i, 'items'),
         source: i.source ? await blobToDataUrl(i.source) : undefined, srcBox: i.source ? i.srcBox : undefined,
-      }))),
-      wishlist: await Promise.all(wishlist.map(async (w) => ({
-        id: w.id, name: w.name, category: w.category, created: w.created, note: w.note, link: w.link, image: await blobToDataUrl(w.blob),
-        ...cleanDetails(w, 'wishlist'),
       }))),
       outfits: await Promise.all(outfits.map(async (o) => ({
         id: o.id, name: o.name, layers: o.layers, bg: o.bg || '#ffffff', created: o.created, thumb: await blobToDataUrl(o.thumb),
@@ -197,8 +193,7 @@ async function importBackup(file) {
   }
   const haveItems = new Set(items.map((i) => i.id));
   const haveOutfits = new Set(outfits.map((o) => o.id));
-  const haveWish = new Set(wishlist.map((w) => w.id));
-  let addedItems = 0, addedOutfits = 0, addedWish = 0;
+  let addedItems = 0, addedOutfits = 0;
   for (const i of data.items) {
     if (typeof i.id !== 'string' || haveItems.has(i.id) || typeof i.image !== 'string' || !i.image.startsWith('data:image/')) continue;
     const category = CATEGORIES.includes(i.category) ? i.category : (LEGACY[i.category] || 'Shirts');
@@ -232,26 +227,11 @@ async function importBackup(file) {
     outfits.push(rec);
     addedOutfits++;
   }
-  for (const w of Array.isArray(data.wishlist) ? data.wishlist : []) {
-    if (typeof w.id !== 'string' || haveWish.has(w.id) || typeof w.image !== 'string' || !w.image.startsWith('data:image/')) continue;
-    const rec = {
-      id: w.id, name: String(w.name || 'Neues Teil').slice(0, 60),
-      category: CATEGORIES.includes(w.category) ? w.category : (LEGACY[w.category] || 'Shirts'),
-      blob: await dataUrlToBlob(w.image), created: num(w.created) ? w.created : Date.now(),
-    };
-    if (typeof w.note === 'string' && w.note.trim()) rec.note = w.note.trim().slice(0, 120);
-    Object.assign(rec, cleanDetails(w, 'wishlist'));
-    const link = typeof w.link === 'string' ? cleanLink(w.link) : '';
-    if (link) rec.link = link;
-    await dbPut('wishlist', rec);
-    wishlist.push(rec);
-    addedWish++;
-  }
   items.sort((a, b) => a.created - b.created);
-  renderCloset(); renderOutfits(); renderPicker(); renderWishlist();
-  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits, ${wishlist.length} Wünsche.`;
-  toast(addedItems || addedOutfits || addedWish
-    ? `${addedItems} Teile, ${addedOutfits} Outfits und ${addedWish} Wünsche hinzugefügt`
+  renderCloset(); renderOutfits(); renderPicker();
+  $('backupInfo').textContent = `Aktuell gespeichert: ${items.length} Teile, ${outfits.length} Outfits.`;
+  toast(addedItems || addedOutfits
+    ? `${addedItems} Teile und ${addedOutfits} Outfits hinzugefügt`
     : 'Alles aus dem Backup war schon vorhanden');
 }
 $('backupFile').addEventListener('change', (e) => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });

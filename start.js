@@ -3,20 +3,14 @@
 fillSelect($('uploadCategory'));
 fillSelect($('itemCategory'));
 fillSelect($('upCategory'));
-fillSelect($('wishCategory'));
-fillSelect($('wishUploadCategory'));
 buildDetails($('itemMore'), 'itd', 'items');
-buildDetails($('wishMore'), 'wsd', 'wishlist');
-['upBrand', 'itdbrand', 'wsdbrand'].forEach((id) => brandSuggest($(id)));
-[['upSize', 'upCategory'], ['itdsize', 'itemCategory'], ['wsdsize', 'wishCategory']].forEach(([id, cat]) => sizeSuggest($(id), cat));
+['upBrand', 'itdbrand'].forEach((id) => brandSuggest($(id)));
+[['upSize', 'upCategory'], ['itdsize', 'itemCategory']].forEach(([id, cat]) => sizeSuggest($(id), cat));
 
 // Alte Kategorien umsortieren (z. B. Outerwear → Jacken, Oberteile → Shirts, Accessoires → Taschen)
 async function migrateCategories() {
   for (const it of items) {
     if (!CATEGORIES.includes(it.category)) { it.category = LEGACY[it.category] || 'Shirts'; await dbPut('items', it); }
-  }
-  for (const w of wishlist) {
-    if (!CATEGORIES.includes(w.category)) { w.category = LEGACY[w.category] || 'Shirts'; await dbPut('wishlist', w); }
   }
 }
 
@@ -46,7 +40,7 @@ async function backfillTrim() {
   trimBusy = true;
   let changed = false;
   try {
-    for (const [kind, list] of [['items', items], ['wishlist', wishlist]]) {
+    for (const [kind, list] of [['items', items]]) {
       for (const it of list.filter((i) => i.blob && i.trimV !== TRIM_V)) {
         try {
           const t = await retrimBlob(it.blob);
@@ -64,19 +58,18 @@ async function backfillTrim() {
       }
     }
   } finally { trimBusy = false; }
-  if (changed) { renderCloset(); renderWishlist(); renderOutfits(); renderPicker(); }
+  if (changed) { renderCloset(); renderOutfits(); renderPicker(); }
 }
 
 // Alles aus dem lokalen Speicher neu einlesen und anzeigen (nach dem Abgleich mit dem Konto)
 async function reloadAll() {
-  [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
+  [items, outfits] = await Promise.all([dbAll('items'), dbAll('outfits')]);
   await migrateCategories();
   for (const u of urls.values()) URL.revokeObjectURL(u);
   urls.clear();
   items.sort((a, b) => a.created - b.created);
-  wishlist.sort((a, b) => a.created - b.created);
   outfits.sort((a, b) => a.created - b.created);
-  renderCloset(); renderWishlist(); renderOutfits(); renderPicker();
+  renderCloset(); renderOutfits(); renderPicker();
   upgradeOutfitThumbs().catch((e) => console.error(e));
   backfillColors();
   backfillTrim();
@@ -94,7 +87,7 @@ function readLegacyDb() {
       const old = req.result;
       const out = {};
       try {
-        for (const name of ['items', 'outfits', 'wishlist']) {
+        for (const name of ['items', 'outfits']) {
           out[name] = old.objectStoreNames.contains(name)
             ? await new Promise((res, rej) => { const r = old.transaction(name, 'readonly').objectStore(name).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })
             : [];
@@ -111,13 +104,13 @@ async function offerLegacy(userId) {
   try { if (localStorage.getItem(flag)) return; } catch (e) { return; }
   const old = await readLegacyDb();
   if (!old) return;
-  const total = old.items.length + old.outfits.length + old.wishlist.length;
+  const total = old.items.length + old.outfits.length;
   if (!total) return;
-  const text = `Auf diesem Gerät liegen noch ${old.items.length} Teile, ${old.outfits.length} Outfits und ${old.wishlist.length} Wünsche von vor dem Login. In dein Konto übernehmen?`;
+  const text = `Auf diesem Gerät liegen noch ${old.items.length} Teile und ${old.outfits.length} Outfits von vor dem Login. In dein Konto übernehmen?`;
   const yes = await askConfirm(text, 'Übernehmen');
   try { localStorage.setItem(flag, '1'); } catch (e) { /* egal */ } // die Frage kommt nur einmal, egal wie die Antwort ausfällt
   if (!yes) return;
-  for (const name of ['items', 'outfits', 'wishlist']) {
+  for (const name of ['items', 'outfits']) {
     const have = new Set((await dbAll(name)).map((r) => r.id));
     for (const rec of old[name]) {
       if (have.has(rec.id)) continue;
@@ -134,8 +127,7 @@ async function startApp(userId) {
   try {
     db = await openDb('kleiderschrank-u-' + userId);
     await offerLegacy(userId);
-    [items, outfits, wishlist] = await Promise.all([dbAll('items'), dbAll('outfits'), dbAll('wishlist')]);
-    wishlist.sort((a, b) => a.created - b.created);
+    [items, outfits] = await Promise.all([dbAll('items'), dbAll('outfits')]);
   } catch (e) {
     console.error(e);
     toast('Speicher im Browser nicht verfügbar');
@@ -143,7 +135,6 @@ async function startApp(userId) {
   await migrateCategories();
   items.sort((a, b) => a.created - b.created);
   renderCloset();
-  renderWishlist();
   renderOutfits();
   showView('feed');
   maybeWelcome();
@@ -170,8 +161,8 @@ document.querySelectorAll('dialog').forEach((d) => {
   d.addEventListener('pointerdown', (e) => { down = e.target === d && outside(e); });
   d.addEventListener('click', (e) => { if (down && e.target === d && outside(e)) d.close(); down = false; });
 });
-// Enter speichert und schließt den Dialog (Teil, Wunschliste, Hochladen, Profil). Mehrzeilige Felder (Notizen, Über mich) machen einen Absatz.
-[['itemDialog', 'itemSave'], ['wishDialog', 'wishSave'], ['uploadDialog', 'upAdd'], ['profileDialog', 'profTextSave']].forEach(([d, btn]) => {
+// Enter speichert und schließt den Dialog (Teil, Hochladen, Profil). Mehrzeilige Felder (Notizen, Über mich) machen einen Absatz.
+[['itemDialog', 'itemSave'], ['uploadDialog', 'upAdd'], ['profileDialog', 'profTextSave']].forEach(([d, btn]) => {
   $(d).addEventListener('keydown', (e) => {
     const t = e.target;
     if (e.key !== 'Enter' || e.isComposing || e.shiftKey || ['TEXTAREA', 'BUTTON', 'A', 'SELECT', 'SUMMARY'].includes(t.tagName) || (t.tagName === 'INPUT' && ['file', 'checkbox', 'radio'].includes(t.type))) return;

@@ -104,18 +104,6 @@ test('Farbe nur aus der Liste, hex nur gültig', () => {
   eq(cd({ color: 'Beige', hex: 'rot' }), { color: 'Beige' });
   eq(cd({ color: 'Türkis' }), {});
 });
-test('Wunschliste nimmt keinen Zustand an', () => eq(cd({ cond: 'Gut', vis: 'public' }, 'wishlist'), { vis: 'public' }));
-test('Wunschliste kennt kein „Verkauf“', () => eq(cd({ vis: 'sale', price: 5 }, 'wishlist'), {}));
-
-/* ---------- Treffer Wunsch ↔ Teil ---------- */
-group('Treffer Wunschliste');
-const m = (w, i) => W('Profile').matches(w, i);
-test('gleiche Artikelnummer trifft immer', () => ok(m({ sku: 'AB-123' }, { sku: 'ab 123' })));
-test('andere Marke trifft nicht', () => ok(!m({ brand: 'Nike', name: 'Air Max' }, { brand: 'Adidas', name: 'Air Max' })));
-test('gleiche Marke und Wörter trifft', () => ok(m({ brand: 'Nike', name: 'Air Max 90' }, { brand: 'nike', name: 'Nike Air Max 90 weiß' })));
-test('falsche Größe trifft nicht', () => ok(!m({ brand: 'Nike', name: 'Air Max', size: '42' }, { brand: 'Nike', name: 'Air Max', size: '44' })));
-test('ohne Größe am Teil trifft', () => ok(m({ brand: 'Nike', name: 'Air Max', size: '42' }, { brand: 'Nike', name: 'Air Max' })));
-test('ganz anderer Name trifft nicht', () => ok(!m({ brand: 'Nike', name: 'Tech Fleece Hoodie' }, { brand: 'Nike', name: 'Air Max Schuhe' })));
 
 /* ---------- Kleinteile ---------- */
 group('Kleinteile');
@@ -254,12 +242,11 @@ test('Englisch: Sätze mit Zahlen, Namen und Serverfehler', async () => {
     eq(tr('1 Teil'), '1 item'); eq(tr('5 Teile'), '5 items');
     eq(tr('Foto 2 von 4'), 'Photo 2 of 4');
     eq(tr('Wird hinzugefügt … 1/3'), 'Adding … 1/3');
-    eq(tr('Passt zu deinem Wunsch: Jacke'), 'Matches your wish: Jacke');
     eq(tr('Kein Zugriff.'), 'No access.');
     eq(tr('Das bist du selbst.'), 'That is you.');
     eq(tr('Annehmen'), 'Accept'); eq(tr('Als verkauft markieren'), 'Mark as sold');
     eq(tr('Angebot abgelehnt.'), 'Offer declined.');
-    eq(tr('Aktuell gespeichert: 4 Teile, 2 Outfits, 1 Wünsche.'), 'Currently saved: 4 items, 2 outfits, 1 wishes.');
+    eq(tr('Aktuell gespeichert: 4 Teile, 2 Outfits.'), 'Currently saved: 4 items, 2 outfits.');
   } finally { localStorage.removeItem('jawnz-lang'); f.remove(); }
 });
 

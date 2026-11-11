@@ -6,7 +6,7 @@ const Cloud = (() => {
   const MAIL_DOMAIN = 'drobe.example.com'; // frühere Pseudo-Adressen, werden bei der Registrierung abgelehnt
   const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const isPseudo = (m) => String(m || '').toLowerCase().endsWith('@' + MAIL_DOMAIN);
-  const KINDS = ['items', 'outfits', 'wishlist'];
+  const KINDS = ['items', 'outfits'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
   const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp'];
   const srcPath = (kind, id) => `${user.id}/${kind}-${id}-src`; // Ausgangsfoto zum Zurückholen von Hintergrund

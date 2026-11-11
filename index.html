@@ -167,7 +167,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
   </section>
 
-  <!-- MEIN PROFIL: Kopf mit Reitern für Schrank, Outfits und Wunschliste -->
+  <!-- MEIN PROFIL: Kopf mit Reitern für Schrank, Outfits und Gemerkt -->
   <div class="me-bar" id="meBar" hidden>
     <div class="me-head">
       <span class="avatar" id="meAvatar" aria-hidden="true"></span>
@@ -181,7 +181,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="subtabs" role="tablist">
       <button class="subtab active" type="button" data-sub="closet">Schrank</button>
       <button class="subtab" type="button" data-sub="outfits">Outfits <span id="outfitCount" class="badge">0</span></button>
-      <button class="subtab" type="button" data-sub="wishlist">Gemerkt</button>
+      <button class="subtab" type="button" data-sub="saved">Gemerkt</button>
 
     </div>
   </div>
@@ -205,7 +205,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   </section>
 
   <!-- GEMERKT: Teile und Outfits anderer, die ich mit „Merken“ gespeichert habe -->
-  <section id="view-wishlist" class="view">
+  <section id="view-saved" class="view">
     <div class="chips feed-switch" id="savedSwitch">
       <button class="chip active" type="button" data-kind="items">Teile</button>
       <button class="chip" type="button" data-kind="outfits">Outfits</button>
@@ -228,10 +228,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   <section id="view-add" class="view">
     <button class="btn builder-back back-btn" type="button" id="addBack">Zurück</button>
     <h2 class="page-title">Hinzufügen</h2>
-    <div class="chips" id="addTarget">
-      <button class="chip active" type="button" data-target="closet">Schrank</button>
-      <button class="chip" type="button" data-target="wish">Wunschliste</button>
-    </div>
     <div class="upload" id="dropzone">
       <div>
         <strong>Klamotten hochladen</strong>
@@ -246,21 +242,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
           <input type="file" id="fileInput" accept="image/*" multiple hidden>
         </label>
         <button class="btn" type="button" id="vintedOpen">Von Vinted übernehmen</button>
-      </div>
-    </div>
-    <div class="upload" id="wishDrop">
-      <div>
-        <strong>Wunschliste</strong>
-        <p class="muted">Fotos von Teilen, die du kaufen willst. Du kannst Preis und einen Link zum Shop dazuschreiben.</p>
-      </div>
-      <div class="upload-actions">
-        <label class="field-inline">Kategorie
-          <select id="wishUploadCategory"></select>
-        </label>
-        <label class="btn primary">
-          Fotos auswählen
-          <input type="file" id="wishFileInput" accept="image/*" multiple hidden>
-        </label>
       </div>
     </div>
   </section>
@@ -383,34 +364,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
-<dialog id="wishDialog">
-  <form method="dialog" onsubmit="return false">
-    <img id="wishPreview" alt="">
-    <label class="field">Name
-      <input type="text" id="wishName" maxlength="60">
-    </label>
-    <label class="field">Kategorie
-      <select id="wishCategory"></select>
-    </label>
-    <label class="field">Preis / Notiz
-      <textarea id="wishNote" rows="2" maxlength="120" placeholder="z. B. 89 €"></textarea>
-    </label>
-    <label class="field">Link zum Shop
-      <input type="text" id="wishLink" inputmode="url" autocapitalize="off" placeholder="https://…">
-    </label>
-    <div id="wishMore"></div>
-    <button class="btn full" type="button" id="wishFind">Passende Teile finden</button>
-    <div id="wishMatches"></div>
-    <button class="btn full" type="button" id="wishBought">Gekauft: in den Schrank legen</button>
-    <div class="row">
-      <button class="btn danger" type="button" id="wishDelete">Löschen</button>
-      <span class="spacer"></span>
-      <button class="btn" type="button" id="wishCancel">Abbrechen</button>
-      <button class="btn primary" type="button" id="wishSave">Speichern</button>
-    </div>
-  </form>
-</dialog>
-
 <dialog id="vintedDialog">
   <form method="dialog" onsubmit="return false">
     <h2>Von Vinted übernehmen</h2>
@@ -481,14 +434,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       </label>
       <p class="muted small" id="upImportHint" hidden></p>
     </div>
-    <div id="upWish" hidden>
-      <label class="field">Preis / Notiz
-        <textarea id="upNote" rows="2" maxlength="120" placeholder="z. B. 89 €"></textarea>
-      </label>
-      <label class="field">Link zum Shop
-        <input type="text" id="upLink" inputmode="url" autocapitalize="off" placeholder="https://…">
-      </label>
-    </div>
     <div class="batch" id="upBatch" hidden>
       <label class="check"><input type="checkbox" id="upAllBg"> Bei allen den Hintergrund entfernen</label>
       <button class="btn full" type="button" id="upAll">Alle hinzufügen</button>
@@ -518,7 +463,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   <form method="dialog" onsubmit="return false">
     <h2 id="intTitle"></h2>
     <p class="muted" id="intWhat"></p>
-    <label class="check" id="intRefRow" hidden><input type="checkbox" id="intRef" checked> <span id="intRefText"></span></label>
     <label class="field">Nachricht (optional)
       <input type="text" id="intMsg" maxlength="200">
     </label>
@@ -623,7 +567,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
 
     <div class="set-panel" data-panel="delete" data-title="Konto löschen" hidden>
-      <p>Dein Konto mit allen Teilen, Outfits, Wünschen, Nachrichten und Fotos wird endgültig gelöscht. Das lässt sich nicht rückgängig machen.</p>
+      <p>Dein Konto mit allen Teilen, Outfits, Nachrichten und Fotos wird endgültig gelöscht. Das lässt sich nicht rückgängig machen.</p>
       <p class="muted small">Die Daten auf diesem Gerät werden ebenfalls entfernt. Speichere vorher ein Backup, wenn du etwas behalten willst.</p>
       <label class="field">Zur Bestätigung deinen Benutzernamen eintippen
         <input type="text" id="delName" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
@@ -711,7 +655,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <h3>Welche Daten verarbeitet werden</h3>
         <ul>
           <li><b>Konto:</b> E-Mail-Adresse, Benutzername und Passwort. Das Passwort wird nur als Hash gespeichert. Die E-Mail-Adresse dient zur Bestätigung und zum Zurücksetzen des Passworts und ist für andere nicht sichtbar. Der Benutzername ist für andere sichtbar.</li>
-          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen, Outfits und Wünschen sowie dein Profiltext (Über mich, Stadt) und dein Profilbild. Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“ oder „Zum Verkauf“ stellst.</li>
+          <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen und Outfits sowie dein Profiltext (Über mich, Stadt) und dein Profilbild. Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“ oder „Zum Verkauf“ stellst.</li>
           <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
           <li><b>Fehlerprotokoll:</b> Tritt in der App ein unerwarteter Fehler auf, werden die Fehlermeldung, die Stelle im Programm, die Seite (ohne Benutzernamen) und die App-Version an den Betreiber gesendet. Es werden keine Inhalte deines Schranks oder deiner Nachrichten mitgeschickt. Die Meldungen werden nach 30 Tagen gelöscht.</li>
           <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
@@ -813,7 +757,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 <script src="upload.js"></script>
 <script src="item.js"></script>
 <script src="outfits.js"></script>
-<script src="wishlist.js"></script>
+<script src="saved.js"></script>
 <script src="settings.js"></script>
 <script src="start.js"></script>
 <script>

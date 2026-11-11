@@ -3,7 +3,7 @@
 const upDlg = $('uploadDialog');
 const BG_LIB = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm';
 // Nach dem Hinzufügen zurück zur Liste, in die die Teile gekommen sind
-const leaveAddPage = () => { if (upAdded && state.view === 'add') showView(upTarget === 'wish' ? 'wishlist' : 'closet'); };
+const leaveAddPage = () => { if (upAdded && state.view === 'add') showView('closet'); };
 let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 
 function trimAlpha(canvas) {
@@ -61,14 +61,12 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
   }
 }
 
-let upTarget = 'closet'; // 'closet' oder 'wish': wohin die aktuell hochgeladenen Fotos kommen
-const upColl = () => (upTarget === 'wish' ? { store: 'wishlist', list: wishlist } : { store: 'items', list: items });
-const renderLists = () => { renderCloset(); renderWishlist(); };
+const upColl = () => ({ store: 'items', list: items });
+const renderLists = () => { renderCloset(); };
 
-async function addFiles(files, target = 'closet') {
+async function addFiles(files) {
   const imgs = [...files].filter((f) => f.type.startsWith('image/'));
   if (!imgs.length) return;
-  if (!upCur) upTarget = target;
   upQueue.push(...imgs);
   upTotal += imgs.length;
   if (!upCur) nextUpload();
@@ -107,12 +105,8 @@ async function nextUpload() {
     upCur = { file: f, orig, src: orig, cut: null, useCut: false, busy: false, url: null, angle: 0 };
     $('upAngle').value = 0;
     $('upName').value = nameFromFile(f);
-    $('upCategory').value = (upTarget === 'wish' ? $('wishUploadCategory') : $('uploadCategory')).value;
-    $('upWish').hidden = upTarget !== 'wish';
-    $('upItem').hidden = upTarget === 'wish';
+    $('upCategory').value = $('uploadCategory').value;
     $('upBrand').value = ''; $('upSize').value = ''; $('upCond').value = ''; $('upColor').value = '';
-    $('upNote').value = '';
-    $('upLink').value = '';
     $('upVis').value = 'public'; $('upVisSale').hidden = true; $('upImportHint').hidden = true;
     upCur.imp = f.imp || null;
     if (upCur.imp) applyImport(upCur.imp);
@@ -597,7 +591,7 @@ function refreshUpload() {
   $('upAdd').disabled = locked;
   $('upSkip').disabled = locked;
   $('upAll').disabled = locked;
-  $('upBatch').hidden = upQueue.length === 0 || upTarget === 'wish'; // Links sind pro Teil, deshalb kein Sammel-Upload
+  $('upBatch').hidden = upQueue.length === 0; 
   if (!u.busy) $('upAll').textContent = `Alle ${upQueue.length + 1} Fotos hinzufügen`;
 }
 bindTool('remove', async () => {
@@ -625,7 +619,6 @@ bindTool('remove', async () => {
 });
 // Marke, Größe und Zustand sind bei Teilen Pflicht; Sichtbarkeit ist vorausgewählt „Öffentlich“
 function upItemDetails() {
-  if (upTarget === 'wish') return {};
   const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
   if (need) { toast('Bitte gib ' + need[1] + ' an'); $(need[0]).focus(); return null; }
   return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, color: $('upColor').value, vis: $('upVis').value, price: upCur && upCur.imp ? upCur.imp.price : undefined }, 'items');
@@ -635,21 +628,15 @@ $('upAdd').addEventListener('click', async () => {
   const coll = upColl();
   const det = upItemDetails();
   if (!det) return;
-  const rawLink = $('upLink').value.trim();
-  const link = upTarget === 'wish' ? cleanLink(rawLink) : '';
-  if (rawLink && upTarget === 'wish' && !link) return toast('Der Link sieht nicht richtig aus');
   const res = await upResult(u);
   const rec = {
     id: uid(), name: $('upName').value.trim() || 'Neues Teil', category: $('upCategory').value,
     blob: res.blob, created: Date.now(),
   };
   if (res.source) { rec.source = res.source; rec.srcBox = res.srcBox; }
-  if (u.imp && upTarget !== 'wish') rec.origin = 'vinted'; // kam aus eigenem Foto und Text des Nutzers
-  const note = $('upNote').value.trim().slice(0, 120);
-  if (upTarget === 'wish' && note) rec.note = note;
-  if (link) rec.link = link;
+  if (u.imp) rec.origin = 'vinted'; // kam aus eigenem Foto und Text des Nutzers
   Object.assign(rec, det);
-  if (upTarget !== 'wish' && !rec.color) applyColor(rec, await detectColor(res.blob)); // von Hand gewählte Farbe hat Vorrang
+  if (!rec.color) applyColor(rec, await detectColor(res.blob)); // von Hand gewählte Farbe hat Vorrang
   await dbPut(coll.store, rec);
   coll.list.push(rec);
   upAdded++;
@@ -704,7 +691,7 @@ $('upAll').addEventListener('click', async () => {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
       const rec = { id: uid(), name: j.name, category, blob, created: Date.now(), ...det };
-      if (upTarget !== 'wish' && !rec.color) applyColor(rec, await detectColor(blob));
+      if (!rec.color) applyColor(rec, await detectColor(blob));
       if (j.res && j.res.source) { rec.source = j.res.source; rec.srcBox = j.res.srcBox; }
       const coll = upColl();
       await dbPut(coll.store, rec);
@@ -734,8 +721,3 @@ const dz = $('dropzone');
 ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
 dz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
-$('wishFileInput').addEventListener('change', (e) => { addFiles(e.target.files, 'wish'); e.target.value = ''; });
-const wdz = $('wishDrop');
-['dragenter', 'dragover'].forEach((ev) => wdz.addEventListener(ev, (e) => { e.preventDefault(); wdz.classList.add('over'); }));
-['dragleave', 'drop'].forEach((ev) => wdz.addEventListener(ev, (e) => { e.preventDefault(); wdz.classList.remove('over'); }));
-wdz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files, 'wish'));

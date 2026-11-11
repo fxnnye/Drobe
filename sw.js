@@ -1,6 +1,6 @@
 // Offline-Cache. Bei Änderung die Version anheben (Datei bleibt 1500 Byte).
-const CACHE = 'drobe-v184';
-const JS = ['colors', 'begriffe', 'profile', 'cloud', 'core', 'details', 'imaging', 'feed', 'closet', 'search', 'upload', 'item', 'outfits', 'wishlist', 'settings', 'start', 'errors', 'i18n'].map((n) => n + '.js');
+const CACHE = 'drobe-v185';
+const JS = ['colors', 'begriffe', 'profile', 'cloud', 'core', 'details', 'imaging', 'feed', 'closet', 'search', 'upload', 'item', 'outfits', 'saved', 'settings', 'start', 'errors', 'i18n'].map((n) => n + '.js');
 const FILES = [
   './', 'index.html', 'style.css', ...JS, 'vendor/supabase.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -35,4 +35,4 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(req).then((hit) => hit || caches.match('index.html')))
   );
 });
-//---------------
+//------------------

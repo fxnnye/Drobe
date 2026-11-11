@@ -1,16 +1,9 @@
 // Navigation, Feed und Filter-Chips (Teil der App, Reihenfolge siehe index.html)
 /* ---------- Navigation ---------- */
-// Hinzufügen-Seite: wählt, ob das Foto in den Schrank oder auf die Wunschliste kommt
-function setAddTarget(t) {
-  $('dropzone').hidden = t !== 'closet';
-  $('wishDrop').hidden = t !== 'wish';
-  document.querySelectorAll('#addTarget .chip').forEach((c) => c.classList.toggle('active', c.dataset.target === t));
-}
-document.querySelectorAll('#addTarget .chip').forEach((c) => { c.onclick = () => setAddTarget(c.dataset.target); });
 document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien
 $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
-// Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Wunschliste sind Unterseiten von „Profil“.
-const ME_VIEWS = ['closet', 'outfits', 'wishlist', 'followers', 'following'];
+// Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Gemerkt sind Unterseiten von „Profil“.
+const ME_VIEWS = ['closet', 'outfits', 'saved', 'followers', 'following'];
 const topTab = (name) => (name === 'builder' || ME_VIEWS.includes(name) ? 'me' : name);
 // Ohne Konto sind nur Feed und Suche offen; alles andere verlangt die Anmeldung
 const isGuest = () => document.body.classList.contains('guest');
@@ -23,15 +16,15 @@ function showView(name) {
   if (name === 'me') name = state.lastMe || 'closet';
   const prev = state.view;
   state.view = name;
-  if (['closet', 'outfits', 'wishlist'].includes(name)) state.lastMe = name;
+  if (['closet', 'outfits', 'saved'].includes(name)) state.lastMe = name;
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
   document.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('active', t.dataset.sub === (name === 'builder' ? 'outfits' : name)));
   $('meBar').hidden = !ME_VIEWS.includes(name);
-  if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; setAddTarget(prev === 'wishlist' ? 'wish' : 'closet'); }
+  if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
   if (name === 'feed') loadFeed(true);
-  if (name === 'wishlist') renderWishlist();
+  if (name === 'saved') renderSaved();
   if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
   if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
   if (name === 'followers' || name === 'following') Profile.loadPeople(name, $(name === 'followers' ? 'followersList' : 'followingList'));
