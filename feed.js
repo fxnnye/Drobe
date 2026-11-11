@@ -123,6 +123,15 @@ const matchesFilter = (it, f) => f === 'Alle' || it.category === f || !!GROUPS[f
 const inGroup = (f) => GROUPS[f] ? f : Object.keys(GROUPS).find((g) => GROUPS[g].includes(f));
 
 function renderChips(el, key, onChange) {
+  const prevScroll = el.scrollLeft, prevIdx = el._idx;
+  const idx = ['Alle', ...TOP].indexOf(inGroup(state[key]) || state[key]);
+  el._idx = idx;
+  // Wechselt die Hauptkategorie, rückt die Reihe leicht in die Richtung weiter, in die man geklickt hat (am Handy)
+  const nudge = () => {
+    if (!window.matchMedia('(max-width: 700px)').matches || prevIdx == null || idx === prevIdx) { el.scrollLeft = prevScroll; return; }
+    el.scrollLeft = prevScroll;
+    el.scrollTo({ left: Math.max(0, prevScroll + (idx > prevIdx ? 70 : -70)), behavior: 'smooth' });
+  };
   el.innerHTML = '';
   const chip = (parent, label, value) => {
     const b = document.createElement('button');
@@ -137,7 +146,7 @@ function renderChips(el, key, onChange) {
   const chips = {};
   ['Alle', ...TOP].forEach((c) => { chips[c] = chip(el, c, c); });
   const group = inGroup(state[key]);
-  if (!group) return;
+  if (!group) { nudge(); return; }
   const sub = document.createElement('div');
   sub.className = 'subchips';
   chip(sub, 'Alle ' + group, group);
@@ -145,7 +154,7 @@ function renderChips(el, key, onChange) {
   if (window.matchMedia('(max-width: 700px)').matches) {
     // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
     chips[group].after(sub);
-    el.scrollLeft = Math.max(0, chips[group].offsetLeft - 12);
+    nudge();
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
