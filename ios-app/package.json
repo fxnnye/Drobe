@@ -1,0 +1,15 @@
+{
+  "name": "jawnz-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "iOS-Hülle (Capacitor) für JAWNZ. Die Web-App selbst liegt eine Ebene höher.",
+  "scripts": {
+    "web": "sh sync-web.sh",
+    "ios": "sh sync-web.sh && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0"
+  }
+}
