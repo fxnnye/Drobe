@@ -3,7 +3,7 @@
 const upDlg = $('uploadDialog');
 const BG_LIB = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm';
 // Nach dem Hinzufügen zurück zur Liste, in die die Teile gekommen sind
-const leaveAddPage = () => { if (upAdded && state.view === 'add') showView('closet'); };
+const leaveAddPage = () => { if (upAdded && state.view === 'add') { ['upBrand', 'upSize', 'upCond', 'upColor'].forEach((id) => { $(id).value = ''; }); $('upVis').value = 'public'; showView('closet'); } };
 let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 
 function trimAlpha(canvas) {
@@ -64,7 +64,9 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
 const upColl = () => ({ store: 'items', list: items });
 const renderLists = () => { renderCloset(); };
 
-// Marke, Größe und Zustand stehen jetzt auf der Hinzufügen-Seite und müssen vor den Fotos ausgefüllt sein
+// Marke, Größe und Zustand stehen auf der Hinzufügen-Seite; Fotos und Angaben gehen in beliebiger Reihenfolge.
+// Fehlen Angaben, warten die Fotos, bis „Weiter“ gedrückt wird.
+let upPending = [];
 function missingDetail() {
   const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
   if (!need) return false;
@@ -72,10 +74,15 @@ function missingDetail() {
   $(need[0]).focus();
   return true;
 }
+function showPending() {
+  const n = upPending.length;
+  $('addGo').hidden = !n;
+  $('addPendingText').textContent = n ? (n === 1 ? '1 Foto ausgewählt' : n + ' Fotos ausgewählt') : '';
+}
 async function addFiles(files) {
   const imgs = [...files].filter((f) => f.type.startsWith('image/'));
   if (!imgs.length) return;
-  if (!upCur && missingDetail()) return;
+  if (!upCur && [['upBrand'], ['upSize'], ['upCond']].some(([id]) => !$(id).value.trim())) { upPending.push(...imgs); showPending(); return; }
   upQueue.push(...imgs);
   upTotal += imgs.length;
   if (!upCur) nextUpload();
@@ -683,7 +690,10 @@ upDlg.addEventListener('close', () => { // Esc: Rest der Warteschlange verwerfen
   leaveAddPage();
   upAdded = 0;
 });
-$('fileInput').addEventListener('click', (e) => { if (missingDetail()) e.preventDefault(); }); // Fotos erst wählen, wenn die Angaben stehen
+$('addGo').addEventListener('click', () => {
+  if (missingDetail()) return;
+  const f = upPending; upPending = []; showPending(); addFiles(f);
+});
 $('fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
 const dz = $('dropzone');
 ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));

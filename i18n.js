@@ -18,7 +18,7 @@ const I18N = {
     'Zum Profil': 'Open profile', 'Ansehen': 'View', 'Merken': 'Save', 'Gemerkt ': 'Saved ',
     // Hinzufügen und Hochladen
     'Hinzufügen ': 'Add ', 'Klamotten hochladen': 'Upload clothes', 'Fotos auswählen': 'Choose photos',
-    'Kategorie': 'Category', 'Name': 'Name', 'Marke *': 'Brand *', 'Größe *': 'Size *', 'Zustand *': 'Condition *',
+    'Kategorie': 'Category', 'Name': 'Name', 'Marke *': 'Brand *', '1 Foto ausgewählt': '1 photo selected', 'Größe *': 'Size *', 'Zustand *': 'Condition *',
     'Farbe (optional)': 'Color (optional)', 'Sichtbarkeit': 'Visibility', 'Öffentlich (im Feed sichtbar)': 'Public (visible in the feed)', 'Zum Verkauf': 'For sale',
     'Hintergrund entfernen': 'Remove background', 'Bereich einzeichnen': 'Mark area', 'Radierer': 'Eraser', 'Zurückholen': 'Restore', 'Pinselgröße': 'Brush size',
     'Alle hinzufügen': 'Add all', 'Bei allen den Hintergrund entfernen': 'Remove background on all', 'Wählen …': 'Choose …', 'Automatisch, wenn freigestellt': 'Automatic when cut out',
@@ -182,6 +182,7 @@ const I18N_PATTERNS = {
     [/^(\d+) Farben$/, '$1 colors'],
     [/^Zum Shop · (.+) ↗$/, 'To the shop · $1 ↗'],
     [/^Du kannst bis zu (\d+) Teile anpinnen$/, 'You can pin up to $1 items'],
+    [/^(\d+) Fotos ausgewählt$/, '$1 photos selected'],
     [/^Bitte gib (.+) an$/, 'Please enter $1'],
     [/^Konnte (.+) nicht laden$/, 'Could not load $1'],
     [/^Foto (\d+) von (\d+)$/, 'Photo $1 of $2'],
