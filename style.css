@@ -1082,3 +1082,6 @@ dialog p.muted { margin: 0 0 var(--s-2); }
 .welcome-steps { margin: var(--s-2) 0 var(--s-4); }
 input[type=checkbox], input[type=radio] { margin: 0; }
 :where(button.icon) { padding: 0; }
+
+/* iPhone-App (Kamerainsel/Statusleiste): Kopfzeile beginnt unterhalb des sicheren Bereichs */
+@media (max-width: 900px) { .top { padding-top: calc(var(--s-3) + env(safe-area-inset-top, 0px)); } }
