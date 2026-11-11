@@ -1086,3 +1086,6 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 @media (hover: hover) and (pointer: fine) { .add-btn:hover { background: var(--gray-hover); } }
 .add-btn { width: var(--h-chip); height: var(--h-chip); }
 @media (max-width: 700px) { .add-btn { display: none; } }
+/* Reiter „Hinzufügen“ nur am Handy; am Computer gibt es das Plus im Schrank */
+.tab[data-view="add"] { display: none; }
+@media (max-width: 700px) { .tab[data-view="add"] { display: inline-flex; } }
