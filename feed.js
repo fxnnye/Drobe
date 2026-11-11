@@ -137,7 +137,16 @@ function renderChips(el, key, onChange) {
     let t = prevScroll;
     if (prevIdx == null || idx > prevIdx) { if (L < t) t = L; if (R > t + view) t = R - view; }
     else { if (R > t + view) t = R - view; if (L < t) t = L; }
-    if (t !== prevScroll) el.scrollTo({ left: Math.max(0, t), behavior: 'smooth' });
+    t = Math.max(0, t);
+    if (t === prevScroll) return;
+    // Eigene Bewegung statt scrollTo: der Block wächst gerade noch, das Ziel liegt anfangs außerhalb des Scrollbereichs
+    const t0 = performance.now(), dur = 300;
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.scrollLeft = prevScroll + (t - prevScroll) * e;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   };
   el.innerHTML = '';
   const chip = (parent, label, value) => {
@@ -153,15 +162,19 @@ function renderChips(el, key, onChange) {
   const chips = {};
   ['Alle', ...TOP].forEach((c) => { chips[c] = chip(el, c, c); });
   const group = inGroup(state[key]);
+  const fresh = el._group !== group; // Block nur beim Öffnen einblenden, nicht bei jedem Antippen einer Unterkategorie
+  el._group = group || null;
   if (!group) { nudge(chips[state[key]]); return; }
   const sub = document.createElement('div');
-  sub.className = 'subchips';
+  sub.className = 'subchips' + (fresh ? ' enter' : '');
   chip(sub, 'Alle ' + group, group);
   GROUPS[group].forEach((c) => chip(sub, c, c));
   if (window.matchMedia('(max-width: 700px)').matches) {
     // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
     chips[group].after(sub);
+    sub.style.animation = 'none'; // für die Messung die Endgröße verwenden
     nudge(chips[group], sub.nextElementSibling || sub); // ohne Nachbarn rechts: der Unterkategorien-Block selbst
+    void sub.offsetWidth; sub.style.animation = '';
   } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }

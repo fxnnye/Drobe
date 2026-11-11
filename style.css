@@ -1088,3 +1088,9 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 @media (max-width: 700px) { .tab[data-view="add"] { display: inline-flex; } }
 /* Am Handy sind alle Hauptkategorien im Schrank so hoch wie die gewählte mit ihren vier Unterkategorien */
 @media (max-width: 700px) { #closetFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
+/* Unterkategorien gleiten weich herein, statt plötzlich da zu sein */
+@keyframes subIn-x { from { max-width: 0; opacity: 0; transform: translateX(-10px); } to { max-width: 140px; opacity: 1; transform: none; } }
+@keyframes subIn-y { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.subchips.enter { animation: subIn-y .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; }
+@media (max-width: 700px) { .filter-row .chips .subchips.enter { animation: subIn-x .3s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; } }
+@media (prefers-reduced-motion: reduce) { .subchips.enter { animation: none !important; } }

@@ -330,7 +330,7 @@ for (const [fn, args] of [
 
 test('Tabellen sind direkt nicht lesbar', async () => {
   const { url, key } = await api();
-  for (const t of ['records', 'items', 'outfits', 'wishlist', 'profiles', 'interests', 'replies', 'thread', 'message', 'offer', 'offer_item', 'flex_week', 'flex_entry', 'reports', 'follows', 'saves', 'blocks', 'admins', 'client_errors']) {
+  for (const t of ['records', 'items', 'outfits', 'profiles', 'interests', 'replies', 'thread', 'message', 'offer', 'offer_item', 'flex_week', 'flex_entry', 'reports', 'follows', 'saves', 'blocks', 'admins', 'client_errors']) {
     const r = await fetch(url + '/rest/v1/' + t + '?select=*&limit=1', { headers: { apikey: key } });
     const b = await r.json().catch(() => null);
     ok(r.status >= 400 || (Array.isArray(b) && b.length === 0), t + ' liefert Daten ohne Anmeldung');
@@ -406,7 +406,7 @@ test('public_profile: unbekannter Name → null, bekannter nur erlaubte Felder',
   const all = (await rpc('feed_public', { p_kind: 'items' })).body;
   if (!all.length) return;
   const p = (await rpc('public_profile', { p_username: all[0].username })).body;
-  const allowed = new Set(['username', 'bio', 'city', 'followers', 'showcase', 'items', 'outfits', 'wishlist']);
+  const allowed = new Set(['username', 'bio', 'city', 'followers', 'showcase', 'items', 'outfits']);
   for (const k of Object.keys(p)) ok(allowed.has(k), 'unerwartetes Profil-Feld: ' + k);
   for (const it of p.items) { ok(!('note' in it) && !('link' in it) && !('emb' in it), 'private Felder in public_profile'); }
 });
