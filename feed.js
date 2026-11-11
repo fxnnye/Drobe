@@ -1,5 +1,6 @@
 // Navigation, Feed und Filter-Chips (Teil der App, Reihenfolge siehe index.html)
 /* ---------- Navigation ---------- */
+document.querySelectorAll('.add-btn').forEach((b) => { b.onclick = () => showView('add'); }); // Plus neben den Kategorien (nur Computer)
 $('addBack').onclick = () => showView(state.addFrom && state.addFrom !== 'add' ? state.addFrom : 'closet');
 // Obere Reiter: Feed, Suche, Hinzufügen, Nachrichten, Profil. Schrank, Outfits und Gemerkt sind Unterseiten von „Profil“.
 const ME_VIEWS = ['closet', 'outfits', 'saved', 'followers', 'following'];

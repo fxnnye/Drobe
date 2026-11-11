@@ -1081,3 +1081,8 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 .feed-switch { gap: 8px; max-width: 420px; }
 .feed-switch .chip { flex: 1 1 0; min-width: 0; text-align: center; padding-top: 14px; padding-bottom: 14px; font-size: 15px; }
 @media (max-width: 700px) { .feed-switch { max-width: none; } }
+/* Plus im Schrank nur am Computer; am Handy gibt es den Reiter „Hinzufügen“ */
+.add-btn { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--gray); display: grid; place-items: center; padding: 0; color: var(--text); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .add-btn:hover { background: var(--gray-hover); } }
+.add-btn { width: var(--h-chip); height: var(--h-chip); }
+@media (max-width: 700px) { .add-btn { display: none; } }
