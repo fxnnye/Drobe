@@ -266,10 +266,10 @@ dialog { max-height: 92vh; max-height: 92dvh; overflow: auto; }
   .builder { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .panel { display: contents; }
   .panel > .field:first-child { order: 0; margin: 0; }
-  .panel > .row { order: 1; margin: 0; }
+  .panel > .row { order: 6; margin: 0; }
   .stage-wrap { order: 2; }
   .panel > .field:nth-child(2) { order: 3; margin: 0; }
-  .panel > .field:nth-child(4) { order: 3; margin: 0; }
+  .panel > .field:nth-child(3) { order: 5; margin: 0; }
   .picker { order: 4; }
   .panel .hint { display: none; }
   .builder .panel .btn:not(.primary) { background: var(--gray); }

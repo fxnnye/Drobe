@@ -300,6 +300,9 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <div class="field">Hintergrund
           <div class="swatches" id="swatches"></div>
         </div>
+        <label class="field">Sichtbarkeit
+          <select id="outfitVis"><option value="private">Privat</option><option value="public">Öffentlich</option></select>
+        </label>
         <div class="row">
           <button class="btn primary" id="saveOutfit">Speichern</button>
           <button class="btn" id="newOutfit">Neu</button>
@@ -309,9 +312,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
           <button class="btn" id="outfitPng" type="button">PNG</button>
           <button class="btn danger" id="outfitDelete" type="button" hidden>Löschen</button>
         </div>
-        <label class="field">Sichtbarkeit
-          <select id="outfitVis"><option value="private">Privat</option><option value="public">Öffentlich</option></select>
-        </label>
         <p class="muted small hint">Teile ziehen zum Verschieben, Ecke unten rechts zum Skalieren.</p>
       </aside>
     </div>
