@@ -138,14 +138,23 @@ function renderChips(el, key, onChange) {
     b.textContent = label;
     b.onclick = () => { state[key] = value; onChange(); };
     parent.appendChild(b);
+    return b;
   };
-  ['Alle', ...TOP].forEach((c) => chip(el, c, c));
+  const chips = {};
+  ['Alle', ...TOP].forEach((c) => { chips[c] = chip(el, c, c); });
   const group = inGroup(state[key]);
-  if (group) { // zweite Reihe mit den Unterkategorien
-    const sub = document.createElement('div');
-    sub.className = 'subchips';
-    chip(sub, 'Alle ' + group, group);
-    GROUPS[group].forEach((c) => chip(sub, c, c));
+  if (!group) return;
+  const sub = document.createElement('div');
+  sub.className = 'subchips';
+  chip(sub, 'Alle ' + group, group);
+  GROUPS[group].forEach((c) => chip(sub, c, c));
+  if (window.matchMedia('(max-width: 700px)').matches) {
+    // Am Handy stehen die Unterkategorien in derselben Reihe direkt hinter der gewählten Hauptkategorie
+    const kids = [...sub.children];
+    kids.forEach((k) => k.classList.add('sub'));
+    chips[group].after(...kids);
+    el.scrollLeft = Math.max(0, chips[group].offsetLeft - 12);
+  } else { // am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
 }
