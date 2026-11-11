@@ -1086,3 +1086,5 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 /* Reiter „Hinzufügen“ nur am Handy; am Computer gibt es das Plus im Schrank */
 .tab[data-view="add"] { display: none; }
 @media (max-width: 700px) { .tab[data-view="add"] { display: inline-flex; } }
+/* Am Handy sind alle Hauptkategorien im Schrank so hoch wie die gewählte mit ihren vier Unterkategorien */
+@media (max-width: 700px) { #closetFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
