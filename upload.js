@@ -3,7 +3,7 @@
 const upDlg = $('uploadDialog');
 const BG_LIB = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm';
 // Nach dem Hinzufügen zurück zur Liste, in die die Teile gekommen sind
-const leaveAddPage = () => { if (upAdded && state.view === 'add') { ['upBrand', 'upSize', 'upCond', 'upColor'].forEach((id) => { $(id).value = ''; }); $('upVis').value = 'public'; showView('closet'); } };
+const leaveAddPage = () => { if (upAdded && state.view === 'add') { ['upName', 'upBrand', 'upSize', 'upCond', 'upColor'].forEach((id) => { $(id).value = ''; }); $('upVis').value = 'public'; showView('closet'); } };
 let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 
 function trimAlpha(canvas) {
@@ -74,6 +74,8 @@ async function addFiles(files) {
 const nameFromFile = (f) => f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 60) || 'Neues Teil';
 
 // Erkennt die Kleidungsart im Hintergrund und trägt sie in „Kategorie“ ein, solange man dort nicht selbst etwas gewählt hat
+let userName = false; // Name wurde vor dem Foto selbst eingetippt
+$('upName').addEventListener('input', () => { userName = true; });
 let catTouched = false;
 $('uploadCategory').addEventListener('change', () => { catTouched = true; });
 async function autoCategory(u, blob) {
@@ -85,6 +87,7 @@ async function autoCategory(u, blob) {
   } catch (e) { console.warn('Kategorie-Erkennung nicht möglich', e); }
 }
 async function nextUpload() {
+  if (upCur) userName = false; // weiteres Foto: Name kommt wieder aus dem Dateinamen
   stopDraw();
   activeCtx = ctxUp;
   const f = upQueue.shift();
@@ -102,7 +105,8 @@ async function nextUpload() {
     const orig = await shrink(f);
     upCur = { file: f, orig, src: orig, cut: null, useCut: false, busy: false, url: null, angle: 0 };
     $('upAngle').value = 0;
-    $('upName').value = nameFromFile(f);
+    if (!userName) $('upName').value = nameFromFile(f); // selbst getippter Name hat Vorrang
+    userName = false;
     upDone++;
     autoCategory(upCur, orig);
     setTimeout(() => window.refreshBrandHint && window.refreshBrandHint(), 0);
