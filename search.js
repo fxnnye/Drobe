@@ -148,3 +148,36 @@ document.querySelectorAll('#fKind .chip').forEach((c) => { c.onclick = () => { s
 for (const id of ['fColor', 'fSize', 'fBrand']) {
   $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 }
+
+// Fotosuche: ein Foto wählen, dann zeigt die Suche ähnliche (am besten gleiche) öffentliche Teile anderer; nutzt den Bild-Vektor (CLIP) wie „Ähnliche Teile“
+{
+  const box = $('photoSearch'), res = $('photoResults'), thumb = $('photoThumb');
+  let token = 0, thumbUrl = null;
+  const note = (t) => res.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: t }));
+  const close = () => {
+    token++; box.hidden = true; res.replaceChildren();
+    if (thumbUrl) { URL.revokeObjectURL(thumbUrl); thumbUrl = null; }
+    thumb.removeAttribute('src');
+  };
+  $('photoClose').addEventListener('click', close);
+  $('soInput').addEventListener('input', () => { if (!box.hidden) close(); }); // Tippen beendet die Fotosuche
+  $('soPhotoInput').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    if (!Cloud.user()) { toast('Dafür musst du angemeldet sein'); return; }
+    close();
+    const my = ++token;
+    thumbUrl = URL.createObjectURL(f); thumb.src = thumbUrl;
+    box.hidden = false; $('soHistory').hidden = true;
+    note('Suche ähnliche Teile … (beim ersten Mal wird ein kleines Bildmodell geladen)');
+    try {
+      const emb = await embedBlob(f);
+      if (my !== token) return;
+      const { data, error } = await Cloud.client().rpc('similar_public_items', { p_emb: '[' + emb.join(',') + ']' });
+      if (error) throw error;
+      if (my !== token) return;
+      await Profile.showItems(data || [], res, () => my !== token);
+    } catch (err) { console.error(err); if (my === token) note('Die Fotosuche hat nicht geklappt.'); }
+  });
+}

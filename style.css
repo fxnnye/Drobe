@@ -1146,3 +1146,13 @@ dialog { overscroll-behavior: contain; }
 
 .brand-hint { display: inline-flex; align-self: flex-start; min-height: 32px; align-items: center; margin-top: 8px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--gray); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .brand-hint[hidden] { display: none; }
+
+/* Fotosuche */
+.so-head { display: flex; align-items: center; gap: 8px; }
+.so-head input[type=text] { flex: 1; min-width: 0; width: auto; }
+.so-photo { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--gray); color: var(--text); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .so-photo:hover { background: var(--gray-hover); } }
+.photo-search { margin: 8px 0 16px; }
+.photo-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.photo-head img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; background: var(--gray); }
+.photo-head b { flex: 1; min-width: 0; }
