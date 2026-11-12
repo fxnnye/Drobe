@@ -65,7 +65,7 @@ test('uid liefert UUIDs (v4) und keine Doppelten', () => {
 group('Farben');
 const NAMES = [
   [[0, 0, 0], 'Schwarz'], [[255, 255, 255], 'Weiß'], [[140, 140, 140], 'Grau'], [[216, 195, 165], 'Beige'], [[201, 180, 143], 'Beige'],
-  [[107, 74, 50], 'Braun'], [[196, 32, 46], 'Rot'], [[30, 60, 160], 'Blau'], [[26, 34, 56], 'Dunkelblau'], [[40, 52, 70], 'Dunkelblau'], [[170, 200, 230], 'Hellblau'], [[120, 140, 170], 'Blau'], [[60, 140, 70], 'Grün'], [[255, 200, 0], 'Gelb'],
+  [[107, 74, 50], 'Braun'], [[196, 32, 46], 'Rot'], [[30, 60, 160], 'Blau'], [[26, 34, 56], 'Blau'], [[40, 52, 70], 'Blau'], [[170, 200, 230], 'Blau'], [[200, 210, 222], 'Blau'], [[120, 140, 170], 'Blau'], [[60, 140, 70], 'Grün'], [[255, 200, 0], 'Gelb'],
   [[255, 140, 0], 'Orange'], [[120, 60, 180], 'Lila'], [[240, 170, 190], 'Rosa'], [[60, 62, 66], 'Grau'],
 ];
 for (const [rgb, name] of NAMES) test('colorName ' + rgb.join(',') + ' → ' + name, () => eq(W('colorName')(...rgb), name));
@@ -74,7 +74,7 @@ const swatch = (fill, shade) => png(100, 100, (g) => { g.fillStyle = fill; g.fil
 for (const [label, fill, shade, want] of [
   ['Beige', '#d8c3a5', null, 'Beige'], ['Beige mit Schatten', '#d8c3a5', '#8a7f70', 'Beige'], ['Sand', '#c9b48f', null, 'Beige'],
   ['Grau', '#8c8c8c', null, 'Grau'], ['Hellgrau', '#d0d0d0', null, 'Grau'], ['Anthrazit', '#3a3d40', null, 'Grau'], ['Schwarz', '#101010', null, 'Schwarz'],
-  ['Jeansblau', '#4a6a94', null, 'Blau'], ['Dunkelblau', '#1f2a44', null, 'Dunkelblau'], ['Hellblau', '#a9c4e0', null, 'Hellblau'],
+  ['Jeansblau', '#4a6a94', null, 'Blau'], ['Dunkelblau wird Blau', '#1f2a44', null, 'Blau'], ['Hellblau wird Blau', '#a9c4e0', null, 'Blau'], ['Mattes Hellblau', '#c5ced9', null, 'Blau'],
 ]) test('detectColor ' + label, async () => eq((await W('detectColor')(await swatch(fill, shade))).color, want));
 test('detectColor: Foto ohne durchsichtigen Hintergrund → keine Farbe', async () => {
   eq(await W('detectColor')(await png(100, 100, (g) => { g.fillStyle = '#c0392b'; g.fillRect(0, 0, 100, 100); })), null);

@@ -44,7 +44,7 @@ const I18N = {
     'Taschen': 'Bags', 'Schmuck': 'Jewelry', 'Caps': 'Caps', 'Gürtel': 'Belts',
     'Neu / DS': 'New / DS', 'Sehr gut': 'Very good', 'Gut': 'Good', 'Getragen': 'Worn', 'Alltag': 'Everyday', 'Rare': 'Rare', 'Grail': 'Grail', 'Seltenheit': 'Rarity', 'Zustand': 'Condition',
     'Schwarz': 'Black', 'Weiß': 'White', 'Grau': 'Gray', 'Beige': 'Beige', 'Braun': 'Brown', 'Rot': 'Red', 'Orange': 'Orange', 'Gelb': 'Yellow', 'Grün': 'Green',
-    'Blau': 'Blue', 'Dunkelblau': 'Dark blue', 'Hellblau': 'Light blue', 'Lila': 'Purple', 'Rosa': 'Pink',
+    'Blau': 'Blue', 'Lila': 'Purple', 'Rosa': 'Pink',
     // Rückmeldungen
     'Lade …': 'Loading …', 'Teil hinzugefügt': 'Item added', 'Entfernt': 'Removed', 'Anfrage gesendet': 'Request sent', 'Gesendet': 'Sent',
     'Als Flex der Woche gesetzt': 'Set as Flex of the Week', 'Das hat nicht geklappt': 'That did not work', 'Keine Verbindung': 'No connection',

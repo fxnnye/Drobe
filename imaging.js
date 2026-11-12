@@ -119,9 +119,7 @@ $('itSimilar').addEventListener('click', async () => {
 });
 
 /* ---------- Farbe automatisch aus dem freigestellten Bild ---------- */
-const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Dunkelblau', 'Blau', 'Hellblau', 'Lila', 'Rosa'];
-// Blautöne nach Helligkeit: dunkel (Navy, Dunkeljeans), mittel, hell (Hellblau, helle Jeans)
-const blueShade = (l) => (l < 0.33 ? 'Dunkelblau' : l >= 0.62 ? 'Hellblau' : 'Blau');
+const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Blau', 'Lila', 'Rosa'];
 function colorName(r, g, b) {
   r /= 255; g /= 255; b /= 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
@@ -129,8 +127,8 @@ function colorName(r, g, b) {
   let h = 0;
   if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
   h *= 60;
-  // Blautöne zuerst und mit niedrigeren Schwellen: dunkles Blau ist nicht Schwarz, mattes Blau nicht Grau
-  if (h >= 190 && h < 260 && s >= 0.1 && l >= 0.09 && l <= 0.9) return blueShade(l);
+  // Blau hat weitere Grenzen: dunkles Blau ist nicht Schwarz, mattes oder helles Blau nicht Grau
+  if (h >= 185 && h < 260 && s >= 0.08 && l >= 0.1 && l <= 0.9) return 'Blau';
   if (l < 0.16) return 'Schwarz';
   if (l > 0.9 && s < 0.4) return 'Weiß';
   if (s < 0.12) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
@@ -171,18 +169,10 @@ async function detectColor(blob) {
       for (const k of ['n', 'r', 'g', 'b']) sum.Grau[k] += sum.Beige[k];
       delete sum.Beige;
     }
-    // Alle Blautöne zusammenfassen und nach der mittleren Helligkeit benennen (Schatten teilen Jeans sonst in mehrere Töne)
-    const blues = ['Dunkelblau', 'Blau', 'Hellblau'].filter((k) => sum[k]);
-    if (blues.length) {
-      const m = { n: 0, r: 0, g: 0, b: 0 };
-      for (const k of blues) { for (const f of ['n', 'r', 'g', 'b']) m[f] += sum[k][f]; delete sum[k]; }
-      sum.Blau = m;
-    }
     let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
-    if (name === 'Blau') name = blueShade((Math.max(top.r, top.g, top.b) + Math.min(top.r, top.g, top.b)) / (2 * top.n * 255));
     if (name === 'Grau' || name === 'Beige') {
       const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
-      name = warm >= 9 && light >= 0.4 ? 'Beige' : 'Grau';
+      name = warm >= 9 && light >= 0.4 ? 'Beige' : (top.b - top.r) / top.n >= 8 && light > 0.2 ? 'Blau' : 'Grau'; // leichter Blaustich: Blau
     }
     const hex = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('');
     return { color: name, hex };
