@@ -387,7 +387,6 @@ const Profile = (() => {
       cp.onclick = me2 ? () => rebuildOutfit(data) : () => Cloud.showAuth(false);
       const hint = el('p', 'muted small', 'Setzt passende Teile aus deinem Schrank ein. Danach kannst du sie in der Liste austauschen.');
       info.insertBefore(hint, h); info.insertBefore(acts, hint);
-      if (isAdminUser) info.insertBefore(flexBtn('outfit', data.username, data.id), h);
     }
     page.append(photo, info);
     box.append(page);
@@ -486,7 +485,6 @@ const Profile = (() => {
         info.append(go);
         info.append(saveBtn(it, data.username, 'full'));
       }
-      if (isAdminUser && it.vis !== 'private') info.append(flexBtn('item', data.username, it.id));
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
       rp.onclick = me ? () => askReport(data.username, it) : askLogin;
@@ -1057,7 +1055,6 @@ const Profile = (() => {
       if (!error && data === true) {
         isAdminUser = true;
         $('modRow').hidden = false; $('errRow').hidden = false; refreshModBadge(true);
-        if (!$('flexBox').hidden) showFlex($('flexBox')).catch(() => {}); // Entfernen-Knöpfe nachziehen
       }
     } catch (e) { /* kein Admin oder Funktion fehlt noch */ }
   }
@@ -1324,43 +1321,6 @@ const Profile = (() => {
     if (!sb || !navigator.onLine) return 0;
     try { const { data, error } = await sb.rpc('feed_stage'); return error ? 0 : Number(data) || 0; } catch (e) { return 0; }
   }
-  /* ---------- Flex of the Week: vom Admin ausgewählt, oben im Feed ---------- */
-  async function showFlex(box) {
-    const sb = Cloud.client();
-    if (!sb || !navigator.onLine) { box.hidden = true; return; }
-    let list = [];
-    try { const { data, error } = await sb.rpc('current_flex'); if (!error && Array.isArray(data)) list = data; } catch (e) { /* Funktion fehlt noch: kein Flex */ }
-    if (!list.length) { box.hidden = true; box.replaceChildren(); return; }
-    const urls = await signedUrls(sb, list.map((r) => r.path));
-    const cards = list.map((rec) => {
-      const c = feedCard(rec, urls, rec.outfit ? 'outfits' : 'items');
-      if (rec.note) c.append(el('p', 'muted small', rec.note));
-      if (isAdminUser) {
-        const rm = el('button', 'pub-report', 'Als Flex entfernen');
-        rm.type = 'button';
-        rm.onclick = async () => {
-          const { error } = await sb.rpc('admin_remove_flex', { p_entry: rec.entry });
-          if (error) return toast('Das hat nicht geklappt');
-          toast('Entfernt');
-          showFlex(box).catch(() => {});
-        };
-        c.append(rm);
-      }
-      return c;
-    });
-    box.replaceChildren(section('Flex of the Week', cards));
-    box.hidden = false;
-  }
-  // Admin: auf der Seite eines öffentlichen Teils oder Outfits zum Flex der Woche machen
-  function flexBtn(kind, username, id) {
-    const b = el('button', 'btn full', 'Flex of the Week');
-    b.type = 'button';
-    b.onclick = async () => {
-      const { error } = await Cloud.client().rpc('admin_set_flex', { p_username: username, p_kind: kind, p_id: id });
-      toast(error ? 'Das hat nicht geklappt' : 'Als Flex der Woche gesetzt');
-    };
-    return b;
-  }
   // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
   function feedCard(rec, urls, kind) {
     const c = el('div', 'card feed-card');
@@ -1395,5 +1355,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, rec.outfit ? 'outfits' : shape));
   }
 
-  return { paintOwnAvatars, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, feed, feedStage, showFeed, showFlex, loadInbox, leaveThread };
+  return { paintOwnAvatars, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, feed, feedStage, showFeed, loadInbox, leaveThread };
 })();

@@ -21,11 +21,10 @@ function renderCloset() {
     const card = document.createElement('button');
     card.className = 'card' + (closetSel && closetSel.has(it.id) ? ' selected' : '');
     if (closetSel) card.setAttribute('aria-pressed', closetSel.has(it.id));
-    card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span><i class="note"></i></div>`;
+    card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>`;
     card.querySelector('img').src = urlFor(it);
     card.querySelector('b').textContent = it.name;
     card.querySelector('span').textContent = [it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');
-    card.querySelector('.note').textContent = it.note || '';
     // Lange drücken wählt das Teil aus und startet die Auswahl
     let lp = null, sx = 0, sy = 0;
     const stopLp = () => { clearTimeout(lp); lp = null; };

@@ -120,18 +120,16 @@ $('itSimilar').addEventListener('click', async () => {
 
 /* ---------- Farbe automatisch aus dem freigestellten Bild ---------- */
 const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Blau', 'Lila', 'Rosa'];
-function colorName(r, g, b) {
+function hslOf(r, g, b) {
   r /= 255; g /= 255; b /= 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
   const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
   let h = 0;
   if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
-  h *= 60;
-  // Blau hat weitere Grenzen: dunkles Blau ist nicht Schwarz, mattes oder helles Blau nicht Grau
-  if (h >= 185 && h < 260 && s >= 0.08 && l >= 0.1 && l <= 0.9) return 'Blau';
-  if (l < 0.16) return 'Schwarz';
-  if (l > 0.9 && s < 0.4) return 'Weiß';
-  if (s < 0.12) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
+  return [h * 60, s, l];
+}
+// Farbton → Name (für Flächen, die einen erkennbaren Farbton haben)
+function hueName(h, s, l) {
   if (h >= 15 && h < 65 && s < 0.5 && l >= 0.45) return 'Beige';
   if (h >= 10 && h < 50 && l < 0.42) return 'Braun';
   if (h < 15 || h >= 345) return l > 0.7 ? 'Rosa' : 'Rot';
@@ -141,6 +139,14 @@ function colorName(r, g, b) {
   if (h < 255) return 'Blau';
   if (h < 295) return 'Lila';
   return 'Rosa';
+}
+// Dunkle Flächen mit Farbton bleiben Farbe (Navy, Dunkelgrün, Bordeaux), nur wirklich dunkle oder farblose werden Schwarz; blasse Töne bleiben Farbe statt Grau
+function colorName(r, g, b) {
+  const [h, s, l] = hslOf(r, g, b);
+  if (l < 0.08 || (l < 0.16 && s < 0.25)) return 'Schwarz';
+  if (l > 0.9 && s < 0.4) return 'Weiß';
+  if (s < 0.08) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
+  return hueName(h, s, l);
 }
 // Häufigste Farbe der sichtbaren Pixel; nur bei freigestellten Bildern (mit durchsichtigem Hintergrund), sonst null
 async function detectColor(blob) {
@@ -172,7 +178,13 @@ async function detectColor(blob) {
     let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
     if (name === 'Grau' || name === 'Beige') {
       const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
-      name = warm >= 9 && light >= 0.4 ? 'Beige' : (top.b - top.r) / top.n >= 8 && light > 0.2 ? 'Blau' : 'Grau'; // leichter Blaustich: Blau
+      if (warm >= 9 && light >= 0.4) name = 'Beige';
+      else {
+        // Grau mit erkennbarem Farbstich (egal welcher Farbe) zählt als diese Farbe
+        const m = [top.r, top.g, top.b].map((v) => v / top.n), chroma = Math.max(...m) - Math.min(...m);
+        const [h, s, l] = hslOf(...m);
+        name = chroma >= 10 && light > 0.2 && l < 0.9 ? hueName(h, Math.max(s, 0.2), l) : 'Grau';
+      }
     }
     const hex = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('');
     return { color: name, hex };

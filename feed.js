@@ -74,10 +74,6 @@ async function loadFeed(reset) {
     }
   }
   const kind = feed.kind;
-  if (reset) { // Flex of the Week steht über den Teilen, nicht bei Outfits, Gemerkt und Folge ich
-    if (kind === 'items' || kind === 'foryou') Profile.showFlex($('flexBox')).catch((e) => console.error(e));
-    else $('flexBox').hidden = true;
-  }
   const done = skeletons(grid, reset ? 8 : 4);
   try {
     const list = await Profile.feed(kind, feed.before, feed.color);
