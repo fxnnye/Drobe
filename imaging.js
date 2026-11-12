@@ -212,6 +212,9 @@ function colorName(r, g, b) {
   const [h, s, l] = hslOf(r, g, b);
   if (l < 0.08 || (l < 0.16 && s < 0.25)) return 'Schwarz';
   if (l > 0.9 && s < 0.4) return 'Weiß';
+  // Helle, blasse Flächen (Creme, Off-White) haben in HSL oft hohe Sättigung, sind aber praktisch weiß/beige
+  const ch = (Math.max(r, g, b) - Math.min(r, g, b));
+  if (l > 0.72 && ch < 70 && h >= 20 && h < 120) return h < 65 && ch >= 25 ? 'Beige' : 'Weiß';
   if (s < 0.08) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
   return hueName(h, s, l);
 }
@@ -242,7 +245,9 @@ async function detectColor(blob) {
       for (const k of ['n', 'r', 'g', 'b']) sum.Grau[k] += sum.Beige[k];
       delete sum.Beige;
     }
-    let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
+    // Weiß/Beige zählen halb: ein Cap mit cremefarbener Front und dunkelblauem Schirm ist dunkelblau, ein weißes Shirt bleibt weiß
+    const wt = (e) => e[1].n * (e[0] === 'Weiß' || e[0] === 'Beige' ? 0.5 : 1);
+    let [name, top] = Object.entries(sum).sort((x, y) => wt(y) - wt(x))[0];
     if (name === 'Grau' || name === 'Beige') {
       const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
       if (warm >= 9 && light >= 0.4) name = 'Beige';
