@@ -1158,3 +1158,7 @@ dialog { overscroll-behavior: contain; }
 .photo-head b { flex: 1; min-width: 0; }
 .photo-tags { margin-bottom: 12px; }
 .photo-tags:empty { display: none; }
+
+/* Mittig: Reiter in Nachrichten ohne Leerzeichen-Versatz (leere Zähler werden ausgeblendet) */
+.msg-tab { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.msg-tab .badge:empty { display: none; }
