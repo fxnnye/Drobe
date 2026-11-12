@@ -1089,12 +1089,15 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 /* Am Handy sind alle Hauptkategorien im Schrank so hoch wie die gewählte mit ihren vier Unterkategorien */
 @media (max-width: 700px) { #closetFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
 /* Unterkategorien gleiten weich herein, statt plötzlich da zu sein */
-@keyframes subIn-x { from { max-width: 0; opacity: 0; transform: translateX(-10px); } to { max-width: 140px; opacity: 1; transform: none; } }
+/* Der Block wächst auch in der Höhe weich; --sub-from ist die Höhe der Hauptknöpfe, --sub-to die des größten Blocks (Accessoires: 5 Einträge) */
+.chips { --sub-from: calc(var(--h-chip) * 4 + 24px); --sub-to: calc(var(--h-chip) * 5 + 32px); }
+#pickerFilter { --sub-from: var(--h-chip); }
+@keyframes subIn-x { from { max-width: 0; max-height: var(--sub-from); opacity: 0; transform: translateX(-10px); } to { max-width: 140px; max-height: var(--sub-to); opacity: 1; transform: none; } }
 @keyframes subIn-y { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .subchips.enter { animation: subIn-y .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; }
 @media (max-width: 700px) { .filter-row .chips .subchips.enter { animation: subIn-x .3s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; } }
 @media (prefers-reduced-motion: reduce) { .subchips.enter { animation: none !important; } }
-@keyframes subOut-x { from { max-width: 140px; opacity: 1; transform: none; } to { max-width: 0; opacity: 0; transform: translateX(-10px); } }
+@keyframes subOut-x { from { max-width: 140px; max-height: var(--sub-to); opacity: 1; transform: none; } to { max-width: 0; max-height: var(--sub-from); opacity: 0; transform: translateX(-10px); } }
 @keyframes subOut-y { from { opacity: 1; max-height: 200px; transform: none; } to { opacity: 0; max-height: 0; transform: translateY(-6px); } }
 .subchips.leave { animation: subOut-y .24s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; pointer-events: none; }
 @media (max-width: 700px) { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
