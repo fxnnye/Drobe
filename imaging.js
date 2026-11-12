@@ -245,9 +245,7 @@ async function detectColor(blob) {
       for (const k of ['n', 'r', 'g', 'b']) sum.Grau[k] += sum.Beige[k];
       delete sum.Beige;
     }
-    // Weiß/Beige zählen halb: ein Cap mit cremefarbener Front und dunkelblauem Schirm ist dunkelblau, ein weißes Shirt bleibt weiß
-    const wt = (e) => e[1].n * (e[0] === 'Weiß' || e[0] === 'Beige' ? 0.5 : 1);
-    let [name, top] = Object.entries(sum).sort((x, y) => wt(y) - wt(x))[0];
+    let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
     if (name === 'Grau' || name === 'Beige') {
       const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
       if (warm >= 9 && light >= 0.4) name = 'Beige';
