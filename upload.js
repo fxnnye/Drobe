@@ -81,8 +81,7 @@ async function autoCategory(u, blob) {
   try {
     const [cat, p] = await classifyBlob(blob);
     if (upCur !== u || catTouched || p < 0.4 || !CATEGORIES.includes(cat)) return;
-    $('uploadCategory').value = cat;
-    toast('Kategorie erkannt: ' + cat);
+    $('uploadCategory').value = cat; // ohne Meldung: man sieht nur die Auswahl
   } catch (e) { console.warn('Kategorie-Erkennung nicht möglich', e); }
 }
 async function nextUpload() {
