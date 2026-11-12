@@ -1323,7 +1323,7 @@ const Profile = (() => {
   }
   // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
   function feedCard(rec, urls, kind) {
-    const c = el('div', 'card feed-card');
+    const c = el('div', 'card feed-card' + (kind === 'items' ? '' : ' feed-outfit'));
     const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : outfitLink(rec.username, rec.id); };
     const owner = el('button', 'feed-owner');
     owner.type = 'button';

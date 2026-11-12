@@ -1167,3 +1167,7 @@ dialog { overscroll-behavior: contain; }
 .card.feed-card .img.feed-img, .outfits .card.feed-card .img.feed-img { background: var(--gray); }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .card.feed-card .img.feed-img img { mix-blend-mode: multiply; } }
 :root[data-theme="light"] .card.feed-card .img.feed-img img { mix-blend-mode: multiply; }
+
+/* Feed: Outfits in der Größe wie im Profil (9:16) und mit ihrem echten Hintergrund; nur Teile nehmen das Grau der Karte an */
+.card.feed-card.feed-outfit .img.feed-img { --pad: 0px; aspect-ratio: 9 / 16; overflow: hidden; background: #fff; border: 1px solid var(--gray-hover); }
+.card.feed-card.feed-outfit .img.feed-img img { mix-blend-mode: normal !important; }
