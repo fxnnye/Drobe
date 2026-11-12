@@ -709,7 +709,7 @@ dz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
     const b = brandInName($('upName').value, items.map((r) => r.brand));
     const show = b && !$('upBrand').value.trim();
     hint.hidden = !show;
-    if (show) { hint.textContent = 'Marke ' + b + '?'; hint.dataset.brand = b; }
+    if (show) { hint.textContent = 'Vorschlag: ' + b; hint.dataset.brand = b; }
   };
   hint.addEventListener('click', () => { $('upBrand').value = hint.dataset.brand; hint.hidden = true; });
   $('upName').addEventListener('input', refresh);

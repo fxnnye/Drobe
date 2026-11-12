@@ -183,7 +183,7 @@ const I18N_PATTERNS = {
     [/^Zum Shop · (.+) ↗$/, 'To the shop · $1 ↗'],
     [/^Du kannst bis zu (\d+) Teile anpinnen$/, 'You can pin up to $1 items'],
     [/^(\d+) Fotos ausgewählt$/, '$1 photos selected'],
-    [/^Marke (.+)\?$/, 'Brand $1?'],
+    [/^Vorschlag: (.+)$/, 'Suggestion: $1'],
     [/^Bitte gib (.+) an$/, 'Please enter $1'],
     [/^Konnte (.+) nicht laden$/, 'Could not load $1'],
     [/^Foto (\d+) von (\d+)$/, 'Photo $1 of $2'],
