@@ -1139,3 +1139,7 @@ body:not(:has(#meBar:not([hidden]))) .top > .menu { display: none; }
 #view-add:has(#uploadDialog[open]) #dropzone { display: none; }
 #view-add:not(:has(#uploadDialog[open])) .add-actions { display: none; }
 .add-actions { margin-top: 20px; }
+
+/* Offenes Fenster: Seite dahinter bleibt stehen */
+body.dlg-lock { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+dialog { overscroll-behavior: contain; }

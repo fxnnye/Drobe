@@ -73,6 +73,18 @@ async function addFiles(files) {
 }
 const nameFromFile = (f) => f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 60) || 'Neues Teil';
 
+// Erkennt die Kleidungsart im Hintergrund und trägt sie in „Kategorie“ ein, solange man dort nicht selbst etwas gewählt hat
+let catTouched = false;
+$('uploadCategory').addEventListener('change', () => { catTouched = true; });
+async function autoCategory(u, blob) {
+  catTouched = false;
+  try {
+    const [cat, p] = await classifyBlob(blob);
+    if (upCur !== u || catTouched || p < 0.4 || !CATEGORIES.includes(cat)) return;
+    $('uploadCategory').value = cat;
+    toast('Kategorie erkannt: ' + cat);
+  } catch (e) { console.warn('Kategorie-Erkennung nicht möglich', e); }
+}
 async function nextUpload() {
   stopDraw();
   activeCtx = ctxUp;
@@ -93,6 +105,7 @@ async function nextUpload() {
     $('upAngle').value = 0;
     $('upName').value = nameFromFile(f);
     upDone++;
+    autoCategory(upCur, orig);
     refreshUpload();
     if (!upDlg.open) upDlg.show(); // steht als Bearbeitungsbereich direkt auf der Hinzufügen-Seite
     upDlg.scrollIntoView({ block: 'start', behavior: 'smooth' });

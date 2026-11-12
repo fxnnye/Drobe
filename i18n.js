@@ -44,7 +44,7 @@ const I18N = {
     'Taschen': 'Bags', 'Schmuck': 'Jewelry', 'Caps': 'Caps', 'Gürtel': 'Belts',
     'Neu / DS': 'New / DS', 'Sehr gut': 'Very good', 'Gut': 'Good', 'Getragen': 'Worn', 'Alltag': 'Everyday', 'Rare': 'Rare', 'Grail': 'Grail', 'Seltenheit': 'Rarity', 'Zustand': 'Condition',
     'Schwarz': 'Black', 'Weiß': 'White', 'Grau': 'Gray', 'Beige': 'Beige', 'Braun': 'Brown', 'Rot': 'Red', 'Orange': 'Orange', 'Gelb': 'Yellow', 'Grün': 'Green',
-    'Blau': 'Blue', 'Lila': 'Purple', 'Rosa': 'Pink',
+    'Blau': 'Blue', 'Dunkelblau': 'Dark blue', 'Hellblau': 'Light blue', 'Lila': 'Purple', 'Rosa': 'Pink',
     // Rückmeldungen
     'Lade …': 'Loading …', 'Teil hinzugefügt': 'Item added', 'Entfernt': 'Removed', 'Anfrage gesendet': 'Request sent', 'Gesendet': 'Sent',
     'Als Flex der Woche gesetzt': 'Set as Flex of the Week', 'Das hat nicht geklappt': 'That did not work', 'Keine Verbindung': 'No connection',
@@ -183,6 +183,7 @@ const I18N_PATTERNS = {
     [/^Zum Shop · (.+) ↗$/, 'To the shop · $1 ↗'],
     [/^Du kannst bis zu (\d+) Teile anpinnen$/, 'You can pin up to $1 items'],
     [/^(\d+) Fotos ausgewählt$/, '$1 photos selected'],
+    [/^Kategorie erkannt: (.+)$/, 'Category detected: $1'],
     [/^Bitte gib (.+) an$/, 'Please enter $1'],
     [/^Konnte (.+) nicht laden$/, 'Could not load $1'],
     [/^Foto (\d+) von (\d+)$/, 'Photo $1 of $2'],

@@ -43,6 +43,49 @@ async function embedBlob(blob) {
   const { image_embeds } = await model(await processor(raw));
   return Array.from(image_embeds.normalize().data, (v) => Math.round(v * 1e4) / 1e4);
 }
+// Kleidungsart automatisch erkennen (CLIP, ohne Training): Bild-Vektor gegen Textbeschreibungen je Kategorie vergleichen
+const CLASS_PROMPTS = {
+  Jacken: ['a photo of a jacket', 'a photo of a coat', 'a photo of a bomber jacket', 'a photo of a puffer jacket'],
+  Pullover: ['a photo of a hoodie', 'a photo of a sweater', 'a photo of a sweatshirt', 'a photo of a knitted jumper'],
+  Shirts: ['a photo of a t-shirt', 'a photo of a shirt', 'a photo of a polo shirt', 'a photo of a tank top'],
+  Hosen: ['a photo of pants', 'a photo of jeans', 'a photo of trousers', 'a photo of shorts'],
+  Schuhe: ['a photo of shoes', 'a photo of sneakers', 'a photo of boots', 'a photo of sandals'],
+  Taschen: ['a photo of a bag', 'a photo of a backpack', 'a photo of a handbag', 'a photo of a shoulder bag'],
+  Schmuck: ['a photo of jewelry', 'a photo of a necklace', 'a photo of a ring', 'a photo of a watch'],
+  Caps: ['a photo of a cap', 'a photo of a beanie', 'a photo of a hat'],
+  Gürtel: ['a photo of a belt', 'a photo of a leather belt'],
+};
+let textEmbs = null;
+function loadTextEmbs() {
+  if (!textEmbs) {
+    textEmbs = (async () => {
+      const { T } = await loadEmbedder();
+      const tok = await T.AutoTokenizer.from_pretrained(EMBED_MODEL);
+      const tm = await T.CLIPTextModelWithProjection.from_pretrained(EMBED_MODEL, { dtype: 'q8' });
+      const out = [];
+      for (const [cat, ps] of Object.entries(CLASS_PROMPTS)) {
+        for (const p of ps) {
+          const { text_embeds } = await tm(tok([p], { padding: true, truncation: true }));
+          out.push({ cat, v: text_embeds.normalize().data });
+        }
+      }
+      return out;
+    })().catch((e) => { textEmbs = null; throw e; });
+  }
+  return textEmbs;
+}
+// Liefert [Kategorie, Wahrscheinlichkeit] für das wahrscheinlichste Ergebnis
+async function classifyBlob(blob) {
+  const [emb, texts] = await Promise.all([embedBlob(blob), loadTextEmbs()]);
+  const best = {};
+  for (const t of texts) {
+    let s = 0;
+    for (let i = 0; i < emb.length; i++) s += emb[i] * t.v[i];
+    best[t.cat] = Math.max(best[t.cat] ?? -9, s);
+  }
+  const cats = Object.keys(best), ex = cats.map((c) => Math.exp(100 * best[c])), z = ex.reduce((a, b) => a + b, 0);
+  return cats.map((c, i) => [c, ex[i] / z]).sort((a, b) => b[1] - a[1])[0];
+}
 // Öffentliche Teile ohne Vektor nach und nach berechnen (im Hintergrund, einmalig pro Teil)
 let embedBusy = false;
 async function backfillEmbeddings() {
@@ -76,7 +119,9 @@ $('itSimilar').addEventListener('click', async () => {
 });
 
 /* ---------- Farbe automatisch aus dem freigestellten Bild ---------- */
-const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Blau', 'Lila', 'Rosa'];
+const COLORS = ['Schwarz', 'Weiß', 'Grau', 'Beige', 'Braun', 'Rot', 'Orange', 'Gelb', 'Grün', 'Dunkelblau', 'Blau', 'Hellblau', 'Lila', 'Rosa'];
+// Blautöne nach Helligkeit: dunkel (Navy, Dunkeljeans), mittel, hell (Hellblau, helle Jeans)
+const blueShade = (l) => (l < 0.33 ? 'Dunkelblau' : l >= 0.62 ? 'Hellblau' : 'Blau');
 function colorName(r, g, b) {
   r /= 255; g /= 255; b /= 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
@@ -84,6 +129,8 @@ function colorName(r, g, b) {
   let h = 0;
   if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
   h *= 60;
+  // Blautöne zuerst und mit niedrigeren Schwellen: dunkles Blau ist nicht Schwarz, mattes Blau nicht Grau
+  if (h >= 190 && h < 260 && s >= 0.1 && l >= 0.09 && l <= 0.9) return blueShade(l);
   if (l < 0.16) return 'Schwarz';
   if (l > 0.9 && s < 0.4) return 'Weiß';
   if (s < 0.12) return l > 0.82 ? 'Weiß' : (h >= 15 && h < 65 && s >= 0.05 && l >= 0.45) ? 'Beige' : 'Grau';
@@ -124,7 +171,15 @@ async function detectColor(blob) {
       for (const k of ['n', 'r', 'g', 'b']) sum.Grau[k] += sum.Beige[k];
       delete sum.Beige;
     }
+    // Alle Blautöne zusammenfassen und nach der mittleren Helligkeit benennen (Schatten teilen Jeans sonst in mehrere Töne)
+    const blues = ['Dunkelblau', 'Blau', 'Hellblau'].filter((k) => sum[k]);
+    if (blues.length) {
+      const m = { n: 0, r: 0, g: 0, b: 0 };
+      for (const k of blues) { for (const f of ['n', 'r', 'g', 'b']) m[f] += sum[k][f]; delete sum[k]; }
+      sum.Blau = m;
+    }
     let [name, top] = Object.entries(sum).sort((x, y) => y[1].n - x[1].n)[0];
+    if (name === 'Blau') name = blueShade((Math.max(top.r, top.g, top.b) + Math.min(top.r, top.g, top.b)) / (2 * top.n * 255));
     if (name === 'Grau' || name === 'Beige') {
       const warm = (top.r - top.b) / top.n, light = (top.r + top.g + top.b) / (3 * top.n * 255);
       name = warm >= 9 && light >= 0.4 ? 'Beige' : 'Grau';

@@ -170,3 +170,23 @@ document.querySelectorAll('dialog').forEach((d) => {
     $(btn).click();
   });
 });
+
+// Ist ein Fenster offen, scrollt nur das Fenster und nicht die Seite dahinter (Seite wird eingefroren, Position bleibt erhalten)
+{
+  let lockY = null;
+  const sync = () => {
+    const open = [...document.querySelectorAll('dialog[open]')].some((d) => !d.classList.contains('up-inline'));
+    const b = document.body;
+    if (open && lockY === null) {
+      lockY = window.scrollY;
+      b.style.top = -lockY + 'px';
+      b.classList.add('dlg-lock');
+    } else if (!open && lockY !== null) {
+      b.classList.remove('dlg-lock');
+      b.style.top = '';
+      window.scrollTo(0, lockY);
+      lockY = null;
+    }
+  };
+  document.querySelectorAll('dialog').forEach((d) => new MutationObserver(sync).observe(d, { attributes: true, attributeFilter: ['open'] }));
+}
