@@ -1162,3 +1162,8 @@ dialog { overscroll-behavior: contain; }
 /* Mittig: Reiter in Nachrichten ohne Leerzeichen-Versatz (leere Zähler werden ausgeblendet) */
 .msg-tab { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .msg-tab .badge:empty { display: none; }
+
+/* Feed: das Weiß hinter den Teilen und Outfits nimmt das Grau der Karte an (Multiplizieren); beim Öffnen zeigt die Ansicht den echten Hintergrund */
+.card.feed-card .img.feed-img, .outfits .card.feed-card .img.feed-img { background: var(--gray); }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .card.feed-card .img.feed-img img { mix-blend-mode: multiply; } }
+:root[data-theme="light"] .card.feed-card .img.feed-img img { mix-blend-mode: multiply; }
