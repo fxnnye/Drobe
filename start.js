@@ -141,16 +141,23 @@ async function startApp(userId) {
   backfillTrim();
 }
 
-// Startbildschirm ausblenden, sobald die App bereit ist (spätestens nach 12 Sekunden)
-function hideSplash() {
-  try { window.Capacitor?.Plugins?.SplashScreen?.hide(); } catch (e) { /* kein iOS-App-Rahmen */ }
-  const sp = document.getElementById('splash');
-  if (!sp || sp.classList.contains('gone')) return;
-  sp.classList.add('gone');
-  setTimeout(() => sp.remove(), 400);
+// Startbildschirm ausblenden: erst wenn die App bereit ist, aber mindestens 1,5 Sekunden nach dem Start (Schriften, Bilder und Daten brauchen die Zeit), spätestens nach 12 Sekunden
+const SPLASH_MIN_MS = 1500;
+let splashHiding = false;
+function hideSplash(force) {
+  if (splashHiding) return;
+  const wait = force === true ? 0 : Math.max(0, SPLASH_MIN_MS - performance.now());
+  splashHiding = true;
+  Promise.race([document.fonts ? document.fonts.ready : null, new Promise((r) => setTimeout(r, 3000))]).catch(() => {}).then(() => setTimeout(() => {
+    try { window.Capacitor?.Plugins?.SplashScreen?.hide(); } catch (e) { /* kein iOS-App-Rahmen */ }
+    const sp = document.getElementById('splash');
+    if (!sp || sp.classList.contains('gone')) return;
+    sp.classList.add('gone');
+    setTimeout(() => sp.remove(), 400);
+  }, wait));
 }
-setTimeout(hideSplash, 12000);
-Cloud.boot().then(hideSplash, hideSplash);
+setTimeout(() => hideSplash(true), 12000);
+Cloud.boot().then(() => hideSplash(), () => hideSplash());
 
 // Tipp auf den abgedunkelten Bereich neben einem Fenster schließt es (außer beim Hochladen, damit nichts verloren geht)
 document.querySelectorAll('dialog').forEach((d) => {
