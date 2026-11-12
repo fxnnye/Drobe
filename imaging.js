@@ -55,13 +55,28 @@ const CLASS_PROMPTS = {
   Caps: ['a photo of a cap', 'a photo of a beanie', 'a photo of a hat'],
   Gürtel: ['a photo of a belt', 'a photo of a leather belt'],
 };
+let textModel = null;
+function loadTextModel() {
+  if (!textModel) {
+    textModel = (async () => {
+      const { T } = await loadEmbedder();
+      const tok = await T.AutoTokenizer.from_pretrained(EMBED_MODEL);
+      const tm = await T.CLIPTextModelWithProjection.from_pretrained(EMBED_MODEL, { dtype: 'q8' });
+      return { tok, tm };
+    })().catch((e) => { textModel = null; throw e; });
+  }
+  return textModel;
+}
+const textVec = async (p) => {
+  const { tok, tm } = await loadTextModel();
+  const { text_embeds } = await tm(tok([p], { padding: true, truncation: true }));
+  return Float32Array.from(text_embeds.normalize().data);
+};
 let textEmbs = null;
 function loadTextEmbs() {
   if (!textEmbs) {
     textEmbs = (async () => {
-      const { T } = await loadEmbedder();
-      const tok = await T.AutoTokenizer.from_pretrained(EMBED_MODEL);
-      const tm = await T.CLIPTextModelWithProjection.from_pretrained(EMBED_MODEL, { dtype: 'q8' });
+      const { tok, tm } = await loadTextModel();
       const out = [];
       for (const [cat, ps] of Object.entries(CLASS_PROMPTS)) {
         for (const p of ps) {
@@ -85,6 +100,58 @@ async function classifyBlob(blob) {
   }
   const cats = Object.keys(best), ex = cats.map((c) => Math.exp(100 * best[c])), z = ex.reduce((a, b) => a + b, 0);
   return cats.map((c, i) => [c, ex[i] / z]).sort((a, b) => b[1] - a[1])[0];
+}
+// Fotosuche: aus dem Foto auch Marke (Logo, Aufdruck, Schriftzug) und Farbe erkennen, nicht nur den Gesamteindruck
+const COLOR_EN = { Schwarz: 'black', Weiß: 'white', Grau: 'gray', Beige: 'beige', Braun: 'brown', Rot: 'red', Orange: 'orange', Gelb: 'yellow', Grün: 'green', Blau: 'blue', Lila: 'purple', Rosa: 'pink' };
+const dotv = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+const softTop = (scores) => { const ex = scores.map((s) => Math.exp(100 * s)), z = ex.reduce((a, b) => a + b, 0); let k = 0; ex.forEach((e, i) => { if (e > ex[k]) k = i; }); return [k, ex[k] / z]; };
+// Marken, die man am Logo oder Aufdruck erkennt (klein gehalten, damit die einmalige Berechnung schnell geht)
+const LOGO_BRANDS = ['Nike', 'Adidas', 'Puma', 'New Balance', 'Reebok', 'Converse', 'Vans', 'Jordan', 'Under Armour', 'Champion', 'Lacoste', 'Fila', 'Kappa', 'Stüssy', 'Supreme', 'Palace', 'Carhartt', 'Patagonia', 'The North Face', 'Stone Island', 'Moncler', 'Ralph Lauren', 'Tommy Hilfiger', 'Calvin Klein', "Levi's", 'Gucci', 'Louis Vuitton', 'Balenciaga', 'Off-White', 'Essentials', 'Bape', 'Comme des Garçons', 'Burberry', 'Versace', 'Prada', 'Dior', 'Chanel', 'Diesel', 'Hugo Boss', 'Gap', 'Trapstar', 'Corteiz', 'Chrome Hearts', 'Kith', 'Obey', 'Thrasher', 'Hollister', 'Abercrombie & Fitch', 'Guess', 'Dickies', 'Columbia', 'Salomon', 'Asics', 'Timberland', 'Arc\'teryx'];
+// Mehrere Texte in einem Durchgang (stapelweise, mit Pausen, damit die Seite nicht einfriert)
+async function textVecs(prompts) {
+  const { tok, tm } = await loadTextModel();
+  const out = [];
+  for (let i = 0; i < prompts.length; i += 8) {
+    const { text_embeds } = await tm(tok(prompts.slice(i, i + 8), { padding: true, truncation: true }));
+    const n = text_embeds.dims[0], d = text_embeds.dims[1], data = text_embeds.normalize().data;
+    for (let r = 0; r < n; r++) out.push(Float32Array.from(data.slice(r * d, (r + 1) * d)));
+    await new Promise((res) => setTimeout(res, 0));
+  }
+  return out;
+}
+let brandVecs = null;
+function loadBrandVecs() {
+  if (!brandVecs) {
+    brandVecs = (async () => {
+      const KEY = 'jawnz-brandvec-v2', names = LOGO_BRANDS;
+      try {
+        const c = JSON.parse(localStorage.getItem(KEY));
+        if (c && c.n === names.join('|') && c.v.length === names.length) return names.map((b, i) => ({ b, v: Float32Array.from(c.v[i]) }));
+      } catch (e) { /* neu berechnen */ }
+      const vs = await textVecs(names.map((b) => `a photo of clothing with the ${b} logo`));
+      const out = names.map((b, i) => ({ b, v: vs[i] }));
+      try { localStorage.setItem(KEY, JSON.stringify({ n: names.join('|'), v: out.map((x) => Array.from(x.v, (n) => Math.round(n * 1e4) / 1e4)) })); } catch (e) { /* Speicher voll: egal */ }
+      return out;
+    })().catch((e) => { brandVecs = null; throw e; });
+  }
+  return brandVecs;
+}
+let colorVecs = null;
+const loadColorVecs = () => colorVecs || (colorVecs = textVecs(Object.values(COLOR_EN).map((en) => `a ${en} piece of clothing`)).then((vs) => Object.keys(COLOR_EN).map((de, i) => ({ de, v: vs[i] }))).catch((e) => { colorVecs = null; throw e; }));
+let plainVecs = null;
+const loadPlainVecs = () => plainVecs || (plainVecs = textVecs(['a plain piece of clothing without any logo or print', 'a photo of clothing', 'a garment with a graphic print']).catch((e) => { plainVecs = null; throw e; }));
+// Liefert { emb, brand, color }: Bild-Vektor plus – nur bei klarer Erkennung – Marke und Farbe
+async function describePhoto(blob) {
+  const emb = await embedBlob(blob);
+  const out = { emb, brand: null, color: null };
+  try {
+    const [bv, pv, cv] = await Promise.all([loadBrandVecs(), loadPlainVecs(), loadColorVecs()]);
+    const [k, p] = softTop([...bv.map((x) => dotv(emb, x.v)), ...pv.map((v) => dotv(emb, v))]);
+    if (k < bv.length && p >= 0.5) out.brand = bv[k].b;
+    const [ci, cp] = softTop(cv.map((x) => dotv(emb, x.v)));
+    if (cp >= 0.45) out.color = cv[ci].de;
+  } catch (e) { console.warn('Marken-/Farberkennung nicht möglich', e); }
+  return out;
 }
 // Öffentliche Teile ohne Vektor nach und nach berechnen (im Hintergrund, einmalig pro Teil)
 let embedBusy = false;

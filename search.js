@@ -149,18 +149,41 @@ for (const id of ['fColor', 'fSize', 'fBrand']) {
   $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 }
 
-// Fotosuche: ein Foto wählen, dann zeigt die Suche ähnliche (am besten gleiche) öffentliche Teile anderer; nutzt den Bild-Vektor (CLIP) wie „Ähnliche Teile“
+// Fotosuche: ein Foto wählen, dann zeigt die Suche ähnliche (am besten gleiche) öffentliche Teile anderer.
+// Neben dem Gesamteindruck (Bild-Vektor) zählen erkannte Marke (Logo, Aufdruck) und Farbe: passende Teile rücken nach vorn.
 {
-  const box = $('photoSearch'), res = $('photoResults'), thumb = $('photoThumb');
-  let token = 0, thumbUrl = null;
+  const box = $('photoSearch'), res = $('photoResults'), thumb = $('photoThumb'), tags = $('photoTags');
+  let token = 0, thumbUrl = null, found = null, use = {};
   const note = (t) => res.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: t }));
   const close = () => {
-    token++; box.hidden = true; res.replaceChildren();
+    token++; box.hidden = true; res.replaceChildren(); tags.replaceChildren(); found = null;
     if (thumbUrl) { URL.revokeObjectURL(thumbUrl); thumbUrl = null; }
     thumb.removeAttribute('src');
   };
   $('photoClose').addEventListener('click', close);
   $('soInput').addEventListener('input', () => { if (!box.hidden) close(); }); // Tippen beendet die Fotosuche
+  const same = (a, b) => a && b && brandKey(a) === brandKey(b);
+  // Reihenfolge: passende Marke, dann passende Farbe, dann der Bildeindruck (Platz in der Ähnlichkeitsliste)
+  async function render(my) {
+    const { visual, byBrand, brand, color } = found;
+    const all = new Map();
+    visual.forEach((it, i) => all.set(it.id, { it, rank: i }));
+    byBrand.forEach((it) => { if (!all.has(it.id)) all.set(it.id, { it, rank: 50 }); });
+    const score = ({ it, rank }) => rank - (use.brand && brand && same(it.brand, brand) ? 100 : 0) - (use.color && color && it.color === color ? 20 : 0);
+    const list = [...all.values()].sort((x, y) => score(x) - score(y)).slice(0, 24).map((x) => x.it);
+    await Profile.showItems(list, res, () => my !== token);
+  }
+  function drawTags(my) {
+    tags.replaceChildren();
+    for (const k of ['brand', 'color']) {
+      if (!found[k]) continue;
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (use[k] ? ' active' : ''); b.textContent = found[k];
+      b.setAttribute('aria-pressed', use[k]);
+      b.onclick = () => { use[k] = !use[k]; drawTags(my); render(my); }; // antippen schaltet die Gewichtung aus oder an
+      tags.append(b);
+    }
+  }
   $('soPhotoInput').addEventListener('change', async (e) => {
     const f = e.target.files[0];
     e.target.value = '';
@@ -172,12 +195,19 @@ for (const id of ['fColor', 'fSize', 'fBrand']) {
     box.hidden = false; $('soHistory').hidden = true;
     note('Suche ähnliche Teile … (beim ersten Mal wird ein kleines Bildmodell geladen)');
     try {
-      const emb = await embedBlob(f);
+      const d = await describePhoto(f);
       if (my !== token) return;
-      const { data, error } = await Cloud.client().rpc('similar_public_items', { p_emb: '[' + emb.join(',') + ']' });
-      if (error) throw error;
+      const sb = Cloud.client();
+      const [vis, brandList] = await Promise.all([
+        sb.rpc('similar_public_items', { p_emb: '[' + d.emb.join(',') + ']' }),
+        d.brand ? Profile.fetchItems(d.brand, { brand: d.brand }).catch(() => []) : [],
+      ]);
+      if (vis.error) throw vis.error;
       if (my !== token) return;
-      await Profile.showItems(data || [], res, () => my !== token);
+      found = { visual: vis.data || [], byBrand: brandList, brand: d.brand, color: d.color };
+      use = { brand: !!d.brand, color: !!d.color };
+      drawTags(my);
+      await render(my);
     } catch (err) { console.error(err); if (my === token) note('Die Fotosuche hat nicht geklappt.'); }
   });
 }

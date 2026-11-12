@@ -1156,3 +1156,5 @@ dialog { overscroll-behavior: contain; }
 .photo-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .photo-head img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; background: var(--gray); }
 .photo-head b { flex: 1; min-width: 0; }
+.photo-tags { margin-bottom: 12px; }
+.photo-tags:empty { display: none; }
