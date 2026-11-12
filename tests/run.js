@@ -62,6 +62,11 @@ test('uid liefert UUIDs (v4) und keine Doppelten', () => {
 });
 
 /* ---------- Farben ---------- */
+group('Marke im Namen');
+test('brandInName findet die Marke als ganzes Wort', () => {
+  eq(W('brandInName')('Nike Air Max 90'), 'Nike'); eq(W('brandInName')('Vintage New Balance 574'), 'New Balance');
+  eq(W('brandInName')('Blaue Jacke'), null); eq(W('brandInName')('Pumas Schuhe'), null);
+});
 group('Farben');
 const NAMES = [
   [[0, 0, 0], 'Schwarz'], [[255, 255, 255], 'Weiß'], [[140, 140, 140], 'Grau'], [[216, 195, 165], 'Beige'], [[201, 180, 143], 'Beige'],

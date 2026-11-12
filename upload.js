@@ -105,6 +105,7 @@ async function nextUpload() {
     $('upName').value = nameFromFile(f);
     upDone++;
     autoCategory(upCur, orig);
+    setTimeout(() => window.refreshBrandHint && window.refreshBrandHint(), 0);
     refreshUpload();
     if (!upDlg.open) upDlg.show(); // steht als Bearbeitungsbereich direkt auf der Hinzufügen-Seite
     upDlg.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -694,3 +695,21 @@ const dz = $('dropzone');
 ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
 dz.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+
+// Steht die Marke im Namen, wird sie beim Feld „Marke“ vorgeschlagen (genau ein Vorschlag, Tippen übernimmt ihn)
+{
+  const hint = document.createElement('button');
+  hint.type = 'button'; hint.className = 'brand-hint'; hint.hidden = true;
+  $('upBrand').after(hint);
+  const refresh = () => {
+    const b = brandInName($('upName').value, items.map((r) => r.brand));
+    const show = b && !$('upBrand').value.trim();
+    hint.hidden = !show;
+    if (show) { hint.textContent = 'Marke ' + b + '?'; hint.dataset.brand = b; }
+  };
+  hint.addEventListener('click', () => { $('upBrand').value = hint.dataset.brand; hint.hidden = true; });
+  $('upName').addEventListener('input', refresh);
+  $('upBrand').addEventListener('input', refresh);
+  new MutationObserver(refresh).observe($('uploadDialog'), { attributes: true, attributeFilter: ['open'] });
+  window.refreshBrandHint = refresh; // wird beim Laden eines neuen Fotos aufgerufen
+}

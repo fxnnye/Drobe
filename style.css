@@ -1143,3 +1143,6 @@ body:not(:has(#meBar:not([hidden]))) .top > .menu { display: none; }
 /* Offenes Fenster: Seite dahinter bleibt stehen */
 body.dlg-lock { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
 dialog { overscroll-behavior: contain; }
+
+.brand-hint { display: inline-flex; align-self: flex-start; min-height: 32px; align-items: center; margin-top: 8px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--gray); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.brand-hint[hidden] { display: none; }

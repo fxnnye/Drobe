@@ -189,6 +189,22 @@ function brandMatches(q, own = [], limit = 5) {
   scored.sort((x, y) => x.s - y.s || (y.mine - x.mine) || x.b.length - y.b.length || x.b.localeCompare(y.b));
   return scored.slice(0, limit).map((x) => x.b);
 }
+// Steht eine bekannte oder schon benutzte Marke im Namen (als ganzes Wort), kommt genau eine Marke zurück (die längste), sonst null
+function brandInName(name, own = []) {
+  const words = String(name).split(/[^\p{L}\p{N}]+/u).map(brandKey).filter(Boolean);
+  if (!words.length) return null;
+  const text = ' ' + words.join(' ') + ' ';
+  const seen = new Set(); let best = null;
+  for (const b of [...own, ...KNOWN_BRANDS]) {
+    if (!b) continue;
+    const parts = String(b).split(/[\s\-&]+/).map(brandKey).filter(Boolean);
+    const k = parts.join(' ');
+    if (!k || k.replace(/ /g, '').length < 3 || seen.has(k)) continue;
+    seen.add(k);
+    if (text.includes(' ' + k + ' ') && (!best || k.length > best.k.length)) best = { b, k };
+  }
+  return best ? best.b : null;
+}
 // Hängt die Vorschlagsliste unter ein Markenfeld. Die Liste enthält immer auch „so lassen“ mit der eigenen Schreibweise.
 function brandSuggest(input) {
   if (!input) return;
