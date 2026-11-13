@@ -629,8 +629,9 @@ const Profile = (() => {
       box.replaceChildren();
       if (!names.length) return message(box, which === 'followers' ? 'Dir folgt noch niemand.' : 'Du folgst noch niemandem. Über „Suche“ findest du Mitglieder.');
       for (const n of names) {
-        const b = el('button', 'member', n);
+        const b = el('button', 'member');
         b.type = 'button';
+        b.append(avatarFor(n, 'md'), el('span', null, n));
         b.onclick = () => { location.hash = '#/u/' + n; };
         box.append(b);
       }

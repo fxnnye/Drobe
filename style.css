@@ -1219,3 +1219,12 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 /* Hinweis „So sehen andere dein Profil“ rechts neben Zurück */
 .pub-back { display: inline-flex; vertical-align: middle; }
 .pub-banner-inline { display: inline-block; vertical-align: middle; margin: 4px 0 16px 10px; padding: 8px 14px; }
+
+/* Listen-Fenster (Follower, Folge ich, Bewertungen): füllen das Handy aus */
+dialog.sheet { width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; margin: 0; border-radius: 0; padding: 16px; padding-top: calc(16px + env(safe-area-inset-top)); padding-bottom: calc(16px + env(safe-area-inset-bottom)); overflow: hidden; }
+dialog.sheet[open] { display: flex; flex-direction: column; }
+dialog.sheet form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+dialog.sheet .rev-list { flex: 1; max-height: none; }
+dialog.sheet .member { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+@media (min-width: 701px) { dialog.sheet { width: min(520px, 94vw); height: min(760px, 92dvh); border-radius: 32px; margin: auto; } }
+#peopleList { display: flex; flex-direction: column; gap: 8px; }
