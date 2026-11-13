@@ -472,6 +472,17 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   </form>
 </dialog>
 
+<dialog id="peopleDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2 id="peopleTitle">Follower</h2>
+    <div id="peopleList" class="rev-list"></div>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="peopleClose">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="reviewsDialog">
   <form method="dialog" onsubmit="return false">
     <h2 id="revTitle">Bewertungen</h2>

@@ -637,6 +637,15 @@ const Profile = (() => {
     } catch (e) { console.error(e); message(box, 'Die Liste konnte nicht geladen werden.', { retry: () => loadPeople(which, box) }); }
   }
 
+  function openPeople(which) {
+    const d = $('peopleDialog'), box = $('peopleList');
+    $('peopleTitle').textContent = which === 'followers' ? 'Follower' : 'Folge ich';
+    box.replaceChildren();
+    loadPeople(which, box);
+    box.onclick = (e) => { if (e.target.closest('.member')) d.close(); };
+    if (!d.open) d.showModal();
+  }
+
   /* ---------- Melden und Sperren ---------- */
   const blocked = new Set();
   async function loadBlocks(sb) {
@@ -1171,6 +1180,7 @@ const Profile = (() => {
     $('pfPhotoDel').onclick = () => { pendingAvatar = ''; $('pfCrop').hidden = true; $('pfAvatar').hidden = false; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
     $('revClose').onclick = () => $('reviewsDialog').close();
+    $('peopleClose').onclick = () => $('peopleDialog').close();
     document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.onclick = () => { inboxTab = t.dataset.tab; renderInbox(); }; });
     $('intCancel').onclick = () => $('interestDialog').close();
     $('repCancel').onclick = () => $('reportDialog').close();
@@ -1298,5 +1308,5 @@ const Profile = (() => {
     for (const rec of list) grid.append(feedCard(rec, urls, rec.outfit ? 'outfits' : shape));
   }
 
-  return { paintOwnAvatars, loadPeople, start, isPinned, setPinned, search, fetchItems, showItems, feed, feedStage, showFeed, loadInbox, leaveThread };
+  return { paintOwnAvatars, loadPeople, openPeople, start, isPinned, setPinned, search, fetchItems, showItems, feed, feedStage, showFeed, loadInbox, leaveThread };
 })();

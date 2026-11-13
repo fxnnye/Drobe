@@ -39,8 +39,8 @@ logo.setAttribute('role', 'link'); logo.tabIndex = 0; logo.setAttribute('aria-la
 logo.onclick = () => document.querySelector('.tab[data-view=feed]').click();
 logo.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); logo.onclick(); } };
 document.querySelectorAll('.subtab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.sub)));
-$('meFollowers').onclick = () => showView('followers');
-$('meFollowing').onclick = () => showView('following');
+$('meFollowers').onclick = () => Profile.openPeople('followers');
+$('meFollowing').onclick = () => Profile.openPeople('following');
 document.querySelectorAll('[data-back-me]').forEach((b) => { b.onclick = () => showView('me'); });
 
 function renderMeHead() {
