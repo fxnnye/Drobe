@@ -1202,8 +1202,9 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 
 /* Mehr Platz zum Scrollen: Outfit-Bearbeitung unten, Profil auch mit wenigen Teilen */
 #view-builder { padding-bottom: 240px; }
-#view-closet, #view-saved, #view-outfits { min-height: calc(100vh + 320px); min-height: calc(100dvh + 320px); }
+#view-closet, #view-saved, #view-outfits { min-height: calc(100vh + 120px); min-height: calc(100dvh + 120px); }
 @media (max-width: 700px) {
-  main, .public { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
+  main { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
+  .public { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
   body.in-thread main { padding-bottom: 8px; }
 }
