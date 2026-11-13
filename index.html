@@ -553,9 +553,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <button class="set-row" type="button" data-legal="impressum">Impressum</button>
       <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
       <button class="set-row" type="button" data-legal="nutzung">AGB</button>
-      <p class="set-head" id="adminHead" hidden>Admin</p>
-      <button class="set-row" type="button" data-open="moderation" id="modRow" hidden>Moderation <span class="badge" id="modBadge"></span></button>
-      <button class="set-row" type="button" data-open="errors" id="errRow" hidden>Fehlerprotokoll</button>
       <button class="btn full set-logout" type="button" id="logoutBtn">Abmelden</button>
     </div>
 
@@ -576,20 +573,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <p class="pw-msg" id="delMsg" role="status"></p>
       <button class="btn primary full danger" type="button" id="delGo" disabled>Konto endgültig löschen</button>
     </div>
-
-    <div class="set-panel" data-panel="errors" data-title="Fehlerprotokoll" hidden>
-      <p class="muted small">Unerwartete Fehler aus der App, neueste zuerst. Gleiche Meldungen werden gezählt.</p>
-      <div id="errList"></div>
-      <button class="btn full" type="button" id="errClear">Alle löschen</button>
-    </div>
-
-    <div class="set-panel" data-panel="moderation" data-title="Moderation" hidden>
-      <p class="muted small">Offene Meldungen. „Teil verstecken“ macht den Eintrag privat (der Besitzer kann ihn nicht wieder freigeben), „Konto sperren“ meldet die Person ab und versteckt alles von ihr. Wer gemeldet hat, bekommt beim nächsten Start eine Rückmeldung.</p>
-      <div id="modList"></div>
-      <h3 class="mod-head">Gesperrte Konten</h3>
-      <div id="modBanned"></div>
-    </div>
-
 
     <div class="set-panel" data-panel="password" data-title="Passwort ändern" hidden>
       <label class="field">Neues Passwort

@@ -1195,3 +1195,7 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 #itSimilar, #itSimilarBox { display: none; } /* „Ähnliche Teile von anderen“ gibt es bei eigenen Teilen nicht mehr */
 #itViewRow .spacer { display: none; }
 #itViewRow .btn { flex: 1; }
+
+/* Menü-Symbol (drei Striche) nicht auf Breite 0 schrumpfen lassen, wenn der Knopf oben in der Kopfzeile steht */
+.menu svg { flex: none; }
+.top > .menu { padding: 0; justify-content: center; align-items: center; }
