@@ -1207,3 +1207,12 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
   .public { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   body.in-thread main { padding-bottom: 8px; }
 }
+
+/* Bewertungen */
+.rv-stars { display: flex; gap: 6px; margin: 8px 0 16px; }
+.rv-stars button { border: 0; background: none; font-size: 36px; line-height: 1; padding: 2px 4px; cursor: pointer; color: var(--text); }
+.rev-list { max-height: 50vh; max-height: 50dvh; overflow-y: auto; overscroll-behavior: contain; margin-bottom: 12px; }
+.rev-item { padding: 12px 0; border-bottom: 1px solid var(--gray-hover); }
+.rev-stars { letter-spacing: 2px; }
+.rev-text { margin: 4px 0 0; overflow-wrap: anywhere; }
+.me-rating { align-self: flex-start; text-align: left; }

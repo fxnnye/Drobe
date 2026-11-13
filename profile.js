@@ -167,6 +167,7 @@ const Profile = (() => {
     const about = [data.city, data.followers ? cnt(data.followers, 'Follower', 'Follower') : ''].filter(Boolean).join(' · ');
     if (about) info.append(el('span', 'muted small', about));
     if (data.bio) info.append(el('span', 'small pub-bio', data.bio));
+    fetchReviews(data.username).then((r) => { if (r && r.count && info.isConnected) { const rb = el('button', 'linkish small', ratingText(r)); rb.type = 'button'; rb.onclick = () => openReviews(data.username); info.append(rb); } });
     head.append(av, info);
     box.append(head);
     if (!own) avatarOf(data.username).then((url) => { if (url) paintAvatar(av, url, data.username); });
@@ -500,6 +501,72 @@ const Profile = (() => {
     }
   }
 
+  /* ---------- Bewertungen (nach einem erfolgreichen Kauf) ---------- */
+  const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const ratingText = (r) => '★ ' + Number(r.avg).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' · ' + r.count + (r.count === 1 ? ' Bewertung' : ' Bewertungen');
+  async function fetchReviews(name) {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return null;
+    try { const { data, error } = await sb.rpc('user_reviews', { p_username: name }); if (error) throw error; return data; } catch (e) { return null; } // Migration 0039 fehlt noch oder kein Netz
+  }
+  async function openReviews(name) {
+    const d = $('reviewsDialog'), list = $('revList');
+    $('revTitle').textContent = 'Bewertungen von ' + name;
+    $('revSummary').textContent = '';
+    list.replaceChildren(); message(list, 'Lade …', { loading: true });
+    if (!d.open) d.showModal();
+    const r = await fetchReviews(name);
+    list.replaceChildren();
+    if (!r) return message(list, 'Die Bewertungen konnten nicht geladen werden.');
+    if (!r.count) return list.append(el('p', 'muted', 'Noch keine Bewertungen.'));
+    $('revSummary').textContent = ratingText(r);
+    for (const x of r.items) {
+      const row = el('div', 'rev-item');
+      row.append(el('b', 'rev-stars', stars(x.rating)));
+      row.append(el('span', 'muted small', ' von ' + x.from + ' · ' + new Date(x.at).toLocaleDateString('de-DE')));
+      if (x.comment) row.append(el('p', 'rev-text', x.comment));
+      list.append(row);
+    }
+  }
+  // Bewertung abgeben: Sterne wählen, optional ein kurzer Text; löst auf, wenn der Dialog zu ist
+  function askReview(offerId, other) {
+    const d = $('reviewDialog');
+    let rating = 0;
+    $('rvTitle').textContent = 'Bewertung für ' + other;
+    $('rvText').value = ''; $('rvError').textContent = '';
+    const btns = [...document.querySelectorAll('#rvStars button')];
+    const paint = () => btns.forEach((b, i) => { b.textContent = i < rating ? '★' : '☆'; b.setAttribute('aria-pressed', i < rating); });
+    btns.forEach((b, i) => { b.onclick = () => { rating = i + 1; paint(); }; });
+    paint();
+    return new Promise((resolve) => {
+      const done = () => { d.onclose = null; if (d.open) d.close(); resolve(); };
+      $('rvCancel').onclick = done;
+      d.onclose = done;
+      $('rvSend').onclick = async () => {
+        if (!rating) { $('rvError').textContent = 'Bitte wähle 1 bis 5 Sterne.'; return; }
+        $('rvSend').disabled = true;
+        try {
+          const { error } = await Cloud.client().rpc('leave_review', { p_offer: offerId, p_rating: rating, p_comment: $('rvText').value });
+          if (error) throw error;
+          toast('Danke für deine Bewertung');
+          done();
+        } catch (e) { console.error(e); $('rvError').textContent = (e && e.message) || 'Das hat nicht geklappt.'; }
+        $('rvSend').disabled = false;
+      };
+      d.showModal();
+    });
+  }
+  async function loadOwnRating() {
+    const u = Cloud.user();
+    const b = $('meRating');
+    b.hidden = true;
+    if (!u) return;
+    const r = await fetchReviews(u.name);
+    if (!r || !r.count) return;
+    b.textContent = ratingText(r); b.hidden = false;
+    b.onclick = () => openReviews(u.name);
+  }
+
   /* ---------- Folgen und Merken ---------- */
   const follows = new Set(); // Benutzernamen, denen ich folge
   const saved = new Set();
@@ -743,6 +810,10 @@ const Profile = (() => {
     const rpc = async (name, args) => { const { error } = await Cloud.client().rpc(name, args); if (error) throw error; };
     if (o.listing === 'sold') {
       box.append(el('p', 'muted small offer-note', 'Dieses Teil ist verkauft.'));
+      if (o.status === 'accepted') {
+        if (o.reviewed) box.append(el('p', 'muted small offer-note', 'Du hast diesen Kauf bewertet.'));
+        else act('Bewertung abgeben', 'btn primary', () => askReview(o.id, thread.other));
+      }
     } else if (o.status === 'open' && o.seller) {
       act('Annehmen', 'btn primary', () => rpc('answer_offer', { p_offer: o.id, p_action: 'accept' }));
       act('Ablehnen', 'btn', () => rpc('answer_offer', { p_offer: o.id, p_action: 'decline' }));
@@ -1100,6 +1171,7 @@ const Profile = (() => {
     };
     $('pfPhotoDel').onclick = () => { pendingAvatar = ''; $('pfCrop').hidden = true; $('pfAvatar').hidden = false; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
+    $('revClose').onclick = () => $('reviewsDialog').close();
     document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.onclick = () => { inboxTab = t.dataset.tab; renderInbox(); }; });
     $('intCancel').onclick = () => $('interestDialog').close();
     $('repCancel').onclick = () => $('reportDialog').close();
@@ -1124,7 +1196,7 @@ const Profile = (() => {
   // Wird vom Konto-Code nach dem Start (Gast oder angemeldet) aufgerufen
   async function start() {
     if (!started) { started = true; wire(); wireThread(); }
-    if (Cloud.user()) { loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); checkReportUpdates(); }
+    if (Cloud.user()) { loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); loadOwnRating(); checkReportUpdates(); }
     await route();
   }
 

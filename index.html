@@ -184,6 +184,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <div class="me-info">
         <strong id="meName"></strong>
         <span class="muted small" id="meCounts"></span>
+        <button class="linkish small me-rating" type="button" id="meRating" hidden></button>
         <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button></span>
       </div>
       <button class="btn" type="button" id="meProfile">Bearbeiten</button>
@@ -468,6 +469,37 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <span class="spacer"></span>
       <button class="btn" type="button" id="intCancel">Abbrechen</button>
       <button class="btn primary" type="button" id="intSend">Senden</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="reviewsDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2 id="revTitle">Bewertungen</h2>
+    <p class="muted" id="revSummary"></p>
+    <div id="revList" class="rev-list"></div>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="revClose">Schließen</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="reviewDialog">
+  <form method="dialog" onsubmit="return false">
+    <h2 id="rvTitle">Bewertung</h2>
+    <p class="muted small">Wie war der Kauf? Deine Bewertung sieht jeder auf dem Profil.</p>
+    <div class="rv-stars" id="rvStars" role="group" aria-label="Sterne">
+      <button type="button" aria-label="1 Stern">☆</button><button type="button" aria-label="2 Sterne">☆</button><button type="button" aria-label="3 Sterne">☆</button><button type="button" aria-label="4 Sterne">☆</button><button type="button" aria-label="5 Sterne">☆</button>
+    </div>
+    <label class="field">Kommentar (optional)
+      <textarea id="rvText" rows="3" maxlength="300" placeholder="z. B. schnelle Antwort, Teil wie beschrieben"></textarea>
+    </label>
+    <p class="auth-error" id="rvError" role="alert"></p>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="rvCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="rvSend">Bewertung senden</button>
     </div>
   </form>
 </dialog>
