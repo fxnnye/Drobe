@@ -332,16 +332,22 @@ const Cloud = (() => {
     };
     $('pwSave').onclick = async () => {
       const msg = $('pwMsg');
-      const a = $('pwNew').value, b = $('pwNew2').value;
+      const old = $('pwOld').value, a = $('pwNew').value, b = $('pwNew2').value;
       msg.className = 'pw-msg err';
+      if (!old) { msg.textContent = 'Bitte gib dein altes Passwort ein.'; return; }
       if (a.length < 8) { msg.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
       if (a !== b) { msg.textContent = 'Die beiden Passwörter sind nicht gleich.'; return; }
       if (!sb || !navigator.onLine) { msg.textContent = 'Dafür brauchst du eine Internetverbindung.'; return; }
       $('pwSave').disabled = true;
       try {
+        // Altes Passwort prüfen: erneut mit der eigenen E-Mail-Adresse anmelden
+        const email = (await sb.auth.getSession()).data.session?.user?.email;
+        if (!email) throw new Error('Bitte melde dich neu an.');
+        const chk = await sb.auth.signInWithPassword({ email, password: old });
+        if (chk.error) { msg.textContent = 'Das alte Passwort stimmt nicht.'; return; }
         const { error } = await sb.auth.updateUser({ password: a });
         if (error) throw error;
-        $('pwNew').value = ''; $('pwNew2').value = '';
+        $('pwOld').value = ''; $('pwNew').value = ''; $('pwNew2').value = '';
         msg.className = 'pw-msg';
         msg.textContent = 'Passwort geändert.';
       } catch (ex) {

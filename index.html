@@ -575,6 +575,9 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
 
     <div class="set-panel" data-panel="password" data-title="Passwort ändern" hidden>
+      <label class="field">Altes Passwort
+        <input type="password" id="pwOld" autocomplete="current-password">
+      </label>
       <label class="field">Neues Passwort
         <input type="password" id="pwNew" autocomplete="new-password">
       </label>

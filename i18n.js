@@ -94,7 +94,7 @@ const I18N = {
     // Einstellungen, Backup
     'Dein Konto mit allen Teilen, Outfits, Nachrichten und Fotos wird endgültig gelöscht. Das lässt sich nicht rückgängig machen.': 'Your account with all items, outfits, messages and photos will be deleted permanently. This cannot be undone.',
     'Die Daten auf diesem Gerät werden ebenfalls entfernt. Speichere vorher ein Backup, wenn du etwas behalten willst.': 'The data on this device is removed as well. Save a backup first if you want to keep anything.',
-    'Zur Bestätigung deinen Benutzernamen eintippen': 'Type your username to confirm', 'Neues Passwort wiederholen': 'Repeat new password',
+    'Zur Bestätigung deinen Benutzernamen eintippen': 'Type your username to confirm', 'Neues Passwort wiederholen': 'Repeat new password', 'Altes Passwort': 'Old password', 'Bitte gib dein altes Passwort ein.': 'Please enter your old password.', 'Das alte Passwort stimmt nicht.': 'The old password is wrong.',
     'Unerwartete Fehler aus der App, neueste zuerst. Gleiche Meldungen werden gezählt.': 'Unexpected errors from the app, newest first. Identical reports are counted.',
     'Dein Schrank liegt in deinem Konto und auf diesem Gerät. Speichere trotzdem ab und zu ein Backup, dann ist im Notfall alles schnell wieder da.': 'Your closet lives in your account and on this device. Still, save a backup now and then so everything is quickly back in an emergency.',
     'Backup speichern': 'Save backup', 'Backup-Datei hierher ziehen': 'Drag the backup file here', 'oder klicken zum Auswählen': 'or click to choose',
