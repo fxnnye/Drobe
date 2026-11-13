@@ -1199,3 +1199,7 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 /* Menü-Symbol (drei Striche) nicht auf Breite 0 schrumpfen lassen, wenn der Knopf oben in der Kopfzeile steht */
 .menu svg { flex: none; }
 .top > .menu { padding: 0; justify-content: center; align-items: center; }
+
+/* Mehr Platz zum Scrollen: Outfit-Bearbeitung unten, Profil auch mit wenigen Teilen */
+#view-builder { padding-bottom: 120px; }
+#view-closet, #view-saved, #view-outfits { min-height: calc(100vh + 60px); min-height: calc(100dvh + 60px); }

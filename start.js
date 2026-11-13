@@ -142,7 +142,7 @@ async function startApp(userId) {
 }
 
 // Startbildschirm ausblenden: erst wenn die App bereit ist, aber mindestens 1,5 Sekunden nach dem Start (Schriften, Bilder und Daten brauchen die Zeit), spätestens nach 12 Sekunden
-const SPLASH_MIN_MS = 1500;
+const SPLASH_MIN_MS = 2500;
 let splashHiding = false;
 function hideSplash(force) {
   if (splashHiding) return;
