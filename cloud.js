@@ -220,7 +220,36 @@ const Cloud = (() => {
     const p = document.createElement('p'); p.textContent = `Hallo ${name}, wir haben dir eine Mail an ${mail} geschickt. Tippe darin auf „E-Mail bestätigen“, dann bist du drin. Schau auch im Spam-Ordner nach.`;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary full'; b.textContent = 'Zur Anmeldung';
     b.onclick = () => location.reload();
-    f.append(h, h2, p, b);
+    // Mail nicht angekommen? Erneut anfordern, aber erst nach einer Minute
+    const WAIT = 60;
+    const again = document.createElement('button'); again.type = 'button'; again.className = 'btn full'; again.textContent = 'Mail erneut senden'; again.disabled = true;
+    const note = document.createElement('p'); note.className = 'muted small'; note.setAttribute('role', 'status');
+    let left = WAIT;
+    const tick = setInterval(() => {
+      if (!again.isConnected) return clearInterval(tick);
+      left -= 1;
+      if (left > 0) { note.textContent = `Keine Mail angekommen? In ${left} Sekunden kannst du sie erneut anfordern.`; return; }
+      clearInterval(tick); again.disabled = false; note.textContent = 'Keine Mail angekommen? Du kannst sie jetzt erneut anfordern.';
+    }, 1000);
+    note.textContent = `Keine Mail angekommen? In ${left} Sekunden kannst du sie erneut anfordern.`;
+    again.onclick = async () => {
+      if (!sb || !navigator.onLine) { note.textContent = 'Dafür brauchst du eine Internetverbindung.'; return; }
+      again.disabled = true;
+      try {
+        const { error } = await sb.auth.resend({ type: 'signup', email: mail, options: { emailRedirectTo: APP_URL } });
+        if (error) throw error;
+        note.textContent = 'Wir haben dir die Mail noch einmal geschickt. Schau auch im Spam-Ordner nach.';
+      } catch (ex) {
+        note.textContent = /rate|seconds|too many/i.test(String((ex && ex.message) || ex)) ? 'Bitte warte einen Moment, bevor du es noch einmal versuchst.' : 'Das hat nicht geklappt. Versuche es gleich noch einmal.';
+      }
+      left = WAIT;
+      const t2 = setInterval(() => {
+        if (!again.isConnected) return clearInterval(t2);
+        left -= 1;
+        if (left <= 0) { clearInterval(t2); again.disabled = false; }
+      }, 1000);
+    };
+    f.append(h, h2, p, note, again, b);
   }
 
   let registering = false;
