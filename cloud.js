@@ -296,7 +296,7 @@ const Cloud = (() => {
         if (!MAIL_OK.test(mail) || isPseudo(mail)) { err.textContent = 'Bitte gib eine echte E-Mail-Adresse ein.'; return; }
         if (!NAME_OK.test(name)) { err.textContent = 'Benutzername: 3 bis 20 Zeichen, nur Buchstaben, Zahlen, Punkt, Strich und Unterstrich.'; return; }
         if (pass.length < 8) { err.textContent = 'Das Passwort braucht mindestens 8 Zeichen.'; return; }
-        if (!$('authConsent').checked) { err.textContent = 'Bitte akzeptiere die AGB und bestätige die Datenschutzerklärung.'; return; }
+        if (!$('authConsent').checked) { err.textContent = 'Bitte akzeptiere die AGB, bestätige, dass du mindestens 18 Jahre alt bist, und die Datenschutzerklärung.'; return; }
         $('authSubmit').disabled = true;
         try {
           const free = await sb.rpc('username_free', { p_name: name });

@@ -193,11 +193,12 @@
         const l = el('label', null, 'Zur Bestätigung den Benutzernamen „' + o.typeName + '“ eintippen'); typed = el('input'); typed.autocomplete = 'off'; typed.autocapitalize = 'none'; l.append(typed); body.push(l);
       }
       if (o.checkboxLabel) {
-        const l = el('label', 'check'); check = el('input'); check.type = 'checkbox'; check.checked = true; l.append(check, el('span', null, o.checkboxLabel)); body.push(l);
+        const l = el('label', 'check'); check = el('input'); check.type = 'checkbox'; check.checked = !o.mustCheck; l.append(check, el('span', null, o.checkboxLabel)); body.push(l);
       }
       const cancel = btn('Abbrechen', null, () => closeModal());
       const ok = btn(o.confirmLabel, o.danger ? 'danger solid' : 'primary');
-      if (typed) { ok.disabled = true; typed.oninput = () => { ok.disabled = typed.value.trim().toLowerCase() !== o.typeName.toLowerCase(); }; }
+      const gate = () => { ok.disabled = (typed && typed.value.trim().toLowerCase() !== o.typeName.toLowerCase()) || (o.mustCheck && check && !check.checked); };
+      if (typed || o.mustCheck) { ok.disabled = true; if (typed) typed.oninput = gate; if (check) check.onchange = gate; }
       let answered = false;
       ok.onclick = () => { answered = true; resolve({ reason: reason ? reason.value.trim() : '', checked: check ? check.checked : false }); closeModal(); };
       openModal(o.title, body, [cancel, ok], () => { if (!answered) resolve(null); });
@@ -241,6 +242,39 @@
     const res = await call('admin_set_ban', { p_username: username, p_ban: true, p_reason: r.reason }, username + ' ist gesperrt.');
     if (res.failed) return false;
     return true;
+  }
+
+  // Konto endgültig löschen: erst die Fotos (Storage-API), dann das Konto samt allen Einträgen
+  async function deleteAccountFlow(username) {
+    const r = await confirmAction({
+      title: username + ' endgültig löschen?',
+      intro: 'Das lässt sich nicht rückgängig machen, auch nicht über Entsperren:',
+      bullets: [
+        'Das Konto, alle Teile, Outfits, Nachrichten, Angebote und Meldungen werden gelöscht.',
+        'Alle Fotos des Kontos werden gelöscht.',
+        'Die E-Mail-Adresse wird frei, die Person kann sich neu registrieren.',
+        'Wenn du nur den Zugang beenden willst, nimm „Konto sperren“. Das lässt sich zurücknehmen.',
+      ],
+      reasonLabel: 'Grund (bleibt im Protokoll, optional)',
+      typeName: username,
+      checkboxLabel: 'Ich weiß, dass das Konto danach unwiederbringlich weg ist.',
+      mustCheck: true,
+      confirmLabel: 'Konto endgültig löschen',
+      danger: true,
+    });
+    if (!r) return false;
+    toast('Lösche …');
+    const idRes = await sb.rpc('admin_member_id', { p_username: username });
+    if (idRes.error) { toast('Das hat nicht geklappt: ' + idRes.error.message, true); return false; }
+    const store = sb.storage.from('images');
+    for (let guard = 0; guard < 50; guard++) {
+      const { data, error } = await store.list(idRes.data, { limit: 100 });
+      if (error) { toast('Die Fotos konnten nicht gelöscht werden, das Konto wurde nicht gelöscht: ' + error.message, true); return false; }
+      if (!data || !data.length) break;
+      const rm = await store.remove(data.map((f) => idRes.data + '/' + f.name));
+      if (rm.error) { toast('Die Fotos konnten nicht gelöscht werden, das Konto wurde nicht gelöscht: ' + rm.error.message, true); return false; }
+    }
+    return !(await call('admin_delete_account', { p_username: username, p_reason: r.reason }, username + ' wurde gelöscht.')).failed;
   }
 
   async function removeFlow(username, kind, id, name) {
@@ -295,6 +329,7 @@
       const g2 = el('div', 'group sep'); g2.append(el('h4', null, 'Konto'));
       const r2 = el('div', 'row');
       r2.append(btn(state.banned ? 'Konto entsperren' : 'Konto sperren', state.banned ? 'primary' : 'danger', async () => { if (await banFlow(username, state.banned, { reportId: opt.reportId })) opt.refresh(); }));
+      r2.append(btn('Konto löschen …', 'danger', async () => { if (await deleteAccountFlow(username)) opt.refresh(); }));
       g2.append(r2); wrap.append(g2);
     }
     return wrap;
