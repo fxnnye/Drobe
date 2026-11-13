@@ -67,14 +67,14 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <p class="muted small" id="authNote" hidden>Wir schicken dir eine Mail, mit der du die Adresse bestätigst. Erst danach kannst du dich anmelden. Der Benutzername ist später für andere sichtbar, die E-Mail-Adresse nicht.</p>
     <label class="check" id="authConsentRow" hidden>
       <input type="checkbox" id="authConsent">
-      <span>Ich habe die <a href="#" data-legal="nutzung">Nutzungsbedingungen</a> und die <a href="#" data-legal="datenschutz">Datenschutzerklärung</a> gelesen und bin einverstanden.</span>
+      <span>Ich akzeptiere die <a href="#" data-legal="nutzung">AGB</a> und habe die <a href="#" data-legal="datenschutz">Datenschutzerklärung</a> gelesen.</span>
     </label>
     <p class="auth-error" id="authError" role="alert"></p>
     <button class="btn primary full" type="submit" id="authSubmit">Anmelden</button>
     <button class="linkish" type="button" id="authForgot">Passwort vergessen?</button>
     <button class="btn full" type="button" id="authSwitch">Neues Konto erstellen</button>
     <button class="btn full" type="button" id="authCancel" hidden>Abbrechen</button>
-    <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">Nutzungsbedingungen</a></p>
+    <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">AGB</a></p>
   </form>
 </div>
 
@@ -377,7 +377,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   </section>
 </main>
 <footer id="landing" class="landing" hidden>
-  <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">Nutzungsbedingungen</a></p>
+  <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">AGB</a></p>
 </footer>
 
 <dialog id="itemDialog">
@@ -568,7 +568,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="set-panel" data-panel="legal" data-title="Rechtliches" hidden>
       <button class="set-row" type="button" data-legal="impressum">Impressum</button>
       <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
-      <button class="set-row" type="button" data-legal="nutzung">Nutzungsbedingungen</button>
+      <button class="set-row" type="button" data-legal="nutzung">AGB</button>
     </div>
 
     <div class="set-panel" data-panel="errors" data-title="Fehlerprotokoll" hidden>
@@ -625,7 +625,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="chips" id="legalTabs">
       <button class="chip" type="button" data-legal-tab="impressum">Impressum</button>
       <button class="chip" type="button" data-legal-tab="datenschutz">Datenschutz</button>
-      <button class="chip" type="button" data-legal-tab="nutzung">Nutzung</button>
+      <button class="chip" type="button" data-legal-tab="nutzung">AGB</button>
     </div>
     <div class="legal-body" id="legalBody" data-no-i18n>
       <div data-legal-page="impressum">
@@ -666,17 +666,118 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <p>Du kannst Auskunft, Berichtigung, Löschung, Einschränkung, Übertragbarkeit und Widerspruch verlangen (Art. 15 bis 21 DSGVO) und dich bei einer Aufsichtsbehörde beschweren. Wende dich an die Adresse im Impressum.</p>
       </div>
       <div data-legal-page="nutzung" hidden>
-        <h2>Nutzungsbedingungen</h2>
+        <h2>Allgemeine Geschäfts- und Nutzungsbedingungen (AGB)</h2>
+        <h3>§ 1 Geltungsbereich und Anbieter</h3>
         <ol>
-          <li><b>Was JAWNZ ist.</b> JAWNZ ist ein digitaler Kleiderschrank mit einem Bereich, in dem du Teile zeigen und anfragen kannst. JAWNZ wickelt keine Zahlungen ab und ist nicht Vertragspartner von Käufen zwischen Nutzern.</li>
-          <li><b>Dein Konto.</b> Du bist für dein Passwort verantwortlich. Das Passwort kannst du über deine E-Mail-Adresse zurücksetzen. Du darfst nur Inhalte hochladen, an denen du die nötigen Rechte hast.</li>
-          <li><b>Erlaubte Inhalte.</b> Keine Fälschungen, keine rechtswidrigen, beleidigenden, pornografischen oder diskriminierenden Inhalte, keine Fotos anderer Personen ohne deren Einwilligung, kein Spam und keine Betrugsversuche.</li>
-          <li><b>Moderation.</b> Gemeldete oder offensichtlich regelwidrige Inhalte können entfernt, Konten können gesperrt werden.</li>
-          <li><b>Geschäfte zwischen Nutzern.</b> Absprachen, Zahlung und Versand laufen allein zwischen euch. Sei vorsichtig mit Vorkasse und teile keine Zahlungsdaten in Nachrichten.</li>
-          <li><b>Haftung.</b> JAWNZ wird ohne Gewähr bereitgestellt. Die gesetzliche Haftung bleibt unberührt. Für Inhalte der Nutzer und für Geschäfte zwischen Nutzern übernimmt der Betreiber keine Haftung, soweit das gesetzlich zulässig ist. Bei Vorsatz und grober Fahrlässigkeit sowie bei Verletzung von Leben, Körper und Gesundheit haftet der Betreiber unbeschränkt.</li>
-          <li><b>Beenden.</b> Du kannst dein Konto jederzeit in den Einstellungen löschen.</li>
+        <li>Diese Bedingungen gelten für die Nutzung der Plattform Jawnz (Website und App, zusammen „Jawnz“), betrieben von Finn Freund (Anschrift siehe Impressum), E-Mail: drobe.information@gmail.com („Anbieter“).</li>
+        <li>Jawnz richtet sich an Nutzer mit Wohnsitz in Deutschland. Verkäufe und Zahlungen sind derzeit nur in Euro möglich.</li>
+        <li>Abweichende Bedingungen von Nutzern gelten nicht, auch wenn Jawnz ihnen nicht ausdrücklich widerspricht.</li>
         </ol>
-        <p class="muted small">Stand: 09. November 2026</p>
+
+        <h3>§ 2 Leistungen von Jawnz</h3>
+        <ol>
+        <li>Jawnz ist eine Plattform, auf der Nutzer ihren digitalen Kleiderschrank anlegen, ausgewählte Teile öffentlich zeigen, Teile zum Verkauf einstellen, eine Wunschliste führen und die Schränke anderer Nutzer ansehen können. Teile sind immer Einzelstücke.</li>
+        <li>Nutzer können Inhalte zu eigenen Teilen (eigene Fotos und Texte, auch aus eigenen Anzeigen auf anderen Plattformen) hochladen und in Jawnz übernehmen. Screenshots dürfen dabei nur selbst aufgenommene Fotos enthalten (§ 5 Nr. 2). Jawnz liest dafür keine Links fremder Plattformen aus.</li>
+        <li><strong>Jawnz ist nicht Vertragspartei der Kaufverträge.</strong> Kaufverträge kommen ausschließlich zwischen Käufer und Verkäufer zustande. Jawnz verkauft, prüft, lagert oder versendet keine Ware, nimmt keine Zahlungen entgegen und leitet keine Zahlungen weiter.</li>
+        <li>Jawnz überprüft weder Angebote noch Echtheit, Zustand oder Rechtmäßigkeit der angebotenen Teile.</li>
+        </ol>
+
+        <h3>§ 3 Registrierung und Konto</h3>
+        <ol>
+        <li>Die Nutzung setzt ein Konto voraus. Nutzer müssen mindestens 18 Jahre alt und voll geschäftsfähig sein.</li>
+        <li>Angaben bei der Registrierung müssen wahr und aktuell sein. Pro Person ist ein Konto erlaubt.</li>
+        <li>Zugangsdaten sind geheim zu halten. Nutzer informieren Jawnz unverzüglich, wenn sie einen Missbrauch ihres Kontos vermuten.</li>
+        <li>Das Konto ist nicht übertragbar. Zugangsdaten dürfen nicht weitergegeben und Konten nicht verkauft oder verschenkt werden.</li>
+        </ol>
+
+        <h3>§ 4 Kosten</h3>
+        <p>Die Nutzung von Jawnz ist derzeit kostenlos. Jawnz erhebt keine Provision auf Verkäufe. Sollten künftig Entgelte eingeführt werden, gilt dies nur nach vorheriger Ankündigung und mit Zustimmung der Nutzer (§ 14).</p>
+
+        <h3>§ 5 Eingestellte Inhalte und Angebote</h3>
+        <ol>
+        <li>Nutzer sind für alle von ihnen hochgeladenen Inhalte (Fotos, Texte, Angaben zu Marke, Größe, Zustand, Preis) selbst verantwortlich. Angaben müssen wahrheitsgemäß und vollständig sein, Mängel sind zu nennen.</li>
+        <li>Nutzer dürfen nur Teile einstellen, die ihnen gehören und die sie verkaufen dürfen. <strong>Es dürfen ausschließlich Fotos verwendet werden, die der Nutzer selbst aufgenommen hat.</strong> Nicht erlaubt sind Fotos aus dem Internet, aus Online-Shops, von Herstellern oder Marken, von anderen Nutzern sowie Stockfotos, weil daran Urheberrechte Dritter bestehen. Texte müssen ebenfalls selbst verfasst sein. Auf Fotos dürfen keine anderen Personen ohne deren Einwilligung erkennbar sein.</li>
+        <li><strong>Der Verkauf von Fälschungen (Fakes) ist verboten.</strong> Dazu gehören gefälschte, nachgeahmte und Replika-Ware, auch wenn sie als solche gekennzeichnet ist, sowie Ware, die als Original angeboten wird, obwohl der Verkäufer ihre Echtheit nicht sicher belegen kann. Ebenfalls nicht eingestellt werden dürfen: gestohlene Ware, Waren, deren Verkauf gesetzlich verboten oder beschränkt ist, sowie Waffen, Drogen, Tiere, Lebensmittel und sonstige Artikel, die nicht zu Kleidung, Schuhen, Accessoires und verwandten Modeartikeln gehören. Verstöße gegen diese Nummer und gegen Nr. 2 führen zur Entfernung des Angebots und können zur sofortigen Sperrung des Kontos führen.</li>
+        <li>Nutzer entscheiden selbst, welche Teile ihres Schranks öffentlich sichtbar sind.</li>
+        </ol>
+
+        <h3>§ 6 Kaufverträge zwischen Nutzern</h3>
+        <ol>
+        <li>Ein Angebot auf Jawnz ist eine Aufforderung an andere Nutzer, ein Angebot abzugeben. Ein Kaufvertrag kommt zustande, wenn der Verkäufer die Anfrage oder das Angebot eines Käufers annimmt. Da Teile Einzelstücke sind, kann pro Teil nur ein Vertrag geschlossen werden.</li>
+        <li>Die Zahlung erfolgt direkt zwischen Käufer und Verkäufer über PayPal oder einen anderen von beiden akzeptierten Weg. Für PayPal gelten allein die Bedingungen von PayPal, auch für dessen Käuferschutz. Jawnz hat darauf keinen Einfluss.</li>
+        <li>Bei Zahlung über PayPal ist die Zahlungsart „Waren und Dienstleistungen“ zu verwenden. Die Zahlungsart „Freunde und Familie“ darf für Verkäufe weder verlangt noch genutzt werden, weil dabei kein PayPal-Käuferschutz besteht.</li>
+        <li>Versand und Übergabe, Versandkosten, Gefahrübergang und Rückabwicklung vereinbaren Käufer und Verkäufer untereinander. Verkäufer versenden die Ware zügig nach Zahlungseingang, Käufer zahlen zügig nach Vertragsschluss.</li>
+        <li>Für Mängel und Pflichtverletzungen haftet der Verkäufer nach den gesetzlichen Vorschriften. Jawnz ist dafür nicht verantwortlich und übernimmt keine Garantie, keinen Käuferschutz und keine Vermittlung bei Streitigkeiten. Streitigkeiten klären die Nutzer unter sich, bei Zahlungsproblemen auch über PayPal.</li>
+        <li>Ein gesetzliches Widerrufsrecht besteht nur, wenn der Verkäufer Unternehmer ist.</li>
+        </ol>
+
+        <h3>§ 7 Private und gewerbliche Verkäufer</h3>
+        <p>Jawnz ist für private Verkäufe gedacht. Wer gewerblich (also nicht nur gelegentlich oder aus dem eigenen Bestand) verkaufen möchte, braucht vorab die Zustimmung des Anbieters und muss Name, Anschrift, E-Mail, Telefonnummer und ggf. Handelsregisternummer angeben sowie seine Pflichten gegenüber Verbrauchern (Impressum, Widerrufsbelehrung, Gewährleistung) selbst erfüllen. Wer ohne Zustimmung gewerblich handelt, kann gesperrt werden.</p>
+
+        <h3>§ 8 Nutzungsrechte an Inhalten</h3>
+        <ol>
+        <li>Nutzer behalten alle Rechte an ihren Inhalten.</li>
+        <li>Mit dem Hochladen räumen sie Jawnz ein einfaches, weltweites, unentgeltliches Recht ein, diese Inhalte zu speichern, darzustellen, technisch anzupassen (z. B. zu verkleinern) und im Rahmen der Plattform, ihrer Darstellung in der App sowie ihrer Bewerbung (z. B. „Flex of the Week“ in sozialen Medien, nur mit vorheriger Zustimmung des Nutzers) zu verwenden. Das Recht endet mit Löschung des Inhalts, soweit nicht gesetzliche Aufbewahrungspflichten oder bereits erfolgte Weitergaben entgegenstehen.</li>
+        <li>Nutzer stellen Jawnz von Ansprüchen Dritter frei, die auf rechtswidrigen Inhalten der Nutzer beruhen, soweit sie die Rechtsverletzung zu vertreten haben.</li>
+        </ol>
+
+        <h3>§ 9 Verhaltensregeln, Nachrichten, Bewertungen und Betrug</h3>
+        <p>Nicht erlaubt sind insbesondere: Beleidigungen, Hass, Belästigung, Bedrohung, diskriminierende, pornografische oder gewaltverherrlichende Inhalte, Betrugsversuche, Spam und Werbung für fremde Angebote, das Umgehen technischer Schutzmaßnahmen, automatisiertes Auslesen von Jawnz sowie falsche Angaben zur Person oder zur Ware.</p>
+        <p><strong>Nachrichten und Angebote:</strong> Chat und Angebotsfunktion dienen dem Austausch über Teile und der Abwicklung von Käufen. Nicht erlaubt sind Spam, unerwünschte Werbung, Beleidigungen, Drohungen und das Weitergeben privater Daten anderer Nutzer.</p>
+        <p><strong>Bewertungen:</strong> Bewertungen müssen ehrlich sein und sich auf einen tatsächlichen Kauf beziehen. Gefälschte, beleidigende oder erpresserische Bewertungen kann Jawnz entfernen.</p>
+        <p><strong>Betrug und Umgehung:</strong> Verboten ist es insbesondere, Ware nach Zahlung nicht zu liefern, Zahlungen ohne berechtigten Grund zurückzubuchen, Käufer oder Verkäufer zu einer Zahlung außerhalb des in § 6 Nr. 2 vorgesehenen Wegs oder ohne Käuferschutz zu drängen (zum Beispiel PayPal „Freunde und Familie“) und Nutzer auf Seiten außerhalb von Jawnz zu locken, um dort Zahlungsdaten abzufragen. Wer dagegen verstößt, kann sofort gesperrt werden.</p>
+
+        <h3>§ 10 Melden von Inhalten, Moderation und Sperrung</h3>
+        <ol>
+        <li>Rechtswidrige oder regelwidrige Inhalte können über die Meldefunktion in der App (an jedem Angebot und Profil) oder per E-Mail an drobe.information@gmail.com gemeldet werden. Die Meldung sollte erklären, warum der Inhalt rechtswidrig ist, und den Inhalt eindeutig bezeichnen (Link oder Beschreibung).</li>
+        <li>Jawnz prüft Meldungen zeitnah. Inhalte werden nicht vorab, sondern anlassbezogen nach Meldung oder eigenem Bekanntwerden geprüft, teils mit technischer Unterstützung. Jawnz entscheidet jeweils nach eigener Prüfung; eine automatisierte Entscheidung ohne menschliche Prüfung erfolgt nicht.</li>
+        <li>Bei Verstößen kann Jawnz Inhalte entfernen oder ausblenden, Funktionen einschränken, Konten verwarnen, zeitweise oder dauerhaft sperren. Dabei werden die Schwere und Häufigkeit des Verstoßes und berechtigte Interessen der Beteiligten berücksichtigt.</li>
+        <li>Betroffene Nutzer erhalten die Entscheidung mit Begründung und dem Hinweis auf Rechtsbehelfe. Sie können innerhalb von sechs Monaten per E-Mail an drobe.information@gmail.com Beschwerde einlegen. Jawnz überprüft die Entscheidung und antwortet in angemessener Frist. Das Recht, die Gerichte anzurufen, bleibt unberührt.</li>
+        <li>Nutzer können andere Nutzer blockieren.</li>
+        <li>Jawnz kann Behörden auf Anordnung Auskunft erteilen und bei Verdacht auf schwere Straftaten die zuständigen Behörden informieren.</li>
+        <li>Urheber- und Markenrechtsverletzungen (zum Beispiel fremde Fotos oder Fälschungen) können über die Meldefunktion oder per E-Mail an drobe.information@gmail.com gemeldet werden, mit Angabe des betroffenen Inhalts, des verletzten Rechts und, soweit möglich, eines Nachweises der Rechteinhaberschaft. Jawnz prüft die Meldung und entfernt den Inhalt unverzüglich, wenn die Verletzung erkennbar ist. Nutzer, die wiederholt Rechte Dritter verletzen, werden dauerhaft gesperrt.</li>
+        </ol>
+
+        <h3>§ 11 Steuern</h3>
+        <p>Nutzer sind selbst dafür verantwortlich, ihre Einnahmen aus Verkäufen zu versteuern. Soweit Jawnz gesetzlich verpflichtet ist, Daten von Verkäufern an Behörden zu melden (z. B. nach dem Plattformen-Steuertransparenzgesetz), erheben und übermitteln wir diese Daten, und Nutzer stellen die dafür erforderlichen Angaben auf Anfrage bereit.</p>
+
+        <h3>§ 12 Verfügbarkeit und Änderungen des Dienstes</h3>
+        <p>Jawnz bemüht sich um eine hohe Verfügbarkeit, kann sie aber nicht garantieren (Wartung, Störungen, Ausfall von Drittanbietern). Der Anbieter kann Funktionen ändern, ergänzen oder einstellen, soweit dies für die Nutzer zumutbar ist. Bei Einstellung der Plattform werden Nutzer rechtzeitig informiert.</p>
+
+        <h3>§ 13 Haftung</h3>
+        <ol>
+        <li>Jawnz haftet unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei Verletzung von Leben, Körper und Gesundheit, nach dem Produkthaftungsgesetz sowie soweit eine Garantie übernommen wurde.</li>
+        <li>Bei leicht fahrlässiger Verletzung einer wesentlichen Vertragspflicht (einer Pflicht, auf deren Erfüllung die Nutzer regelmäßig vertrauen dürfen) ist die Haftung auf den vorhersehbaren, typischen Schaden begrenzt. Im Übrigen ist die Haftung bei leichter Fahrlässigkeit ausgeschlossen.</li>
+        <li>Jawnz haftet nicht für Inhalte, Angaben und Handlungen der Nutzer, nicht für das Zustandekommen oder die Abwicklung von Kaufverträgen und nicht für Leistungen Dritter wie PayPal, Post- und Paketdienste.</li>
+        <li>Ergänzend zu Nr. 3: Jawnz prüft Inhalte der Nutzer nicht vorab und übernimmt keine Verantwortung für sie. Für rechtswidrige Inhalte haftet Jawnz erst ab Kenntnis. Erhält Jawnz Kenntnis von einem rechtswidrigen Inhalt (zum Beispiel durch eine Meldung nach § 10), entfernt Jawnz ihn unverzüglich. Wird ein Inhalt trotz Kenntnis nicht unverzüglich entfernt, bleibt die gesetzliche Haftung unberührt.</li>
+        <li>Die Haftung für Datenverlust ist auf den Aufwand beschränkt, der bei regelmäßiger, gefahrentsprechender Datensicherung durch die Nutzer entstanden wäre.</li>
+        </ol>
+
+        <h3>§ 14 Änderung dieser Bedingungen</h3>
+        <p>Änderungen dieser Bedingungen teilt Jawnz mindestens sechs Wochen vor Inkrafttreten per E-Mail oder in der App mit. Nutzer stimmen aktiv zu (z. B. per Klick). Stimmen sie nicht zu, kann das Konto zum Inkrafttreten der Änderung beendet werden; bis dahin gelten die bisherigen Bedingungen. Änderungen, die rein rechtlich zwingend sind oder nur Nutzer begünstigen, gelten ohne Zustimmung.</p>
+
+        <h3>§ 15 Laufzeit, Kündigung, Löschung</h3>
+        <ol>
+        <li>Der Nutzungsvertrag läuft auf unbestimmte Zeit. Nutzer können ihr Konto jederzeit in den Einstellungen löschen.</li>
+        <li>Jawnz kann das Konto mit einer Frist von vier Wochen kündigen. Das Recht zur fristlosen Kündigung aus wichtigem Grund (insbesondere bei schweren oder wiederholten Verstößen gegen §§ 5, 7 oder 9) bleibt unberührt.</li>
+        <li>Bei Beendigung werden das Profil und die öffentlichen Inhalte gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten bestehen. Offene Kaufverträge zwischen Nutzern bleiben davon unberührt und sind zu erfüllen.</li>
+        </ol>
+
+        <h3>§ 16 Datenschutz</h3>
+        <p>Informationen zur Verarbeitung personenbezogener Daten stehen in der <a href="#" data-legal="datenschutz">Datenschutzerklärung</a>.</p>
+
+        <h3>§ 17 Schlussbestimmungen</h3>
+        <ol>
+        <li>Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. Bei Verbrauchern gilt dies nur, soweit nicht zwingende Verbraucherschutzvorschriften des Staates ihres gewöhnlichen Aufenthalts entgegenstehen.</li>
+        <li>Gerichtsstand für Kaufleute, juristische Personen des öffentlichen Rechts und Personen ohne allgemeinen Gerichtsstand in Deutschland ist der Sitz des Anbieters. Für Verbraucher gelten die gesetzlichen Gerichtsstände.</li>
+        <li>Zur Verbraucherstreitbeilegung: Der Anbieter ist nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</li>
+        <li>Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen unberührt. An die Stelle unwirksamer Regelungen treten die gesetzlichen Vorschriften.</li>
+        <li>Mitteilungen von Jawnz erfolgen per E-Mail an die hinterlegte Adresse oder in der App. Nutzer halten ihre E-Mail-Adresse aktuell.</li>
+        <li>Ereignisse höherer Gewalt (zum Beispiel große Störungen bei Hosting- oder Netzanbietern, Cyberangriffe, behördliche Anordnungen) befreien Jawnz für die Dauer der Einwirkung von seinen Leistungspflichten.</li>
+        <li>Nutzer dürfen Rechte und Pflichten aus diesem Vertrag nicht ohne Zustimmung des Anbieters auf Dritte übertragen. Der Anbieter darf den Vertrag auf einen Rechtsnachfolger übertragen und informiert die Nutzer vorher; diese können dann kündigen.</li>
+        </ol>
+
+        <p class="muted small">Stand: 13. November 2026</p>
       </div>
     </div>
     <div class="row">
