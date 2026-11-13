@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>JAWNZ</title>
 <style>
 /* Startbildschirm: Logo und Ladekreis, bis die App bereit ist */
@@ -536,14 +536,21 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
 
     <div class="set-panel" data-panel="main">
+      <p class="set-head">Konto</p>
       <button class="set-row" type="button" data-open="account">Konto</button>
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
+      <p class="set-head">App</p>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
       <button class="set-row" type="button" data-open="lang">Sprache</button>
       <button class="set-row" type="button" id="backupOpen">Backup</button>
-      <button class="set-row" type="button" data-open="legal">Rechtliches</button>
+      <p class="set-head">Rechtliches</p>
+      <button class="set-row" type="button" data-legal="impressum">Impressum</button>
+      <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
+      <button class="set-row" type="button" data-legal="nutzung">AGB</button>
+      <p class="set-head" id="adminHead" hidden>Admin</p>
       <button class="set-row" type="button" data-open="moderation" id="modRow" hidden>Moderation <span class="badge" id="modBadge"></span></button>
       <button class="set-row" type="button" data-open="errors" id="errRow" hidden>Fehlerprotokoll</button>
+      <button class="btn full set-logout" type="button" id="logoutBtn">Abmelden</button>
     </div>
 
     <div class="set-panel" data-panel="account" data-title="Konto" hidden>
@@ -551,7 +558,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <div><span class="muted small">Angemeldet als</span><br><strong id="accName"></strong><br><span class="muted small" id="syncStatus"></span></div>
       </div>
       <button class="btn full" type="button" id="syncNowBtn">Jetzt synchronisieren</button>
-      <button class="btn full" type="button" id="logoutBtn">Abmelden</button>
       <button class="btn full danger" type="button" data-open="delete">Konto löschen</button>
     </div>
 
@@ -563,12 +569,6 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       </label>
       <p class="pw-msg" id="delMsg" role="status"></p>
       <button class="btn primary full danger" type="button" id="delGo" disabled>Konto endgültig löschen</button>
-    </div>
-
-    <div class="set-panel" data-panel="legal" data-title="Rechtliches" hidden>
-      <button class="set-row" type="button" data-legal="impressum">Impressum</button>
-      <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
-      <button class="set-row" type="button" data-legal="nutzung">AGB</button>
     </div>
 
     <div class="set-panel" data-panel="errors" data-title="Fehlerprotokoll" hidden>

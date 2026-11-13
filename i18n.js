@@ -33,7 +33,7 @@ const I18N = {
     'Anmelden': 'Log in', 'Benutzername': 'Username', 'Passwort vergessen?': 'Forgot password?', 'Neues Konto erstellen': 'Create new account', 'Neues Passwort': 'New password',
     'Passwort speichern': 'Save password', 'Abmelden': 'Log out', 'Konto löschen': 'Delete account', 'Konto endgültig löschen': 'Delete account permanently',
     // Einstellungen
-    'Einstellungen': 'Settings', 'Konto': 'Account', 'Passwort ändern': 'Change password', 'Darstellung': 'Appearance', 'Sprache': 'Language', 'Backup': 'Backup',
+    'Einstellungen': 'Settings', 'App': 'App', 'Admin': 'Admin', 'Konto': 'Account', 'Passwort ändern': 'Change password', 'Darstellung': 'Appearance', 'Sprache': 'Language', 'Backup': 'Backup',
     'Rechtliches': 'Legal', 'Moderation': 'Moderation', 'Fehlerprotokoll': 'Error log', 'Hell': 'Light', 'Dunkel': 'Dark', 'Automatisch': 'Automatic',
     'Angemeldet als': 'Signed in as', 'Jetzt synchronisieren': 'Sync now', 'Impressum': 'Imprint', 'Datenschutzerklärung': 'Privacy policy', 'Nutzungsbedingungen': 'Terms of use',
     'Datenschutz': 'Privacy', 'Gesperrte Konten': 'Blocked accounts', 'Alle löschen': 'Delete all',

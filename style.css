@@ -1173,4 +1173,11 @@ dialog { overscroll-behavior: contain; }
 .card.feed-card.feed-outfit .img.feed-img img { mix-blend-mode: normal !important; }
 
 /* Doppeltippen zoomt die Oberfläche nicht; Bilder bleiben per Pinch zoombar */
-html, body, input, textarea, select { touch-action: manipulation; }
+html, body, input, textarea, select { touch-action: pan-x pan-y; }
+
+/* Einstellungen: Abschnitte mit kleinen Überschriften */
+.set-head { margin: var(--s-4) 0 var(--s-2); font-size: 13px; font-weight: 600; color: var(--muted); }
+.set-head:first-child { margin-top: 0; }
+.set-head[hidden] { display: none; }
+.set-logout { margin-top: var(--s-4); }
+.set-panel[data-panel="main"] .set-row { min-height: 46px; margin-bottom: 4px; }

@@ -666,7 +666,7 @@ const Profile = (() => {
   }
   // Kaufen = ich habe angefragt (oder mir bietet jemand etwas zu meinem Wunsch an), Verkaufen = jemand fragt nach meinem Teil (oder ich biete an)
   let inboxData = [], inboxTab = 'buy';
-  const sideOf = (m) => ((m.kind === 'interest') === m.mine ? 'buy' : 'sell');
+  const sideOf = (m) => (m.kind === 'team' ? 'buy' : ((m.kind === 'interest') === m.mine ? 'buy' : 'sell'));
   async function renderInbox() {
     const sb = Cloud.client();
     const box = $('inboxList');
@@ -683,16 +683,16 @@ const Profile = (() => {
     for (const m of list) {
       const row = el('button', 'inbox-item thread-row msg-row' + (m.unread ? ' unread' : ''));
       row.type = 'button';
-      const subject = m.kind === 'interest'
+      const subject = m.kind === 'team' ? 'Nachricht vom Drobe-Team' : m.kind === 'interest'
         ? (m.mine ? 'Interesse an „' : 'Interesse an deinem „') + (m.record_name || 'Teil') + '“'
         : (m.mine ? 'Zu „' : 'Zu deinem Wunsch „') + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
       const thumb = el('span', 'msg-thumb');
       const own = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null; // mein eigenes Teil: Foto liegt lokal
       if (own && own.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(own); thumb.append(i); }
-      else if (m.record_path) rows.push({ m, thumb });
+      else if (m.record_path && m.kind !== 'team') rows.push({ m, thumb });
       const main = el('span', 'msg-main');
       const top = el('span', 'thread-top');
-      top.append(el('b', 'msg-title', m.record_brand || m.record_name || 'Teil'), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
+      top.append(el('b', 'msg-title', m.kind === 'team' ? 'Drobe-Team' : (m.record_brand || m.record_name || 'Teil')), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
       main.append(top);
       if (m.record_brand && m.record_name) main.append(el('span', 'small msg-name', m.record_name));
       if (m.last_text) main.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
@@ -836,15 +836,15 @@ const Profile = (() => {
     document.body.classList.add('in-thread');
     $('threadWho').replaceChildren(avatarFor(m.other, 'md'), el('span', null, m.other));
     // Das Teil, um das es geht: kleines Bild, Name und Art der Anfrage
-    $('threadItem').textContent = m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch');
-    $('threadAbout').textContent = m.kind === 'interest'
+    $('threadItem').textContent = m.kind === 'team' ? 'Drobe-Team' : (m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch'));
+    $('threadAbout').textContent = m.kind === 'team' ? 'Nachricht vom Drobe-Team' : m.kind === 'interest'
       ? (m.mine ? 'Deine Anfrage zu diesem Teil' : 'Anfrage zu deinem Teil')
       : (m.mine ? 'Dein Angebot zu diesem Wunsch' : 'Angebot zu deinem Wunsch') + (m.ref_name ? ': ' + m.ref_name : '');
     const th = $('threadThumb');
     th.replaceChildren();
     const ownIt = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null;
     if (ownIt && ownIt.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(ownIt); th.append(i); }
-    else if (m.record_path && Cloud.client()) signedUrls(Cloud.client(), [m.record_path]).then((u) => { if (u[m.record_path] && thread && thread.id === m.id) { const i = el('img'); i.alt = ''; i.src = u[m.record_path]; th.replaceChildren(i); } });
+    else if (m.record_path && m.kind !== 'team' && Cloud.client()) signedUrls(Cloud.client(), [m.record_path]).then((u) => { if (u[m.record_path] && thread && thread.id === m.id) { const i = el('img'); i.alt = ''; i.src = u[m.record_path]; th.replaceChildren(i); } });
     const owner = m.mine ? m.other : (Cloud.user() && Cloud.user().name);
     const box = $('threadItemBox');
     box.disabled = !(m.kind === 'interest' && m.record_id && owner);
@@ -1048,13 +1048,13 @@ const Profile = (() => {
   let isAdminUser = false;
   async function initAdmin() {
     const sb = Cloud.client();
-    $('modRow').hidden = true; $('errRow').hidden = true;
+    $('modRow').hidden = true; $('errRow').hidden = true; $('adminHead').hidden = true;
     if (!sb || !navigator.onLine) return;
     try {
       const { data, error } = await sb.rpc('is_admin');
       if (!error && data === true) {
         isAdminUser = true;
-        $('modRow').hidden = false; $('errRow').hidden = false; refreshModBadge(true);
+        $('modRow').hidden = false; $('errRow').hidden = false; $('adminHead').hidden = false; refreshModBadge(true);
       }
     } catch (e) { /* kein Admin oder Funktion fehlt noch */ }
   }
