@@ -5,6 +5,7 @@ const Cloud = (() => {
   const SUPABASE_KEY = 'sb_publishable_3goVqjFm8wKraIugwDH5pw_QZGH23tM'; // öffentlicher Schlüssel, der Schutz liegt in den Zugriffsregeln der Datenbank
   const MAIL_DOMAIN = 'drobe.example.com'; // frühere Pseudo-Adressen, werden bei der Registrierung abgelehnt
   const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const TERMS_VERSION = '2026-11-13'; // Stand der AGB (index.html); wird bei der Registrierung mit der Zustimmung gespeichert
   const isPseudo = (m) => String(m || '').toLowerCase().endsWith('@' + MAIL_DOMAIN);
   const KINDS = ['items', 'outfits'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
@@ -301,7 +302,7 @@ const Cloud = (() => {
           const free = await sb.rpc('username_free', { p_name: name });
           if (free.error) throw free.error;
           if (free.data === false) { err.textContent = 'Dieser Benutzername ist schon vergeben.'; return; }
-          const { data, error } = await sb.auth.signUp({ email: mail, password: pass, options: { data: { username: name }, emailRedirectTo: APP_URL } });
+          const { data, error } = await sb.auth.signUp({ email: mail, password: pass, options: { data: { username: name, terms_accepted: true, terms_version: TERMS_VERSION }, emailRedirectTo: APP_URL } });
           if (error) throw error;
           $('authPass').value = '';
           if (data.session) return enter(data.session.user); // falls die Bestätigung in Supabase ausgeschaltet ist

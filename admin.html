@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Drobe Verwaltung</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<style>
+  :root { --bg: #f6f6f6; --surface: #fff; --text: #111; --muted: #767676; --line: #e2e2e2; --red: #e60023; --red-soft: #fdecee; --amber: #b45309; --amber-soft: #fef3c7; --gray: #efefef; --ok: #1a7f37; --backdrop: rgba(0,0,0,.45); }
+  :root:not([data-theme="light"]) { color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #121212; --surface: #1e1e1e; --text: #f1f1f1; --muted: #a3a3a3; --line: #333; --gray: #2a2a2a; --red-soft: #3a1a1f; --amber: #fbbf24; --amber-soft: #3a2e0f; --ok: #3fb950; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+  header { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; flex-wrap: wrap; }
+  header h1 { font-size: 20px; margin: 0; flex: 1; min-width: 0; }
+  .badge { font-size: 12px; background: var(--red); color: #fff; border-radius: 99px; padding: 2px 8px; vertical-align: middle; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  button, .btn { font: inherit; border: 0; border-radius: 12px; padding: 10px 16px; min-height: 42px; background: var(--gray); color: var(--text); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; touch-action: manipulation; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--text); color: var(--bg); }
+  button.danger { background: transparent; color: var(--red); box-shadow: inset 0 0 0 1.5px var(--red); }
+  button.danger.solid { background: var(--red); color: #fff; box-shadow: none; }
+  @media (hover: hover) { button:hover:not(:disabled), .btn:hover { filter: brightness(.93); } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+  .card.login { max-width: 380px; margin: 12vh auto 0; }
+  label { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+  input, textarea { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: 16px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  textarea { resize: vertical; min-height: 96px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
+  .tabs button { white-space: nowrap; }
+  .tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+  .stat b { display: block; font-size: 26px; }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .toolbar .spacer { flex: 1; }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: var(--bg); border-radius: 8px; padding: 8px; margin: 8px 0 0; }
+  summary { cursor: pointer; margin-top: 8px; }
+  .err { color: var(--red); min-height: 1.4em; }
+  [hidden] { display: none !important; }
+  p { margin: 6px 0 0; overflow-wrap: anywhere; }
+
+  .tag { font-size: 12px; border-radius: 99px; padding: 2px 8px; background: var(--gray); margin-left: 6px; font-weight: 500; white-space: nowrap; }
+  .tag.ban { background: var(--red); color: #fff; }
+  .tag.warn { background: var(--amber-soft); color: var(--amber); }
+  details.member > summary { list-style: none; cursor: pointer; }
+  details.member > summary::-webkit-details-marker { display: none; }
+  details.member > summary::before { content: '▸'; color: var(--muted); }
+  details.member[open] > summary::before { content: '▾'; }
+  details.member > summary .sumline { margin-left: auto; overflow-wrap: anywhere; }
+  details.member summary { margin-top: 0; }
+  .search { display: flex; gap: 8px; margin-bottom: 12px; }
+  .search input { margin: 0; }
+
+  /* Meldungs- und Mitgliedskarten */
+  .rep-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rep-head .who { font-size: 18px; font-weight: 700; }
+  .reason { font-size: 12px; font-weight: 600; border-radius: 8px; padding: 3px 8px; background: var(--red-soft); color: var(--red); }
+  .note { background: var(--bg); border-left: 3px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-top: 12px; white-space: pre-wrap; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px 16px; margin-top: 12px; }
+  .facts div { font-size: 13px; }
+  .facts span { display: block; color: var(--muted); font-size: 12px; }
+  .facts .hot { color: var(--red); font-weight: 700; }
+  button.link { background: none; padding: 0; min-height: 0; border-radius: 4px; font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; display: inline; }
+  button.link.hot { color: var(--red); }
+  button.linktag { min-height: 0; border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; text-decoration: underline; }
+  .box { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 12px; display: flex; gap: 12px; align-items: center; }
+  .box .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .box button { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  .actions { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 12px; }
+  .group h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .group .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .group.sep { border-top: 1px dashed var(--line); padding-top: 12px; }
+  .content-list { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .content-row { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
+  .content-row span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  /* Dialog */
+  dialog { border: 0; border-radius: 20px; padding: 0; width: min(520px, calc(100vw - 32px)); background: var(--surface); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  dialog::backdrop { background: var(--backdrop); }
+  .dlg-in { padding: 20px; }
+  .dlg-in h2 { margin: 0 0 8px; font-size: 18px; }
+  .dlg-in ul { margin: 8px 0 0; padding-left: 20px; }
+  .dlg-in li { margin: 4px 0; }
+  .dlg-btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
+  .dlg-btns button { flex: 1 1 140px; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--text); margin: 12px 0 0; }
+  .check input { width: auto; margin: 3px 0 0; }
+  .thread { max-height: 260px; overflow-y: auto; display: grid; gap: 6px; margin: 12px 0; padding: 8px; background: var(--bg); border-radius: 12px; }
+  .msg { max-width: 85%; padding: 8px 12px; border-radius: 14px; background: var(--gray); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.me { justify-self: end; background: var(--text); color: var(--bg); }
+  .msg small { display: block; opacity: .65; font-size: 11px; margin-top: 2px; }
+  .counter { text-align: right; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 12px; max-width: calc(100vw - 32px); z-index: 10; }
+  #toast.bad { background: var(--red); color: #fff; }
+  @media (max-width: 520px) { .box { flex-wrap: wrap; } .group .row button, .group .row .btn { flex: 1 1 auto; } }
+</style>
+</head>
+<body>
+<main>
+  <!-- Anmeldung -->
+  <section id="loginView" class="card login" hidden>
+    <h1 style="font-size:20px;margin:0 0 4px">Drobe Verwaltung</h1>
+    <p class="muted small" style="margin:0 0 16px">Eigene Anmeldung mit dem Verwaltungskonto, getrennt von der App.</p>
+    <form id="loginForm">
+      <label>E-Mail <input id="email" type="email" autocomplete="username" required></label>
+      <label>Passwort <input id="pass" type="password" autocomplete="current-password" required></label>
+      <button class="primary" id="loginBtn" type="submit" style="width:100%">Anmelden</button>
+      <p class="err" id="loginErr" role="alert"></p>
+    </form>
+  </section>
+
+  <!-- Verwaltung -->
+  <section id="adminView" hidden>
+    <header>
+      <h1>Drobe Verwaltung <span class="badge" id="repBadge" hidden></span></h1>
+      <span class="muted small" id="who"></span>
+      <a class="btn" href="./">Zur App</a>
+      <button id="logout" type="button">Abmelden</button>
+    </header>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="overview" aria-selected="true">Übersicht</button>
+      <button role="tab" data-tab="reports" aria-selected="false">Meldungen</button>
+      <button role="tab" data-tab="members" aria-selected="false">Mitglieder</button>
+      <button role="tab" data-tab="errors" aria-selected="false">Fehlerprotokoll</button>
+      <button role="tab" data-tab="log" aria-selected="false">Protokoll</button>
+    </div>
+    <div id="overview"></div>
+    <div id="reports" hidden></div>
+    <div id="members" hidden></div>
+    <div id="errors" hidden></div>
+    <div id="log" hidden></div>
+  </section>
+</main>
+
+<dialog id="dlg"><div class="dlg-in"><h2 id="dlgTitle"></h2><div id="dlgBody"></div><div class="dlg-btns" id="dlgBtns"></div></div></dialog>
+<div id="toast" role="status" hidden></div>
+
+<script src="vendor/supabase.js"></script>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://elffmxtoxvygziiztjhd.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_3goVqjFm8wKraIugwDH5pw_QZGH23tM'; // öffentlicher Schlüssel; der Schutz liegt in is_admin() der Datenbank
+  const REASONS = { betrug: 'Betrugsverdacht', faelschung: 'Fälschung', belaestigung: 'Belästigung', spam: 'Spam', sonstiges: 'Sonstiges' };
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const btn = (label, cls, onclick) => { const b = el('button', cls, label); b.type = 'button'; if (onclick) b.onclick = onclick; return b; };
+  const fmt = (d) => new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+  const day = (d) => new Date(d).toLocaleDateString('de-DE');
+
+  const show = (view) => { $('loginView').hidden = view !== 'login'; $('adminView').hidden = view !== 'admin'; };
+  if (!window.supabase) { show('login'); $('loginBtn').disabled = true; $('loginErr').textContent = 'Die Bibliothek konnte nicht geladen werden. Bitte Seite neu laden.'; return; }
+  // Eigener Speicherschlüssel: die Verwaltungs-Sitzung überschreibt nie die Sitzung der App (gleiche Domain)
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'drobe-admin-auth', detectSessionInUrl: false },
+  });
+
+  /* ---------- Hilfen: Hinweis und Dialog ---------- */
+  let toastTimer = 0;
+  function toast(text, bad) {
+    const t = $('toast'); t.textContent = text; t.className = bad ? 'bad' : ''; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, bad ? 6000 : 3500);
+  }
+  const dlg = $('dlg');
+  let dlgDone = null;
+  dlg.addEventListener('close', () => { if (dlgDone) { const f = dlgDone; dlgDone = null; f(); } });
+  function openModal(title, nodes, buttons, onClose) {
+    $('dlgTitle').textContent = title;
+    $('dlgBody').replaceChildren(...nodes);
+    $('dlgBtns').replaceChildren(...buttons);
+    dlgDone = onClose || null;
+    if (!dlg.open) dlg.showModal();
+  }
+  const closeModal = () => { if (dlg.open) dlg.close(); };
+
+  // Rückfrage vor jeder Änderung: sagt genau, was passiert; Abbrechen ist die Vorauswahl.
+  // Ergebnis: null (abgebrochen) oder { reason, checked }
+  function confirmAction(o) {
+    return new Promise((resolve) => {
+      const body = [];
+      if (o.intro) body.push(el('p', null, o.intro));
+      if (o.bullets) { const ul = el('ul'); for (const b of o.bullets) ul.append(el('li', null, b)); body.push(ul); }
+      let reason = null, typed = null, check = null;
+      if (o.reasonLabel) {
+        const l = el('label', null, o.reasonLabel); l.style.marginTop = '12px'; reason = el('textarea'); reason.maxLength = 300; reason.style.minHeight = '64px'; l.append(reason); body.push(l);
+      }
+      if (o.typeName) {
+        const l = el('label', null, 'Zur Bestätigung den Benutzernamen „' + o.typeName + '“ eintippen'); typed = el('input'); typed.autocomplete = 'off'; typed.autocapitalize = 'none'; l.append(typed); body.push(l);
+      }
+      if (o.checkboxLabel) {
+        const l = el('label', 'check'); check = el('input'); check.type = 'checkbox'; check.checked = true; l.append(check, el('span', null, o.checkboxLabel)); body.push(l);
+      }
+      const cancel = btn('Abbrechen', null, () => closeModal());
+      const ok = btn(o.confirmLabel, o.danger ? 'danger solid' : 'primary');
+      if (typed) { ok.disabled = true; typed.oninput = () => { ok.disabled = typed.value.trim().toLowerCase() !== o.typeName.toLowerCase(); }; }
+      let answered = false;
+      ok.onclick = () => { answered = true; resolve({ reason: reason ? reason.value.trim() : '', checked: check ? check.checked : false }); closeModal(); };
+      openModal(o.title, body, [cancel, ok], () => { if (!answered) resolve(null); });
+      cancel.focus();
+    });
+  }
+
+  async function call(fn, args, okText) {
+    const { data, error } = await sb.rpc(fn, args);
+    if (error) { console.error(error); toast('Das hat nicht geklappt: ' + error.message, true); return { failed: true }; }
+    if (okText) toast(okText);
+    return { data };
+  }
+
+  /* ---------- Gemeinsame Aktionen ---------- */
+  async function banFlow(username, banned, opt = {}) {
+    if (banned) {
+      const r = await confirmAction({
+        title: username + ' entsperren?',
+        intro: 'Das Konto kann sich wieder anmelden und seine Teile und Outfits sind wieder sichtbar.',
+        confirmLabel: 'Konto entsperren',
+      });
+      if (!r) return false;
+      return !(await call('admin_set_ban', { p_username: username, p_ban: false }, username + ' ist entsperrt.')).failed;
+    }
+    const r = await confirmAction({
+      title: username + ' sperren?',
+      intro: 'Das passiert sofort:',
+      bullets: [
+        'Das Konto wird abgemeldet und kann sich nicht mehr anmelden.',
+        'Alle Teile, Outfits und Wünsche verschwinden aus Feed, Suche und Profil.',
+        'Alle offenen Meldungen gegen dieses Konto gelten als erledigt.',
+        'Es wird nichts gelöscht. Beim Entsperren werden die Inhalte wieder sichtbar.',
+      ],
+      reasonLabel: 'Grund (nur für dich im Protokoll sichtbar, optional)',
+      typeName: username,
+      confirmLabel: 'Konto sperren',
+      danger: true,
+    });
+    if (!r) return false;
+    const res = await call('admin_set_ban', { p_username: username, p_ban: true, p_reason: r.reason }, username + ' ist gesperrt.');
+    if (res.failed) return false;
+    return true;
+  }
+
+  async function removeFlow(username, kind, id, name) {
+    const r = await confirmAction({
+      title: '„' + (name || 'Inhalt') + '“ entfernen?',
+      intro: (kind === 'items' ? 'Das Teil' : 'Das Outfit') + ' von ' + username + ' wird gelöscht, auch auf den Geräten des Mitglieds. Das lässt sich nicht rückgängig machen.',
+      reasonLabel: 'Grund (nur für dich im Protokoll sichtbar, optional)',
+      confirmLabel: 'Endgültig entfernen',
+      danger: true,
+    });
+    if (!r) return false;
+    return !(await call('admin_remove_content', { p_username: username, p_kind: kind, p_id: id, p_reason: r.reason }, 'Inhalt entfernt.')).failed;
+  }
+
+  function messageFlow(username) {
+    const thread = el('div', 'thread');
+    const text = el('textarea'); text.maxLength = 500; text.placeholder = 'Nachricht an ' + username + ' …';
+    const counter = el('div', 'counter', '0 / 500');
+    const send = btn('Nachricht senden', 'primary'); send.disabled = true;
+    const close = btn('Schließen', null, () => closeModal());
+    text.oninput = () => { counter.textContent = text.value.length + ' / 500'; send.disabled = !text.value.trim(); };
+    const hint = el('p', 'muted small', 'Das Mitglied sieht die Nachricht in der App unter Nachrichten als „Drobe-Team“ und kann antworten. Antworten erscheinen hier.');
+    async function load() {
+      const { data, error } = await sb.rpc('admin_thread', { p_username: username });
+      thread.replaceChildren();
+      if (error) { thread.append(el('p', 'err', 'Der Verlauf konnte nicht geladen werden. Ist Migration 0020 ausgeführt?')); return; }
+      if (!data.length) { thread.append(el('p', 'muted small', 'Noch keine Nachrichten.')); return; }
+      for (const m of data) { const b = el('div', 'msg' + (m.from_member ? '' : ' me'), m.body); b.append(el('small', null, (m.from_member ? username : 'Du') + ' · ' + fmt(m.at))); thread.append(b); }
+      thread.scrollTop = thread.scrollHeight;
+    }
+    send.onclick = async () => {
+      send.disabled = true;
+      const r = await call('admin_send_message', { p_username: username, p_text: text.value }, 'Nachricht gesendet.');
+      if (r.failed) { send.disabled = false; return; }
+      text.value = ''; counter.textContent = '0 / 500';
+      load();
+    };
+    openModal('Nachricht an ' + username, [thread, text, counter, hint], [close, send]);
+    load();
+  }
+
+  // Aktionsleiste: nach Zweck gruppiert, Gefährliches getrennt und rot umrandet
+  function accountActions(username, state, opt = {}) {
+    const wrap = el('div', 'actions');
+    const g1 = el('div', 'group'); g1.append(el('h4', null, 'Mitglied'));
+    const r1 = el('div', 'row');
+    const prof = el('a', 'btn', 'Profil ansehen'); prof.href = './#/u/' + encodeURIComponent(username); prof.target = '_blank'; prof.rel = 'noopener';
+    r1.append(prof, btn('Nachricht schreiben', null, () => messageFlow(username)));
+    if (opt.onContent) r1.append(btn('Inhalte ansehen', null, opt.onContent));
+    g1.append(r1); wrap.append(g1);
+    if (!state.isAdmin) {
+      const g2 = el('div', 'group sep'); g2.append(el('h4', null, 'Konto'));
+      const r2 = el('div', 'row');
+      r2.append(btn(state.banned ? 'Konto entsperren' : 'Konto sperren', state.banned ? 'primary' : 'danger', async () => { if (await banFlow(username, state.banned, { reportId: opt.reportId })) opt.refresh(); }));
+      g2.append(r2); wrap.append(g2);
+    }
+    return wrap;
+  }
+
+  /* ---------- Anmeldung und Tabs ---------- */
+  async function enter(user) {
+    let admin = false;
+    try { const { data, error } = await sb.rpc('is_admin'); admin = !error && data === true; } catch (e) { /* offline */ }
+    if (!admin) {
+      await sb.auth.signOut();
+      show('login');
+      $('loginErr').textContent = 'Dieses Konto hat keinen Zugriff auf die Verwaltung.';
+      return;
+    }
+    $('who').textContent = user.email;
+    show('admin');
+    loadOverview();
+    loadReports();
+  }
+  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), members: () => loadMembers(), errors: () => loadErrors(), log: () => loadLog() };
+  document.querySelectorAll('.tabs button').forEach((b) => {
+    b.onclick = () => {
+      document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      for (const k of Object.keys(loaders)) $(k).hidden = k !== b.dataset.tab;
+      loaders[b.dataset.tab]();
+    };
+  });
+  const loading = (box, text) => box.replaceChildren(el('p', 'muted', text || 'Lade …'));
+  const failed = (box, text, retry) => { box.replaceChildren(el('p', 'err', text)); box.append(btn('Nochmal versuchen', null, retry)); };
+  function setBadge(n) { $('repBadge').hidden = !n; $('repBadge').textContent = n; }
+
+  /* ---------- Übersicht ---------- */
+  async function loadOverview() {
+    const box = $('overview');
+    loading(box);
+    try {
+      const { data, error } = await sb.rpc('admin_overview');
+      if (error) throw error;
+      const grid = el('div', 'stats');
+      for (const [k, label] of [['members', 'Mitglieder'], ['new_members', 'Neu (7 Tage)'], ['items', 'Teile'], ['outfits', 'Outfits'], ['open_reports', 'Offene Meldungen'], ['errors_24h', 'Fehler (24 h)']]) {
+        const c = el('div', 'card stat'); c.append(el('b', null, String(data[k] ?? 0)), el('span', 'muted small', label)); grid.append(c);
+      }
+      box.replaceChildren(grid);
+      setBadge(data.open_reports);
+    } catch (e) { console.error(e); failed(box, 'Die Übersicht fehlt noch. Ist Migration 0018 ausgeführt?', loadOverview); }
+  }
+
+  /* ---------- Meldungen ---------- */
+  const termsText = (at, ver) => (at ? fmt(at) + (ver ? ' (Fassung ' + ver + ')' : '') : 'nicht erfasst');
+  function fact(label, value, hot, onclick) {
+    const d = el('div'); d.append(el('span', null, label));
+    if (onclick) { const b = btn(value + ' ansehen', 'link' + (hot ? ' hot' : ''), onclick); d.append(b); } else d.append(el('b', hot ? 'hot' : null, value));
+    return d;
+  }
+  // Alle Meldungen gegen ein Konto (offen und erledigt)
+  async function reportsFlow(username) {
+    const list = el('div', 'thread'); list.style.maxHeight = '420px';
+    list.append(el('p', 'muted', 'Lade …'));
+    openModal('Meldungen gegen ' + username, [list], [btn('Schließen', null, () => closeModal())]);
+    const { data, error } = await sb.rpc('admin_reports_for', { p_username: username });
+    list.replaceChildren();
+    if (error) { list.append(el('p', 'err', 'Die Meldungen konnten nicht geladen werden. Ist Migration 0021 ausgeführt?')); return; }
+    if (!data.length) { list.append(el('p', 'muted', 'Keine Meldungen.')); return; }
+    for (const r of data) {
+      const c = el('div', 'card'); c.style.margin = '0';
+      const h = el('div', 'rep-head');
+      h.append(el('span', 'reason', REASONS[r.reason] || r.reason), el('span', 'tag' + (r.resolved_at ? '' : ' warn'), r.resolved_at ? 'erledigt am ' + day(r.resolved_at) : 'offen'));
+      c.append(h, el('div', 'muted small', 'Von ' + (r.reporter || '?') + ' am ' + fmt(r.created_at)));
+      if (r.content_name) c.append(el('div', 'small', (r.content_kind === 'outfits' ? 'Outfit: ' : 'Teil: ') + r.content_name));
+      c.append(r.note ? el('div', 'note', r.note) : el('div', 'muted small', 'Keine Notiz.'));
+      list.append(c);
+    }
+  }
+  async function loadReports() {
+    const box = $('reports');
+    loading(box);
+    try {
+      const { data, error } = await sb.rpc('admin_reports');
+      if (error) throw error;
+      setBadge(data.length);
+      box.replaceChildren();
+      if (!data.length) return box.append(el('p', 'muted', 'Keine offenen Meldungen.'));
+      for (const r of data) box.append(reportCard(r));
+    } catch (e) { console.error(e); failed(box, 'Die Meldungen konnten nicht geladen werden.', loadReports); }
+  }
+  function reportCard(r) {
+    const card = el('div', 'card');
+    const head = el('div', 'rep-head');
+    head.append(el('span', 'reason', REASONS[r.reason] || r.reason), el('span', 'who', r.target || '?'));
+    if (r.target_banned) head.append(el('span', 'tag ban', 'gesperrt'));
+    if (r.target_is_admin) head.append(el('span', 'tag', 'Admin'));
+    if (r.target_reports > 1) { const t = btn(r.target_reports + ' Meldungen', 'tag warn linktag', () => reportsFlow(r.target)); head.append(t); }
+    card.append(head);
+    card.append(el('div', 'muted small', 'Gemeldet von ' + (r.reporter || '?') + ' am ' + fmt(r.created_at)));
+    card.append(r.note ? el('div', 'note', r.note) : el('div', 'muted small', 'Keine Notiz vom Melder.'));
+    if (r.content_name != null || r.record_id) {
+      const b = el('div', 'box');
+      const t = el('div', 'txt');
+      t.append(el('span', 'muted small', 'Gemeldeter Inhalt'), el('div', null, r.content_name ? (r.content_kind === 'outfits' ? 'Outfit: ' : 'Teil: ') + r.content_name : 'Nicht mehr vorhanden'));
+      b.append(t);
+      if (r.content_name && r.content_deleted === false) b.append(btn('Inhalt entfernen', 'danger', async () => { if (await removeFlow(r.target, r.content_kind, r.record_id, r.content_name)) loadReports(); }));
+      card.append(b);
+    }
+    const facts = el('div', 'facts');
+    facts.append(
+      fact('Dabei seit', r.target_since ? day(r.target_since) : '?'),
+      fact('Teile', String(r.target_items)), fact('Outfits', String(r.target_outfits)),
+      fact('AGB zugestimmt', termsText(r.target_terms_at, r.target_terms_version)),
+      fact('Meldungen gesamt', String(r.target_reports), r.target_reports > 1, r.target ? () => reportsFlow(r.target) : null),
+    );
+    card.append(facts);
+    const refresh = () => { loadReports(); loadOverview(); };
+    if (r.target) card.append(accountActions(r.target, { banned: r.target_banned, isAdmin: r.target_is_admin }, { reportId: r.id, refresh }));
+    const g = el('div', 'group sep'); g.style.marginTop = '12px'; g.append(el('h4', null, 'Meldung'));
+    const row = el('div', 'row');
+    row.append(btn('Als erledigt markieren', null, async () => {
+      const a = await confirmAction({ title: 'Meldung als erledigt markieren?', intro: 'Die Meldung verschwindet aus der Liste. Am Konto und an den Inhalten ändert sich nichts.', confirmLabel: 'Als erledigt markieren' });
+      if (!a) return;
+      if (!(await call('admin_resolve_report', { p_id: r.id }, 'Meldung erledigt.')).failed) refresh();
+    }));
+    g.append(row); card.append(g);
+    return card;
+  }
+
+  /* ---------- Mitglieder ---------- */
+  let memberQuery = '';
+  async function loadMembers() {
+    const box = $('members');
+    if (!box.querySelector('.search')) {
+      const form = el('form', 'search');
+      const input = el('input'); input.type = 'search'; input.placeholder = 'Benutzername oder E-Mail'; input.maxLength = 80;
+      const go = el('button', 'primary', 'Suchen'); go.type = 'submit';
+      form.append(input, go);
+      form.onsubmit = (ev) => { ev.preventDefault(); memberQuery = input.value; loadMembers(); };
+      box.replaceChildren(form, el('div'));
+    }
+    const list = box.lastElementChild;
+    loading(list);
+    try {
+      const { data, error } = await sb.rpc('admin_members', { p_query: memberQuery });
+      if (error) throw error;
+      list.replaceChildren();
+      if (!data.length) return list.append(el('p', 'muted', 'Keine Mitglieder gefunden.'));
+      for (const m of data) list.append(memberCard(m));
+    } catch (e) { console.error(e); failed(list, 'Die Mitglieder konnten nicht geladen werden. Ist Migration 0019 ausgeführt?', loadMembers); }
+  }
+  function memberCard(m) {
+    const card = el('details', 'card member');
+    const sum = el('summary', 'rep-head');
+    sum.append(el('span', 'who', m.username));
+    if (m.banned) sum.append(el('span', 'tag ban', 'gesperrt'));
+    if (m.is_admin) sum.append(el('span', 'tag', 'Admin'));
+    if (m.reports_against > 0) sum.append(el('span', 'tag warn', m.reports_against + (m.reports_against === 1 ? ' Meldung' : ' Meldungen')));
+    sum.append(el('span', 'muted small sumline', m.email));
+    card.append(sum);
+    const body = el('div', 'member-body');
+    if (m.banned) body.append(el('div', 'note', 'Gesperrt am ' + (m.banned_at ? fmt(m.banned_at) : '?') + (m.ban_reason ? ' · Grund: ' + m.ban_reason : '')));
+    const facts = el('div', 'facts');
+    facts.append(
+      fact('AGB zugestimmt', termsText(m.terms_accepted_at, m.terms_version)),
+      fact('Dabei seit', day(m.created_at)), fact('Zuletzt angemeldet', m.last_sign_in ? fmt(m.last_sign_in) : 'nie'),
+      fact('Teile', String(m.items)), fact('Outfits', String(m.outfits)),
+      fact('Meldungen gegen das Konto', String(m.reports_against), m.reports_against > 1, m.reports_against ? () => reportsFlow(m.username) : null));
+    body.append(facts);
+    const refresh = () => { loadMembers(); loadOverview(); };
+    body.append(accountActions(m.username, { banned: m.banned, isAdmin: m.is_admin }, { refresh, onContent: () => toggleContent(card, m) }));
+    card.append(body);
+    return card;
+  }
+  async function toggleContent(card, m) {
+    const old = card.querySelector('.content-list');
+    if (old) return old.remove();
+    const box = el('div', 'content-list'); card.append(box);
+    loading(box);
+    try {
+      const { data, error } = await sb.rpc('admin_member_content', { p_username: m.username });
+      if (error) throw error;
+      box.replaceChildren();
+      if (!data.length) return box.append(el('p', 'muted', 'Keine Inhalte.'));
+      for (const c of data) {
+        const row = el('div', 'content-row');
+        row.append(el('span', null, (c.kind === 'items' ? 'Teil' : 'Outfit') + ': ' + (c.name || '(ohne Name)') + (c.brand ? ' · ' + c.brand : '') + ' · ' + c.vis));
+        row.append(btn('Entfernen', 'danger', async () => { if (await removeFlow(m.username, c.kind, c.id, c.name)) row.remove(); }));
+        box.append(row);
+      }
+    } catch (e) { console.error(e); failed(box, 'Die Inhalte konnten nicht geladen werden.', () => { box.remove(); toggleContent(card, m); }); }
+  }
+
+  /* ---------- Fehlerprotokoll ---------- */
+  async function loadErrors() {
+    const box = $('errors');
+    loading(box);
+    try {
+      const { data, error } = await sb.rpc('admin_errors');
+      if (error) throw error;
+      box.replaceChildren();
+      const bar = el('div', 'toolbar');
+      bar.append(el('span', 'muted small', data.length + ' Einträge'), el('span', 'spacer'));
+      const clear = btn('Alle löschen', 'danger', async () => {
+        const a = await confirmAction({ title: 'Fehlerprotokoll leeren?', intro: 'Alle ' + data.length + ' Einträge werden endgültig gelöscht.', confirmLabel: 'Alle löschen', danger: true });
+        if (!a) return;
+        if (!(await call('admin_clear_errors', {}, 'Protokoll geleert.')).failed) loadErrors();
+      });
+      clear.disabled = !data.length;
+      bar.append(clear); box.append(bar);
+      if (!data.length) return box.append(el('p', 'muted', 'Keine Fehler gemeldet.'));
+      for (const e of data) {
+        const card = el('div', 'card');
+        card.append(el('b', null, e.message));
+        card.append(el('div', 'muted small', (e.n > 1 ? e.n + '× · ' : '') + 'Version ' + (e.build ?? '?') + (e.page ? ' · ' + e.page : '') + ' · ' + fmt(e.last_at)));
+        if (e.stack) { const d = el('details'); d.append(el('summary', 'muted small', 'Fundstelle'), el('pre', null, e.stack)); card.append(d); }
+        box.append(card);
+      }
+    } catch (e) { console.error(e); failed(box, 'Das Protokoll konnte nicht geladen werden.', loadErrors); }
+  }
+
+  /* ---------- Protokoll der Verwaltung ---------- */
+  async function loadLog() {
+    const box = $('log');
+    loading(box);
+    try {
+      const { data, error } = await sb.rpc('admin_log_list');
+      if (error) throw error;
+      box.replaceChildren();
+      if (!data.length) return box.append(el('p', 'muted', 'Noch keine Aktionen.'));
+      for (const l of data) {
+        const card = el('div', 'card');
+        card.append(el('b', null, l.action + ' · ' + (l.target || '?')));
+        card.append(el('div', 'muted small', fmt(l.created_at) + (l.admin ? ' · von ' + l.admin : '')));
+        if (l.detail) card.append(el('p', 'small', l.detail));
+        box.append(card);
+      }
+    } catch (e) { console.error(e); failed(box, 'Das Protokoll konnte nicht geladen werden. Ist Migration 0019 ausgeführt?', loadLog); }
+  }
+
+  /* ---------- Anmeldung ---------- */
+  $('loginForm').onsubmit = async (ev) => {
+    ev.preventDefault();
+    $('loginErr').textContent = '';
+    $('loginBtn').disabled = true;
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pass').value });
+      if (error) throw error;
+      $('pass').value = '';
+      await enter(data.user);
+    } catch (e) { $('loginErr').textContent = 'Anmeldung fehlgeschlagen. E-Mail oder Passwort stimmt nicht.'; }
+    $('loginBtn').disabled = false;
+  };
+  $('logout').onclick = async () => { await sb.auth.signOut(); show('login'); };
+
+  (async () => {
+    let session = null;
+    try { session = (await sb.auth.getSession()).data.session; } catch (e) { /* offline */ }
+    if (session) enter(session.user); else show('login');
+  })();
+})();
+</script>
+</body>
+</html>

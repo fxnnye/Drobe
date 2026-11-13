@@ -1171,3 +1171,6 @@ dialog { overscroll-behavior: contain; }
 /* Feed: Outfits in der Größe wie im Profil (9:16) und mit ihrem echten Hintergrund; nur Teile nehmen das Grau der Karte an */
 .card.feed-card.feed-outfit .img.feed-img { --pad: 0px; aspect-ratio: 9 / 16; overflow: hidden; background: #fff; border: 1px solid var(--gray-hover); }
 .card.feed-card.feed-outfit .img.feed-img img { mix-blend-mode: normal !important; }
+
+/* Doppeltippen zoomt die Oberfläche nicht; Bilder bleiben per Pinch zoombar */
+html, body, input, textarea, select { touch-action: manipulation; }
