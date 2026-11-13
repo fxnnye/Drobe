@@ -1193,3 +1193,5 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 #itemDialog.viewing #itemForm > label.field, #itemDialog.viewing #itemMore, #itemDialog.viewing #itEditToggle, #itemDialog.viewing #itEdit, #itemDialog.viewing #itEditRow { display: none; }
 #itemDialog .item-view { margin: 12px 0 8px; }
 #itSimilar, #itSimilarBox { display: none; } /* „Ähnliche Teile von anderen“ gibt es bei eigenen Teilen nicht mehr */
+#itViewRow .spacer { display: none; }
+#itViewRow .btn { flex: 1; }
