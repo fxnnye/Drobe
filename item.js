@@ -40,6 +40,24 @@ $('itemCategory').addEventListener('change', () => {
   $('itScaleVal').textContent = $('itScale').value + ' %';
 });
 
+// Ansicht wie bei anderen Nutzern; erst „Bearbeiten“ zeigt die Felder
+function setViewing(on) { dlg.classList.toggle('viewing', on); }
+function buildItemView(it) {
+  const v = $('itView');
+  v.replaceChildren();
+  const h = document.createElement('h2'); h.className = 'item-name'; h.textContent = it.name || 'Teil'; v.append(h);
+  if (it.vis === 'sale' && it.price != null) { const p = document.createElement('p'); p.className = 'item-price'; p.textContent = Number(it.price).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }); v.append(p); }
+  const dl = document.createElement('dl'); dl.className = 'item-facts';
+  for (const [k, val] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : ''], ['Artikelnummer', it.sku], ['Sichtbarkeit', VIS.items[visOf(it)]], ['Notizen', it.note]]) {
+    if (!val) continue;
+    const row = document.createElement('div'); row.className = 'item-fact';
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = val;
+    row.append(dt, dd); dl.append(row);
+  }
+  v.append(dl);
+}
+$('itEditStart').onclick = () => { setViewing(false); setItemEditOpen(false); $('itemName').focus({ preventScroll: true }); };
 function openItemDialog(it) {
   state.editingItem = it;
   stopDraw();
@@ -58,6 +76,8 @@ function openItemDialog(it) {
   $('itemNote').value = it.note || '';
   fillDetails('itd', it);
   $('itSimilarBox').replaceChildren();
+  buildItemView(it);
+  setViewing(true);
   dlg.showModal();
 }
 $('itemForm').addEventListener('submit', async (e) => {

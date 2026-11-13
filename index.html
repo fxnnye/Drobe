@@ -383,6 +383,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 <dialog id="itemDialog">
   <form method="dialog" id="itemForm">
     <div class="up-preview"><div class="up-zoom"><img id="itemPreview" alt=""></div></div>
+    <div id="itView" class="item-view"></div>
     <label class="field">Name
       <input type="text" id="itemName" maxlength="60">
     </label>
@@ -425,7 +426,12 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <input type="range" id="itScale" min="50" max="150" step="5" value="100">
       </label>
     </div>
-    <div class="row">
+    <div class="row" id="itViewRow">
+      <span class="spacer"></span>
+      <button class="btn" value="cancel">Schließen</button>
+      <button class="btn primary" type="button" id="itEditStart">Bearbeiten</button>
+    </div>
+    <div class="row" id="itEditRow">
       <button class="btn danger" type="button" id="itemDelete">Löschen</button>
       <span class="spacer"></span>
       <button class="btn" value="cancel">Abbrechen</button>
