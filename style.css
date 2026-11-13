@@ -1181,3 +1181,9 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 .set-head[hidden] { display: none; }
 .set-logout { margin-top: var(--s-4); }
 .set-panel[data-panel="main"] .set-row { min-height: 46px; margin-bottom: 4px; }
+
+/* Bild vergrößern */
+.item-photo img { cursor: zoom-in; }
+.zoom-view { position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, .92); display: grid; place-items: center; touch-action: none; overflow: hidden; user-select: none; -webkit-user-select: none; }
+.zoom-view img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center; will-change: transform; -webkit-user-drag: none; }
+.zoom-close { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .18); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; }

@@ -197,3 +197,51 @@ document.querySelectorAll('dialog').forEach((d) => {
   };
   document.querySelectorAll('dialog').forEach((d) => new MutationObserver(sync).observe(d, { attributes: true, attributeFilter: ['open'] }));
 }
+
+/* ---------- Bild vergrößern: Foto auf der Teil-Seite antippen, dann zoomen (zwei Finger / Mausrad) und schieben ---------- */
+(() => {
+  let box = null;
+  function close() { if (box) { box.remove(); box = null; document.removeEventListener('keydown', onKey); } }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function open(src, alt) {
+    close();
+    box = document.createElement('div'); box.className = 'zoom-view'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Bild');
+    const img = document.createElement('img'); img.src = src; img.alt = alt || ''; img.draggable = false;
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'zoom-close'; x.setAttribute('aria-label', 'Schließen'); x.textContent = '×';
+    box.append(img, x); document.body.append(box);
+    let s = 1, tx = 0, ty = 0;
+    const pts = new Map(); let last = null, moved = false;
+    const apply = () => { img.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`; };
+    const clamp = () => { const r = box.getBoundingClientRect(), mx = Math.max(0, (img.offsetWidth * s - r.width) / 2), my = Math.max(0, (img.offsetHeight * s - r.height) / 2); tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty)); };
+    const zoomAt = (ns, cx, cy) => {
+      ns = Math.max(1, Math.min(6, ns));
+      const r = box.getBoundingClientRect(), px = cx - r.left - r.width / 2, py = cy - r.top - r.height / 2;
+      tx = px - (px - tx) * ns / s; ty = py - (py - ty) * ns / s; s = ns; if (s === 1) { tx = 0; ty = 0; } clamp(); apply();
+    };
+    const mid = () => { const p = [...pts.values()]; return { x: p.reduce((t, q) => t + q.x, 0) / p.length, y: p.reduce((t, q) => t + q.y, 0) / p.length, d: p.length > 1 ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) : 0 }; };
+    box.addEventListener('pointerdown', (e) => { if (e.target === x) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); box.setPointerCapture(e.pointerId); last = mid(); moved = false; });
+    box.addEventListener('pointermove', (e) => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const m = mid();
+      if (Math.abs(m.x - last.x) + Math.abs(m.y - last.y) > 3 || (last.d && m.d && Math.abs(m.d - last.d) > 3)) moved = true;
+      if (pts.size > 1 && last.d && m.d) zoomAt(s * m.d / last.d, m.x, m.y);
+      if (s > 1) { tx += m.x - last.x; ty += m.y - last.y; clamp(); apply(); }
+      last = m;
+    });
+    const up = (e) => {
+      if (!pts.delete(e.pointerId)) return;
+      if (!pts.size && !moved && e.target !== x) { if (s > 1) { s = 1; tx = ty = 0; apply(); } else close(); } // Tippen: heranzoomen zurücksetzen bzw. schließen
+      last = pts.size ? mid() : null;
+    };
+    box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+    box.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(s * Math.exp(-e.deltaY / 300), e.clientX, e.clientY); }, { passive: false });
+    box.addEventListener('dblclick', (e) => { if (e.target === x) return; zoomAt(s > 1 ? 1 : 2.5, e.clientX, e.clientY); });
+    x.onclick = close;
+    document.addEventListener('keydown', onKey);
+  }
+  document.addEventListener('click', (e) => {
+    const img = e.target.closest && e.target.closest('.item-photo img');
+    if (img && img.src) open(img.currentSrc || img.src, img.alt);
+  });
+})();
