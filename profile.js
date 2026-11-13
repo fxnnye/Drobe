@@ -131,6 +131,7 @@ const Profile = (() => {
   async function render(name) {
     const box = $('publicView');
     box.replaceChildren();
+    box.classList.remove('has-inline-banner');
     const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück' : 'Zur Startseite');
     back.type = 'button';
     back.onclick = leave;
@@ -156,7 +157,7 @@ const Profile = (() => {
 
     const me = Cloud.user();
     const own = !!me && me.name === data.username;
-    if (me && me.name === data.username) box.append(el('p', 'pub-banner', 'So sehen andere dein Profil. Nur Öffentliches oder zum Verkauf Freigegebenes ist sichtbar.'));
+    if (me && me.name === data.username) { const ban = el('span', 'pub-banner pub-banner-inline', 'So sehen andere dein Profil.'); back.after(ban); box.classList.add('has-inline-banner'); }
     const cnt = (k, one, many) => k + ' ' + (k === 1 ? one : many);
     const head = el('div', 'me-head');
     const av = el('span', 'avatar');
@@ -167,7 +168,7 @@ const Profile = (() => {
     const about = [data.city, data.followers ? cnt(data.followers, 'Follower', 'Follower') : ''].filter(Boolean).join(' · ');
     if (about) info.append(el('span', 'muted small', about));
     if (data.bio) info.append(el('span', 'small pub-bio', data.bio));
-    fetchReviews(data.username).then((r) => { if (r && r.count && info.isConnected) { const rb = el('button', 'linkish small', ratingText(r)); rb.type = 'button'; rb.onclick = () => openReviews(data.username); info.append(rb); } });
+    fetchReviews(data.username).then((r) => { if (r && info.isConnected) { const rb = el('button', 'linkish small', r.count ? ratingText(r) : '0 Bewertungen'); rb.type = 'button'; rb.onclick = () => openReviews(data.username); info.append(rb); } });
     head.append(av, info);
     box.append(head);
     if (!own) avatarOf(data.username).then((url) => { if (url) paintAvatar(av, url, data.username); });
@@ -559,12 +560,10 @@ const Profile = (() => {
   async function loadOwnRating() {
     const u = Cloud.user();
     const b = $('meRating');
-    b.hidden = true;
     if (!u) return;
-    const r = await fetchReviews(u.name);
-    if (!r || !r.count) return;
-    b.textContent = ratingText(r); b.hidden = false;
     b.onclick = () => openReviews(u.name);
+    const r = await fetchReviews(u.name);
+    if (r) b.textContent = r.count ? ratingText(r) : '0 Bewertungen';
   }
 
   /* ---------- Folgen und Merken ---------- */

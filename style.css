@@ -1215,4 +1215,7 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 .rev-item { padding: 12px 0; border-bottom: 1px solid var(--gray-hover); }
 .rev-stars { letter-spacing: 2px; }
 .rev-text { margin: 4px 0 0; overflow-wrap: anywhere; }
-.me-rating { align-self: flex-start; text-align: left; }
+
+/* Hinweis „So sehen andere dein Profil“ rechts neben Zurück */
+.pub-back { display: inline-flex; vertical-align: middle; }
+.pub-banner-inline { display: inline-block; vertical-align: middle; margin: 4px 0 16px 10px; padding: 8px 14px; }
