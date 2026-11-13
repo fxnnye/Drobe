@@ -1200,9 +1200,8 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 .menu svg { flex: none; }
 .top > .menu { padding: 0; justify-content: center; align-items: center; }
 
-/* Mehr Platz zum Scrollen: Outfit-Bearbeitung unten, Profil auch mit wenigen Teilen */
+/* Scrollraum richtet sich nach dem Inhalt; nur Outfit-Bearbeitung bekommt unten extra Platz */
 #view-builder { padding-bottom: 240px; }
-#view-closet, #view-saved, #view-outfits { min-height: calc(100vh + 120px); min-height: calc(100dvh + 120px); }
 @media (max-width: 700px) {
   main { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
   .public { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
