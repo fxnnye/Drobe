@@ -210,7 +210,7 @@ const Cloud = (() => {
     if (linkBad) { toast('Der Link ist abgelaufen oder schon benutzt. Registriere dich erneut oder melde dich an.'); showAuth(false); }
   }
 
-  const APP_URL = 'https://fxnnye.github.io/Drobe/';
+  const APP_URL = 'https://jawnz.de/';
   // Nach der Registrierung: Hinweis, dass die Mail unterwegs ist
   function showSent(name, mail) {
     const f = $('authForm');

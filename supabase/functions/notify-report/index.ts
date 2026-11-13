@@ -53,7 +53,7 @@ Deno.serve(async () => {
         `Zeit: ${new Date(r.created_at).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })}`,
         '',
         'Ansehen und bearbeiten: JAWNZ öffnen → Einstellungen → Moderation',
-        'https://fxnnye.github.io/Drobe/',
+        'https://jawnz.de/',
       ].filter((x) => x !== null).join('\n');
       await client.send({ from: `JAWNZ <${FROM_USER}>`, to: TO, subject: `JAWNZ: neue Meldung (${reason}) zu ${name(r.target_user)}`, content: lines });
     }
