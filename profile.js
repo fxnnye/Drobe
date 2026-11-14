@@ -165,7 +165,6 @@ const Profile = (() => {
     const info = el('div', 'me-info');
     info.append(el('strong', null, data.username));
     info.append(el('span', 'muted small', [cnt(data.items.length, 'Teil', 'Teile'), cnt(data.outfits.length, 'Outfit', 'Outfits')].join(' · ')));
-    if (data.city) info.append(el('span', 'muted small', data.city));
     const social = el('span', 'muted small me-social');
     const fBtn = el('button', 'linkish', data.followers + ' Follower'), gBtn = el('button', 'linkish', 'Folge ich');
     fBtn.type = gBtn.type = 'button';
@@ -1029,7 +1028,8 @@ const Profile = (() => {
     $('threadPhoto').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) sendReply(null, f); };
   }
 
-  /* ---------- Eigenes Profil: Foto, Text, Stadt ---------- */
+  /* ---------- Eigenes Profil: Foto und Text ---------- */
+  let ownCity = '';
   let ownAvatar = null; // Data-URL oder null
   let pendingAvatar; // undefined = unverändert, '' = entfernen, sonst neue Data-URL
   // Zeigt ein Profilbild, sonst den Anfangsbuchstaben
@@ -1068,7 +1068,7 @@ const Profile = (() => {
       const { data, error } = await sb.rpc('my_profile_text');
       if (error) throw error;
       $('profBio').value = (data && data.bio) || '';
-      $('profCity').value = (data && data.city) || '';
+      ownCity = (data && data.city) || ''; // wird nicht mehr angezeigt oder bearbeitet, bleibt beim Speichern aber unverändert
       ownAvatar = (data && data.avatar) || null;
       paintOwnAvatars();
     } catch (e) { console.error(e); }
@@ -1146,7 +1146,7 @@ const Profile = (() => {
     $('profTextSave').disabled = true;
     try {
       const sb = Cloud.client();
-      const { error } = await sb.rpc('update_my_profile', { p_bio: $('profBio').value, p_city: $('profCity').value });
+      const { error } = await sb.rpc('update_my_profile', { p_bio: $('profBio').value, p_city: ownCity });
       if (error) throw error;
       if (!$('pfCrop').hidden) pendingAvatar = cropResult();
       if (pendingAvatar !== undefined) {
