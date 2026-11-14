@@ -1234,3 +1234,15 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 #threadItemBox.in-head { flex: 1; min-width: 0; margin: 0; }
 #threadWho[hidden] { display: none; }
 #threadThumb[hidden] { display: none; }
+
+/* Öffentliches Profil: größeres Profilbild */
+#publicView .me-head { align-items: center; gap: 20px; }
+#publicView .me-head .avatar { width: 104px; height: 104px; font-size: 40px; }
+#publicView .me-info strong { font-size: 24px; }
+#publicView .me-info .linkish { align-self: flex-start; text-align: left; padding: 0; margin-top: 2px; }
+@media (max-width: 700px) { #publicView .me-head { gap: 14px; } #publicView .me-head .avatar { width: 84px; height: 84px; font-size: 32px; } }
+@media (max-width: 700px) {
+  #publicView .me-head { flex-wrap: wrap; align-items: flex-start; }
+  #publicView .me-head .avatar { width: 88px; height: 88px; }
+  #publicView .me-head > .btn { flex: 1 1 100%; }
+}
