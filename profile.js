@@ -772,9 +772,11 @@ const Profile = (() => {
       main.append(top);
       if (m.record_brand && m.record_name) main.append(el('span', 'small msg-name', m.record_name));
       if (m.last_text) main.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
-      const who = el('span', 'msg-who muted small');
-      who.append(avatarFor(m.other, 'xs'), el('span', null, m.other));
-      main.append(who);
+      if (m.kind !== 'team') {
+        const who = el('span', 'msg-who muted small');
+        who.append(avatarFor(m.other, 'xs'), el('span', null, m.other));
+        main.append(who);
+      }
       row.append(thumb, main);
       row.onclick = () => openThread(m, subject);
       box.append(row);
@@ -907,14 +909,14 @@ const Profile = (() => {
     if (atEnd) box.scrollTop = box.scrollHeight;
   }
   function openThread(m, subject) {
-    thread = { id: m.id, other: m.other };
+    thread = { id: m.id, other: m.other, kind: m.kind };
     $('inboxList').hidden = true;
     $('msgTabs').hidden = true;
     $('inboxEmpty').classList.remove('show');
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
     document.body.classList.add('in-thread');
-    $('threadWho').replaceChildren(avatarFor(m.other, 'md'), el('span', null, m.other));
+    $('threadWho').replaceChildren(m.kind === 'team' ? el('span', 'avatar md', 'J') : avatarFor(m.other, 'md'), el('span', null, m.kind === 'team' ? 'JAWNZ-Team' : m.other));
     // Das Teil, um das es geht: kleines Bild, Name und Art der Anfrage
     $('threadItem').textContent = m.kind === 'team' ? 'JAWNZ' : (m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch'));
     $('threadAbout').textContent = m.kind === 'team' ? 'Nachricht von JAWNZ' : m.kind === 'interest'
@@ -986,7 +988,7 @@ const Profile = (() => {
   }
   function wireThread() {
     $('threadBack').onclick = closeThread;
-    $('threadWho').onclick = () => { if (thread) location.hash = '#/u/' + thread.other; };
+    $('threadWho').onclick = () => { if (thread && thread.kind !== 'team') location.hash = '#/u/' + thread.other; };
     $('threadForm').onsubmit = (e) => sendReply(e);
     $('threadPhoto').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) sendReply(null, f); };
   }
