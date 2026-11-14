@@ -174,13 +174,13 @@ function renderChips(el, key, onChange) {
   sub.className = 'subchips' + (fresh ? ' enter' : '');
   chip(sub, 'Alle ' + group, group);
   GROUPS[group].forEach((c) => chip(sub, c, c));
-  if (window.matchMedia('(max-width: 700px)').matches) {
-    // Am Handy steht der Block mit den Unterkategorien (untereinander) direkt rechts neben der gewählten Hauptkategorie
+  if (window.matchMedia('(max-width: 700px)').matches || el.closest('.filter-row')) {
+    // Handy und Schrank am Computer: der Block mit den Unterkategorien (untereinander) steht direkt rechts neben der gewählten Hauptkategorie
     chips[group].after(sub);
     sub.style.animation = 'none'; // für die Messung die Endgröße verwenden
-    nudge(chips[group], sub.nextElementSibling || sub); // ohne Nachbarn rechts: der Unterkategorien-Block selbst
+    nudge(chips[group], sub.nextElementSibling || sub); // ohne Nachbarn rechts: der Unterkategorien-Block selbst (nur am Handy)
     void sub.offsetWidth; sub.style.animation = '';
-  } else { // am Computer: zweite Reihe darunter
+  } else { // Outfit-Auswahl am Computer: zweite Reihe darunter
     el.appendChild(sub);
   }
   leave(chips, group);
