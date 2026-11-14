@@ -916,7 +916,7 @@ const Profile = (() => {
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
     document.body.classList.add('in-thread');
-    $('threadWho').replaceChildren(m.kind === 'team' ? el('span', 'avatar md', 'J') : avatarFor(m.other, 'md'), el('span', null, m.kind === 'team' ? 'JAWNZ-Team' : m.other));
+    $('threadWho').replaceChildren(m.kind === 'team' ? el('span', 'avatar md', 'J') : avatarFor(m.other, 'md'), el('span', null, m.kind === 'team' ? 'JAWNZ' : m.other));
     // Das Teil, um das es geht: kleines Bild, Name und Art der Anfrage
     $('threadItem').textContent = m.kind === 'team' ? 'JAWNZ' : (m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch'));
     $('threadAbout').textContent = m.kind === 'team' ? 'Nachricht von JAWNZ' : m.kind === 'interest'
