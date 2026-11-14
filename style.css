@@ -1250,5 +1250,5 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 }
 .offer-card[hidden] { display: none; }
 
-/* Handy, öffentliches Profil: Melden und Sperren beginnen links bündig mit dem Beschreibungstext (Profilbild 48 px + Abstand 10 px: die linke Kante des Knopfs steht auf einer Linie mit dem Text) */
-@media (max-width: 700px) { #publicView .pub-tools { padding-left: 58px; } }
+/* Handy, öffentliches Profil: Melden und Sperren beginnen links bündig mit dem Beschreibungstext (58 px wären Kante auf Textlinie, 8 px weiter links nach Wunsch) */
+@media (max-width: 700px) { #publicView .pub-tools { padding-left: 50px; } }
