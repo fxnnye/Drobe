@@ -1246,3 +1246,9 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   #publicView .me-head .avatar { width: 88px; height: 88px; }
   #publicView .me-head > .btn { flex: 1 1 100%; }
 }
+
+/* Kopfzeile: der Einstellungs-Button hängt rechts über der Zeile und macht sie nicht höher, so steht JAWNZ überall auf gleicher Höhe */
+@media (min-width: 701px) {
+  .top { position: relative; }
+  .top > .menu { position: absolute; right: var(--pad-page); top: 0; bottom: 0; margin: auto 0; width: 52px; height: 52px; }
+}

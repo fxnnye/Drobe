@@ -165,10 +165,22 @@ const Profile = (() => {
     const info = el('div', 'me-info');
     info.append(el('strong', null, data.username));
     info.append(el('span', 'muted small', [cnt(data.items.length, 'Teil', 'Teile'), cnt(data.outfits.length, 'Outfit', 'Outfits')].join(' · ')));
-    const about = [data.city, data.followers ? cnt(data.followers, 'Follower', 'Follower') : ''].filter(Boolean).join(' · ');
-    if (about) info.append(el('span', 'muted small', about));
+    if (data.city) info.append(el('span', 'muted small', data.city));
+    const social = el('span', 'muted small me-social');
+    const fBtn = el('button', 'linkish', data.followers + ' Follower'), gBtn = el('button', 'linkish', 'Folge ich');
+    fBtn.type = gBtn.type = 'button';
+    social.append(fBtn, ' · ', gBtn);
+    info.append(social);
+    let people = null;
+    fBtn.onclick = () => openPeople('followers', data.username, people);
+    gBtn.onclick = () => openPeople('following', data.username, people);
+    fetchPeople(data.username).then((pp) => { if (!pp) return; people = pp; fBtn.textContent = pp.followers.length + ' Follower'; gBtn.textContent = pp.following.length + ' Folge ich'; });
     if (data.bio) info.append(el('span', 'small pub-bio', data.bio));
-    fetchReviews(data.username).then((r) => { if (r && info.isConnected) { const rb = el('button', 'linkish small', r.count ? ratingText(r) : '0 Bewertungen'); rb.type = 'button'; rb.onclick = () => openReviews(data.username); info.append(rb); } });
+    const rvBtn = el('button', 'linkish', '0 Bewertungen');
+    rvBtn.type = 'button';
+    rvBtn.onclick = () => openReviews(data.username);
+    social.append(' · ', rvBtn);
+    fetchReviews(data.username).then((r) => { if (r && r.count) rvBtn.textContent = ratingText(r); });
     head.append(av, info);
     box.append(head);
     if (!own) avatarOf(data.username).then((url) => { if (url) paintAvatar(av, url, data.username); });
@@ -638,13 +650,32 @@ const Profile = (() => {
     } catch (e) { console.error(e); message(box, 'Die Liste konnte nicht geladen werden.', { retry: () => loadPeople(which, box) }); }
   }
 
-  function openPeople(which) {
+  // Liste im Fenster: eigene Follower/Folge ich (name leer) oder die eines fremden Profils
+  async function openPeople(which, name, known) {
     const d = $('peopleDialog'), box = $('peopleList');
     $('peopleTitle').textContent = which === 'followers' ? 'Follower' : 'Folge ich';
     box.replaceChildren();
-    loadPeople(which, box);
     box.onclick = (e) => { if (e.target.closest('.member')) d.close(); };
     if (!d.open) d.showModal();
+    if (!name) return loadPeople(which, box);
+    message(box, 'Lade …', { loading: true });
+    const people = known || await fetchPeople(name);
+    box.replaceChildren();
+    const names = people && people[which];
+    if (!names) return message(box, 'Die Liste konnte nicht geladen werden.');
+    if (!names.length) return message(box, which === 'followers' ? 'Noch keine Follower.' : 'Folgt noch niemandem.');
+    for (const n of names) {
+      const b = el('button', 'member');
+      b.type = 'button';
+      b.append(avatarFor(n, 'md'), el('span', null, n));
+      b.onclick = () => { location.hash = '#/u/' + n; };
+      box.append(b);
+    }
+  }
+  async function fetchPeople(name) {
+    const sb = Cloud.client();
+    if (!sb || !navigator.onLine) return null;
+    try { const { data, error } = await sb.rpc('profile_people', { p_username: name }); if (error) throw error; return data; } catch (e) { return null; } // Migration 0041 fehlt noch
   }
 
   /* ---------- Melden und Sperren ---------- */
