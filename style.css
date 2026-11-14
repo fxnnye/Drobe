@@ -432,8 +432,8 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .filter-row { display: flex; align-items: center; gap: 12px; }
 .filter-row .chips { flex: 1; min-width: 0; margin-bottom: 0; }
 .filter-row { margin-bottom: 16px; }
-@media (max-width: 700px) {
-  /* Am Handy scrollen die Kategorien seitwärts, damit das Plus rechts daneben Platz hat */
+@media all {
+  /* Die Kategorien scrollen seitwärts (Handy und Computer gleich), damit das Plus rechts daneben Platz hat */
   .filter-row .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .filter-row .chips::-webkit-scrollbar { display: none; }
   .filter-row .chip { flex: none; }
@@ -1072,7 +1072,7 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 @media (max-width: 900px) { .top { padding-top: calc(var(--s-3) + env(safe-area-inset-top, 0px)); } }
 
 /* Am Handy: Unterkategorien stehen als Block untereinander rechts neben der Hauptkategorie */
-@media (max-width: 700px) { .filter-row .chips .subchips { flex: none; flex-basis: auto; flex-direction: column; flex-wrap: nowrap; padding-left: 0; } }
+@media all { .filter-row .chips .subchips { flex: none; flex-basis: auto; flex-direction: column; flex-wrap: nowrap; padding-left: 0; } }
 
 /* Feed: Teile und Outfits gleich groß, am Handy über die ganze Breite */
 .feed-switch { gap: 8px; max-width: 420px; }
@@ -1087,7 +1087,7 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 .tab[data-view="add"] { display: none; }
 @media (max-width: 700px) { .tab[data-view="add"] { display: inline-flex; } }
 /* Am Handy sind alle Hauptkategorien im Schrank so hoch wie die gewählte mit ihren vier Unterkategorien */
-@media (max-width: 700px) { #closetFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
+@media all { #closetFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
 /* Unterkategorien gleiten weich herein, statt plötzlich da zu sein */
 /* Der Block wächst auch in der Höhe weich; --sub-from ist die Höhe der Hauptknöpfe, --sub-to die des größten Blocks (Accessoires: 5 Einträge) */
 .chips { --sub-from: calc(var(--h-chip) * 4 + 24px); --sub-to: calc(var(--h-chip) * 5 + 32px); }
@@ -1095,12 +1095,12 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 @keyframes subIn-x { from { max-width: 0; max-height: var(--sub-from); opacity: 0; transform: translateX(-10px); } to { max-width: 140px; max-height: var(--sub-to); opacity: 1; transform: none; } }
 @keyframes subIn-y { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .subchips.enter { animation: subIn-y .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; }
-@media (max-width: 700px) { .filter-row .chips .subchips.enter { animation: subIn-x .3s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; } }
+@media all { .filter-row .chips .subchips.enter { animation: subIn-x .3s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; } }
 @media (prefers-reduced-motion: reduce) { .subchips.enter { animation: none !important; } }
 @keyframes subOut-x { from { max-width: 140px; max-height: var(--sub-to); opacity: 1; transform: none; } to { max-width: 0; max-height: var(--sub-from); opacity: 0; transform: translateX(-10px); } }
 @keyframes subOut-y { from { opacity: 1; max-height: 200px; transform: none; } to { opacity: 0; max-height: 0; transform: translateY(-6px); } }
 .subchips.leave { animation: subOut-y .24s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; overflow: hidden; pointer-events: none; }
-@media (max-width: 700px) { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
+@media all { .filter-row .chips .subchips.leave { animation: subOut-x .26s var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; } }
 @media (prefers-reduced-motion: reduce) { .subchips.leave { animation: none !important; display: none; } }
 /* Einstellungs-Knopf nur im Profil */
 
@@ -1235,16 +1235,12 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 #threadWho[hidden] { display: none; }
 #threadThumb[hidden] { display: none; }
 
-/* Öffentliches Profil: größeres Profilbild */
-#publicView .me-head { align-items: center; gap: 20px; }
-#publicView .me-head .avatar { width: 104px; height: 104px; font-size: 40px; }
-#publicView .me-info strong { font-size: 24px; }
-#publicView .me-info .linkish { align-self: flex-start; text-align: left; padding: 0; margin-top: 2px; }
-@media (max-width: 700px) { #publicView .me-head { gap: 14px; } #publicView .me-head .avatar { width: 84px; height: 84px; font-size: 32px; } }
-@media (max-width: 700px) {
-  #publicView .me-head { flex-wrap: wrap; align-items: flex-start; }
-  #publicView .me-head .avatar { width: 88px; height: 88px; }
-  #publicView .me-head > .btn { flex: 1 1 100%; }
+/* Öffentliches Profil: größeres Profilbild (nur Computer-Ansicht) */
+@media (min-width: 701px) {
+  #publicView .me-head { align-items: center; gap: 20px; }
+  #publicView .me-head .avatar { width: 104px; height: 104px; font-size: 40px; }
+  #publicView .me-info strong { font-size: 24px; }
+  #publicView .me-info .linkish { align-self: flex-start; text-align: left; padding: 0; margin-top: 2px; }
 }
 
 /* Kopfzeile: der Einstellungs-Button hängt rechts über der Zeile und macht sie nicht höher, so steht JAWNZ überall auf gleicher Höhe */
@@ -1252,3 +1248,4 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   .top { position: relative; }
   .top > .menu { position: absolute; right: var(--pad-page); top: 0; bottom: 0; margin: auto 0; width: 52px; height: 52px; }
 }
+.offer-card[hidden] { display: none; }
