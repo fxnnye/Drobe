@@ -1249,3 +1249,6 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   .top > .menu { position: absolute; right: var(--pad-page); top: 0; bottom: 0; margin: auto 0; width: 52px; height: 52px; }
 }
 .offer-card[hidden] { display: none; }
+
+/* Handy, öffentliches Profil: Melden und Sperren beginnen links bündig mit dem Beschreibungstext (Profilbild 48 px + Abstand 10 px) */
+@media (max-width: 700px) { #publicView .pub-tools { padding-left: 58px; } }
