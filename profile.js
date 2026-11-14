@@ -759,7 +759,7 @@ const Profile = (() => {
     for (const m of list) {
       const row = el('button', 'inbox-item thread-row msg-row' + (m.unread ? ' unread' : ''));
       row.type = 'button';
-      const subject = m.kind === 'team' ? 'Nachricht vom Drobe-Team' : m.kind === 'interest'
+      const subject = m.kind === 'team' ? 'Nachricht von JAWNZ' : m.kind === 'interest'
         ? (m.mine ? 'Interesse an „' : 'Interesse an deinem „') + (m.record_name || 'Teil') + '“'
         : (m.mine ? 'Zu „' : 'Zu deinem Wunsch „') + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
       const thumb = el('span', 'msg-thumb');
@@ -768,7 +768,7 @@ const Profile = (() => {
       else if (m.record_path && m.kind !== 'team') rows.push({ m, thumb });
       const main = el('span', 'msg-main');
       const top = el('span', 'thread-top');
-      top.append(el('b', 'msg-title', m.kind === 'team' ? 'Drobe-Team' : (m.record_brand || m.record_name || 'Teil')), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
+      top.append(el('b', 'msg-title', m.kind === 'team' ? 'JAWNZ' : (m.record_brand || m.record_name || 'Teil')), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
       main.append(top);
       if (m.record_brand && m.record_name) main.append(el('span', 'small msg-name', m.record_name));
       if (m.last_text) main.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
@@ -916,8 +916,8 @@ const Profile = (() => {
     document.body.classList.add('in-thread');
     $('threadWho').replaceChildren(avatarFor(m.other, 'md'), el('span', null, m.other));
     // Das Teil, um das es geht: kleines Bild, Name und Art der Anfrage
-    $('threadItem').textContent = m.kind === 'team' ? 'Drobe-Team' : (m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch'));
-    $('threadAbout').textContent = m.kind === 'team' ? 'Nachricht vom Drobe-Team' : m.kind === 'interest'
+    $('threadItem').textContent = m.kind === 'team' ? 'JAWNZ' : (m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch'));
+    $('threadAbout').textContent = m.kind === 'team' ? 'Nachricht von JAWNZ' : m.kind === 'interest'
       ? (m.mine ? 'Deine Anfrage zu diesem Teil' : 'Anfrage zu deinem Teil')
       : (m.mine ? 'Dein Angebot zu diesem Wunsch' : 'Angebot zu deinem Wunsch') + (m.ref_name ? ': ' + m.ref_name : '');
     const th = $('threadThumb');

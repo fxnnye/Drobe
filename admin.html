@@ -296,7 +296,7 @@
     const send = btn('Nachricht senden', 'primary'); send.disabled = true;
     const close = btn('Schließen', null, () => closeModal());
     text.oninput = () => { counter.textContent = text.value.length + ' / 500'; send.disabled = !text.value.trim(); };
-    const hint = el('p', 'muted small', 'Das Mitglied sieht die Nachricht in der App unter Nachrichten als „Drobe-Team“ und kann antworten. Antworten erscheinen hier.');
+    const hint = el('p', 'muted small', 'Das Mitglied sieht die Nachricht in der App unter Nachrichten als „JAWNZ“ und kann antworten. Antworten erscheinen hier.');
     async function load() {
       const { data, error } = await sb.rpc('admin_thread', { p_username: username });
       thread.replaceChildren();

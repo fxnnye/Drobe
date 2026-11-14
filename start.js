@@ -241,7 +241,7 @@ document.querySelectorAll('dialog').forEach((d) => {
     document.addEventListener('keydown', onKey);
   }
   document.addEventListener('click', (e) => {
-    const img = e.target.closest && e.target.closest('.item-photo img');
+    const img = e.target.closest && e.target.closest('.item-photo img, .outfit-photo img');
     if (img && img.src) open(img.currentSrc || img.src, img.alt);
   });
 })();
