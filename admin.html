@@ -213,6 +213,25 @@
     return { data };
   }
 
+  /* ---------- Hilfe beim Anmelden: Mails an das Mitglied ---------- */
+  // Läuft über die normale Anmelde-Schnittstelle: Supabase verschickt die Mail selbst, du siehst weder Passwort noch Link.
+  async function mailFlow(kind, username, email) {
+    const reset = kind === 'reset';
+    const r = await confirmAction({
+      title: reset ? 'Passwort-Mail an ' + username + ' senden?' : 'Bestätigungs-Mail an ' + username + ' erneut senden?',
+      intro: (reset ? 'Das Mitglied bekommt eine Mail mit einem Link, um ein neues Passwort zu setzen.' : 'Das Mitglied bekommt die Mail zum Bestätigen der E-Mail-Adresse noch einmal. Hat es sie schon bestätigt, passiert nichts.') + ' Adresse: ' + email,
+      confirmLabel: 'Mail senden',
+    });
+    if (!r) return;
+    try {
+      const { error } = reset
+        ? await sb.auth.resetPasswordForEmail(email)
+        : await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: 'https://jawnz.de/' } });
+      if (error) throw error;
+      toast('Mail an ' + email + ' wurde gesendet.');
+    } catch (e) { console.error(e); toast('Das hat nicht geklappt: ' + ((e && e.message) || 'unbekannter Fehler'), true); }
+  }
+
   /* ---------- Gemeinsame Aktionen ---------- */
   async function banFlow(username, banned, opt = {}) {
     if (banned) {
@@ -325,6 +344,12 @@
     r1.append(prof, btn('Nachricht schreiben', null, () => messageFlow(username)));
     if (opt.onContent) r1.append(btn('Inhalte ansehen', null, opt.onContent));
     g1.append(r1); wrap.append(g1);
+    if (opt.email) {
+      const g3 = el('div', 'group sep'); g3.append(el('h4', null, 'Anmeldung'));
+      const r3 = el('div', 'row');
+      r3.append(btn('Passwort-Mail senden', null, () => mailFlow('reset', username, opt.email)), btn('Bestätigungs-Mail erneut senden', null, () => mailFlow('confirm', username, opt.email)));
+      g3.append(r3); wrap.append(g3);
+    }
     if (!state.isAdmin) {
       const g2 = el('div', 'group sep'); g2.append(el('h4', null, 'Konto'));
       const r2 = el('div', 'row');
@@ -496,7 +521,7 @@
       fact('Meldungen gegen das Konto', String(m.reports_against), m.reports_against > 1, m.reports_against ? () => reportsFlow(m.username) : null));
     body.append(facts);
     const refresh = () => { loadMembers(); loadOverview(); };
-    body.append(accountActions(m.username, { banned: m.banned, isAdmin: m.is_admin }, { refresh, onContent: () => toggleContent(card, m) }));
+    body.append(accountActions(m.username, { banned: m.banned, isAdmin: m.is_admin }, { email: m.email, refresh, onContent: () => toggleContent(card, m) }));
     card.append(body);
     return card;
   }
