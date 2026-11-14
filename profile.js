@@ -916,6 +916,11 @@ const Profile = (() => {
     document.querySelector('#view-messages .page-title').hidden = true;
     $('threadPane').hidden = false;
     document.body.classList.add('in-thread');
+    // Team-Nachrichten: der graue Kasten „JAWNZ“ steht oben neben „Zurück“, Absender und Bildplatz entfallen
+    const isTeam = m.kind === 'team', headBox = document.querySelector('#threadPane .thread-head');
+    $('threadWho').hidden = isTeam; $('threadThumb').hidden = isTeam;
+    $('threadItemBox').classList.toggle('in-head', isTeam);
+    if (isTeam) headBox.append($('threadItemBox')); else headBox.after($('threadItemBox'));
     $('threadWho').replaceChildren(m.kind === 'team' ? el('span', 'avatar md', 'J') : avatarFor(m.other, 'md'), el('span', null, m.kind === 'team' ? 'JAWNZ' : m.other));
     // Das Teil, um das es geht: kleines Bild, Name und Art der Anfrage
     $('threadItem').textContent = m.kind === 'team' ? 'JAWNZ' : (m.record_name || (m.kind === 'interest' ? 'Teil' : 'Wunsch'));

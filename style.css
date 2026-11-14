@@ -1231,3 +1231,6 @@ dialog .avatar img { padding: 0; margin: 0; border-radius: 50%; max-height: none
 dialog.sheet .member { padding: 10px 14px; }
 dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .outfit-photo img { cursor: zoom-in; }
+#threadItemBox.in-head { flex: 1; min-width: 0; margin: 0; }
+#threadWho[hidden] { display: none; }
+#threadThumb[hidden] { display: none; }
