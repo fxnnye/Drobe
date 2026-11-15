@@ -880,10 +880,20 @@ const Profile = (() => {
       box.append(el('p', 'muted small offer-note', 'Die Bezahlung läuft direkt zwischen euch. Empfohlen: PayPal „Waren und Dienstleistungen“, sonst gibt es bei Betrug kein Geld zurück.'));
       if (o.seller) {
         act('Als verkauft markieren', 'btn primary', async () => {
-          if (!(await askConfirm('Als verkauft markieren? Das Teil wird danach privat gestellt.', 'Verkauft'))) return;
-          await rpc('mark_sold', { p_item: o.item_id });
+          if (!(await askConfirm('Als verkauft markieren? Das Teil verschwindet aus deinem Kleiderschrank und landet im Kleiderschrank des Käufers (ohne deine Notizen und den Preis).', 'Verkauft'))) return;
+          const { data: sold, error: soldErr } = await Cloud.client().rpc('mark_sold', { p_item: o.item_id });
+          if (soldErr) throw soldErr;
           const it = typeof itemById === 'function' ? itemById(o.item_id) : null;
-          if (it) {
+          if (it && sold && sold.transferred) {
+            // Das Teil gehört jetzt dem Käufer: nur lokal entfernen (nicht löschen, der Server hat es schon übergeben)
+            setPinned(it.id, false);
+            await rawDel('items', it.id);
+            const p = JSON.parse(localStorage.getItem('jawnz-pending-' + (Cloud.user() || {}).id) || '{}'); delete p['items/' + it.id]; try { localStorage.setItem('jawnz-pending-' + Cloud.user().id, JSON.stringify(p)); } catch (e) { /* egal */ }
+            items = items.filter((x) => x.id !== it.id);
+            if (typeof renderCloset === 'function') renderCloset();
+            toast('Verkauft, das Teil ist jetzt beim Käufer');
+            return;
+          } else if (it) {
             applyVisibility(it, 'private');
             setPinned(it.id, false);
             await dbPut('items', it);

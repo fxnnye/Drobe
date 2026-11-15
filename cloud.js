@@ -170,6 +170,29 @@ const Cloud = (() => {
     else if (!failedDl) dlRetries = 0;
   }
 
+  // Gekaufte Teile abholen: der Verkäufer hat „verkauft“ gesetzt, das Teil landet privat in meinem Kleiderschrank (mit Verlauf der Vorbesitzer)
+  async function receiveTransfers() {
+    if (!sb || !user) return;
+    let list;
+    try { const { data, error } = await sb.rpc('my_transfers'); if (error) return; list = Array.isArray(data) ? data : []; } catch (e) { return; } // Migration 0043 fehlt noch
+    let added = 0;
+    for (const t of list) {
+      try {
+        if (!(await dbGet('items', t.id))) {
+          const res = await sb.storage.from('images').download(t.path);
+          if (res.error || !res.data) continue; // später nochmal
+          const rec = { ...(t.data || {}), id: t.id, blob: res.data, vis: 'private', created: Date.now(), bought: Date.now() };
+          delete rec.price; delete rec.note;
+          await dbPut('items', rec);
+          added++;
+        }
+        const { error } = await sb.rpc('finish_transfer', { p_id: t.id });
+        if (error) throw error;
+      } catch (e) { console.error(e); }
+    }
+    if (added) { await reloadAll(); if (typeof toast === 'function') toast(added === 1 ? 'Gekauftes Teil ist jetzt in deinem Kleiderschrank' : added + ' gekaufte Teile sind jetzt in deinem Kleiderschrank'); }
+  }
+
   // Vorschauen für schon vorhandene Teile nachliefern (im Hintergrund, nur bereits hochgeladene)
   let thumbing = false;
   async function backfillThumbs() {
@@ -201,6 +224,7 @@ const Cloud = (() => {
     try {
       await flush();
       await pull();
+      await receiveTransfers();
       await flush();
       backfillThumbs().catch(() => {});
       lastSync = new Date();
@@ -491,7 +515,7 @@ const Cloud = (() => {
   }
 
   // Die App ist für genau diesen Datenbankstand gebaut. Ist die Datenbank neuer, läuft hier eine alte App-Version: neu laden.
-  const SCHEMA = 39;
+  const SCHEMA = 40;
   async function checkSchema() {
     try {
       const { data, error } = await sb.rpc('schema_version');

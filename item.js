@@ -56,6 +56,21 @@ function buildItemView(it) {
     row.append(dt, dd); dl.append(row);
   }
   v.append(dl);
+  // Verlauf: wer das Teil vor mir hatte (bei gekauften Teilen)
+  if (Array.isArray(it.history) && it.history.length) {
+    const box = document.createElement('div'); box.className = 'item-history';
+    const h = document.createElement('h3'); h.textContent = 'Verlauf'; box.append(h);
+    const ul = document.createElement('ul');
+    for (const e of it.history) {
+      const li = document.createElement('li');
+      const d = e.at ? new Date(e.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+      li.textContent = '@' + (e.user || '?') + (d ? ' · bis ' + d : '');
+      ul.append(li);
+    }
+    const li = document.createElement('li'); li.textContent = 'Du' + (it.bought ? ' · seit ' + new Date(it.bought).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+    ul.append(li);
+    box.append(ul); v.append(box);
+  }
 }
 $('itEditStart').onclick = () => { setViewing(false); setItemEditOpen(false); $('itemName').focus({ preventScroll: true }); };
 function openItemDialog(it) {

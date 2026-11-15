@@ -1257,3 +1257,8 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 #welcomeDialog { position: relative; }
 .welcome-x { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--gray); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
 #welcomeDialog h2 { padding-right: 40px; }
+
+/* Verlauf der Vorbesitzer */
+.item-history { margin-top: 16px; }
+.item-history h3 { font-size: 15px; margin: 0 0 6px; }
+.item-history ul { margin: 0; padding-left: 18px; color: var(--muted, #666); font-size: 14px; display: grid; gap: 2px; }
