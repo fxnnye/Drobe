@@ -9,7 +9,26 @@ const Cloud = (() => {
   const isPseudo = (m) => String(m || '').toLowerCase().endsWith('@' + MAIL_DOMAIN);
   const KINDS = ['items', 'outfits'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
-  const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp'];
+  const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp', '_tfp'];
+  // Kleine Vorschau (480 px) für Raster und Feed, damit nicht jedes Mal das große Bild geladen wird
+  const thumbPath = (kind, id) => `${user.id}/${kind}-${id}-t`;
+  async function makeThumb(blob) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = await loadImage(url);
+      const k = Math.min(1, 480 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return await canvasBlob(c, 'image/webp', 0.8);
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function pushThumb(kind, id, blob) {
+    const t = await makeThumb(blob);
+    if (!t) return false;
+    const { error } = await sb.storage.from('images').upload(thumbPath(kind, id), t, { upsert: true, contentType: 'image/webp' });
+    return !error;
+  }
   const srcPath = (kind, id) => `${user.id}/${kind}-${id}-src`; // Ausgangsfoto zum Zurückholen von Hintergrund
 
   let sb = null;
@@ -38,10 +57,12 @@ const Cloud = (() => {
     if (!rec) return; // inzwischen gelöscht
     const blob = rec[imgKey(kind)];
     const fp = blob ? String(blob.size) : '';
+    let thumbDone = null;
     const path = `${user.id}/${kind}-${id}`;
     if (blob && rec._fp !== fp) {
       const { error } = await sb.storage.from('images').upload(path, blob, { upsert: true, contentType: blob.type || 'image/png' });
       if (error) throw error;
+      try { if (await pushThumb(kind, id, blob)) thumbDone = fp; } catch (e) { /* Vorschau ist nur Beschleunigung */ }
     }
     const sblob = rec.source;
     const sfp = sblob ? String(sblob.size) : '';
@@ -64,7 +85,7 @@ const Cloud = (() => {
         r.onsuccess = () => {
           const cur = r.result;
           if (!cur) return;
-          if (cur[imgKey(kind)] && String(cur[imgKey(kind)].size) === fp) cur._fp = fp;
+          if (cur[imgKey(kind)] && String(cur[imgKey(kind)].size) === fp) { cur._fp = fp; if (thumbDone === fp) cur._tfp = fp; }
           if (cur.source && String(cur.source.size) === sfp) cur._sfp = sfp;
           if (!cur.source) delete cur._sfp;
           o.put(cur);
@@ -77,7 +98,7 @@ const Cloud = (() => {
     // Der Eintrag bleibt als „gelöscht“ stehen, damit andere Geräte das Löschen mitbekommen
     const { error } = await sb.rpc('sync_push', { p_kind: kind, p_id: id, p_data: { deleted: true, updated: Date.now() } });
     if (error) throw error;
-    await sb.storage.from('images').remove([`${user.id}/${kind}-${id}`, srcPath(kind, id)]);
+    await sb.storage.from('images').remove([`${user.id}/${kind}-${id}`, srcPath(kind, id), thumbPath(kind, id)]);
   }
 
   let running = false, again = false;
@@ -149,6 +170,29 @@ const Cloud = (() => {
     else if (!failedDl) dlRetries = 0;
   }
 
+  // Vorschauen für schon vorhandene Teile nachliefern (im Hintergrund, nur bereits hochgeladene)
+  let thumbing = false;
+  async function backfillThumbs() {
+    if (thumbing || !sb || !user) return;
+    thumbing = true;
+    try {
+      for (const kind of KINDS) {
+        for (const rec of await dbAll(kind)) {
+          const b = rec[imgKey(kind)];
+          if (!b || rec._tfp === String(b.size) || rec._fp !== String(b.size)) continue;
+          if (!navigator.onLine) return;
+          try {
+            if (!(await pushThumb(kind, rec.id, b))) continue;
+          } catch (e) { continue; }
+          await tx(kind, 'readwrite', (o) => {
+            const r = o.get(rec.id);
+            r.onsuccess = () => { const cur = r.result; if (cur && cur[imgKey(kind)] && String(cur[imgKey(kind)].size) === String(b.size)) { cur._tfp = String(b.size); o.put(cur); } };
+          });
+        }
+      }
+    } finally { thumbing = false; }
+  }
+
   let syncing = false;
   async function sync() {
     if (!sb || !user || !navigator.onLine || syncing) return;
@@ -158,6 +202,7 @@ const Cloud = (() => {
       await flush();
       await pull();
       await flush();
+      backfillThumbs().catch(() => {});
       lastSync = new Date();
       setStatus('Zuletzt abgeglichen: ' + lastSync.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
     } catch (e) {

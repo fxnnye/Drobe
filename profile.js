@@ -73,13 +73,28 @@ const Profile = (() => {
     }
     return out;
   }
+  // Raster und Feed laden die kleine Vorschau (…-t); gibt es sie noch nicht, kommt das große Bild
+  async function thumbUrls(sb, paths) {
+    const out = {};
+    const uniq = [...new Set(paths)].filter(Boolean);
+    for (let i = 0; i < uniq.length; i += 200) {
+      try {
+        const part = uniq.slice(i, i + 200);
+        const { data } = await sb.storage.from('images').createSignedUrls(part.map((x) => x + '-t'), 3600);
+        for (const r of data || []) if (r.signedUrl && r.path) out[r.path.slice(0, -2)] = r.signedUrl;
+      } catch (e) { /* dann das große Bild */ }
+    }
+    const rest = uniq.filter((x) => !out[x]);
+    if (rest.length) Object.assign(out, await signedUrls(sb, rest));
+    return out;
+  }
   const money = (n) => Number(n).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
   function card(rec, urls, tags, action, open) {
     const c = el('div', 'card');
     const img = el(open ? 'button' : 'div', 'img');
     if (open) { img.type = 'button'; img.onclick = open; img.setAttribute('aria-label', (rec.name || 'Teil') + ' ansehen'); }
-    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.src = urls[rec.path]; img.append(i); }
+    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.src = urls[rec.path]; img.append(i); }
     const meta = el('div', 'meta');
     meta.append(el('b', null, rec.name || ''));
     const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
@@ -145,7 +160,7 @@ const Profile = (() => {
       if (res.error) throw res.error;
       data = res.data;
       if (data && Cloud.user()) await loadBlocks(sb);
-      if (data) urls = await signedUrls(sb, [...data.items, ...data.outfits].map((r) => r.path));
+      if (data) urls = await thumbUrls(sb, [...data.items, ...data.outfits].map((r) => r.path));
     } catch (e) {
       console.error(e);
       if (name === parseHash()) message(box, 'Das Profil konnte nicht geladen werden.', { retry: () => render(name) });
@@ -1270,7 +1285,7 @@ const Profile = (() => {
     const sb = Cloud.client();
     box.replaceChildren();
     if (!list.length) return box.append(el('p', 'muted', 'Keine passenden Teile gefunden. Gefunden werden nur Teile, die andere öffentlich gestellt haben.'));
-    const urls = await signedUrls(sb, list.map((r) => r.path));
+    const urls = await thumbUrls(sb, list.map((r) => r.path));
     if (stale()) return;
     box.replaceChildren();
     const grid = el('div', 'grid');
@@ -1324,7 +1339,7 @@ const Profile = (() => {
     const img = el('button', 'img feed-img');
     img.type = 'button';
     img.setAttribute('aria-label', (rec.name || 'Eintrag') + ' von ' + rec.username + ' ansehen');
-    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.src = urls[rec.path]; img.append(i); }
+    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.src = urls[rec.path]; img.append(i); }
     img.onclick = open;
     const meta = el('div', 'meta');
     if (kind === 'items') {
@@ -1342,7 +1357,7 @@ const Profile = (() => {
   }
   async function showFeed(list, grid, kind) {
     const sb = Cloud.client();
-    const urls = list.length ? await signedUrls(sb, list.map((r) => r.path)) : {};
+    const urls = list.length ? await thumbUrls(sb, list.map((r) => r.path)) : {};
     const shape = kind === 'outfits' ? 'outfits' : 'items';
     for (const rec of list) grid.append(feedCard(rec, urls, rec.outfit ? 'outfits' : shape));
   }
