@@ -436,7 +436,7 @@ test('Ausgangsfotos (…-src) und private Bilder sind für Fremde nicht sichtbar
   const names = (await r.json()).map((o) => o.name);
   ok(names.every((n) => !n.endsWith('-src')), 'Ausgangsfoto sichtbar: ' + names.find((n) => n.endsWith('-src')));
   const publicIds = new Set((await rpc('public_profile', { p_username: feed[0].username })).body.items.map((i) => 'items-' + i.id));
-  const extra = names.filter((n) => n.startsWith('items-') && !publicIds.has(n));
+  const extra = names.filter((n) => n.startsWith('items-') && !publicIds.has(n.replace(/-t$/, ''))); // Vorschau (…-t) eines öffentlichen Teils ist erlaubt
   eq(extra, [], 'Bilder nicht-öffentlicher Teile sichtbar');
 });
 test('Hochladen ohne Anmeldung ist gesperrt', async () => {
