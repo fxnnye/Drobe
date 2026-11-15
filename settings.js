@@ -123,11 +123,12 @@ function maybeWelcome() {
     $('welcomeDialog').showModal();
   } catch (e) { /* ohne Speicher: kein Willkommen */ }
 }
-$('welcomeGo').onclick = () => {
+/* Egal wie geschlossen (Los geht's, X, Esc): nicht nochmal zeigen, im Feed bleiben */
+$('welcomeDialog').addEventListener('close', () => {
   try { localStorage.setItem('jawnz-welcomed', '1'); } catch (e) { /* dann erscheint es nochmal */ }
-  $('welcomeDialog').close();
-  showView('add');
-};
+});
+$('welcomeGo').onclick = () => $('welcomeDialog').close();
+$('welcomeX').onclick = () => $('welcomeDialog').close();
 
 /* ---------- Erscheinungsbild ---------- */
 function applyTheme(mode) {

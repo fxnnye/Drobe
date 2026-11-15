@@ -1252,3 +1252,8 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 
 /* Handy, öffentliches Profil: Melden und Sperren beginnen links bündig mit dem Beschreibungstext (58 px wären Kante auf Textlinie, 5 px weiter links nach Wunsch) */
 @media (max-width: 700px) { #publicView .pub-tools { padding-left: 53px; } }
+
+/* Willkommen: X oben rechts */
+#welcomeDialog { position: relative; }
+.welcome-x { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--gray); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+#welcomeDialog h2 { padding-right: 40px; }

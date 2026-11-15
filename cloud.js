@@ -452,6 +452,9 @@ const Cloud = (() => {
       const { data, error } = await sb.rpc('schema_version');
       if (error || typeof data !== 'number') return;
       if (data > SCHEMA) {
+        let again = false; // höchstens einmal je Sitzung neu laden, sonst Endlosschleife bei hartnäckig altem Cache
+        try { again = sessionStorage.getItem('jawnz-schema-reload') === String(data); sessionStorage.setItem('jawnz-schema-reload', String(data)); } catch (e) { /* egal */ }
+        if (again) { console.error(new Error('Datenbank neuer (' + data + ') als App (' + SCHEMA + ') trotz Neuladen')); return; }
         if (typeof toast === 'function') toast('Neue Version verfügbar, die App lädt neu …');
         try { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.update(); } catch (e) { /* egal */ }
         setTimeout(() => location.reload(), 2500);
