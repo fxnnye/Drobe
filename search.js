@@ -100,12 +100,33 @@ async function fetchRelated(t, filters) {
   return out;
 }
 const filtersActive = () => state.searchMode === 'items' && Object.values(searchFilters()).some(Boolean);
+// Unter der leeren Suchleiste: die zuletzt hochgeladenen öffentlichen Teile anderer, neueste zuerst (der Algorithmus gilt nur im Feed)
+let newestToken = 0;
+async function showNewest(box) {
+  const my = ++newestToken, still = () => my === newestToken && !$('soInput').value.trim() && state.searchMode === 'items';
+  box.hidden = false;
+  if (!box.querySelector('.grid')) { box.replaceChildren(); const g = document.createElement('div'); g.className = 'grid'; box.append(g); skeletons(g, 6); }
+  try {
+    const list = await Profile.feed('items', null, null);
+    if (!still()) return;
+    const head = document.createElement('h3');
+    head.className = 'add-h'; head.textContent = 'Neu hochgeladen';
+    await Profile.showItems(list, box, () => !still());
+    if (still() && list.length) box.prepend(head);
+  } catch (e) {
+    console.error(e);
+    if (still()) { box.hidden = true; box.replaceChildren(); } // ohne Netz: nichts zeigen, die Suche bleibt nutzbar
+  }
+}
 async function runSearch() {
   syncFilters();
   const q = $('soInput').value, mode = state.searchMode, t = q.trim();
   const box = $('memberResults');
   renderHistory();
-  if (!t && !filtersActive()) { box.hidden = true; box.replaceChildren(); return; }
+  if (!t && !filtersActive()) {
+    if (mode === 'items') return showNewest(box); // ohne Suchbegriff: immer die neuesten Teile, ohne Algorithmus
+    box.hidden = true; box.replaceChildren(); return;
+  }
   box.hidden = false;
   box.replaceChildren();
   const note = (m) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = m; box.append(p); };
