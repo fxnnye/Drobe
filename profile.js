@@ -867,7 +867,17 @@ const Profile = (() => {
     if (o.listing === 'sold') {
       box.append(el('p', 'muted small offer-note', 'Dieses Teil ist verkauft.'));
       if (o.status === 'accepted') {
-        if (o.reviewed) box.append(el('p', 'muted small offer-note', 'Du hast diesen Kauf bewertet.'));
+        if (!o.confirmed) {
+          if (o.buyer) {
+            box.append(el('p', 'muted small offer-note', 'Hast du das Teil bekommen und passt alles? Dann bestätige den Erhalt: Es landet in deinem Kleiderschrank, danach könnt ihr euch bewerten.'));
+            act('Erhalt bestätigen, alles passt', 'btn primary', async () => {
+              if (!(await askConfirm('Teil erhalten und alles in Ordnung? Es kommt in deinen Kleiderschrank und verschwindet beim Verkäufer.', 'Alles passt'))) return;
+              await rpc('confirm_receipt', { p_offer: o.id });
+              toast('Bestätigt, das Teil kommt in deinen Kleiderschrank');
+              if (typeof Cloud !== 'undefined') Cloud.sync();
+            });
+          } else box.append(el('p', 'muted small offer-note', 'Sobald der Käufer den Erhalt bestätigt, wechselt das Teil in seinen Kleiderschrank. Danach könnt ihr euch bewerten.'));
+        } else if (o.reviewed) box.append(el('p', 'muted small offer-note', 'Du hast diesen Kauf bewertet.'));
         else act('Bewertung abgeben', 'btn primary', () => askReview(o.id, thread.other));
       }
     } else if (o.status === 'open' && o.seller) {
@@ -880,20 +890,10 @@ const Profile = (() => {
       box.append(el('p', 'muted small offer-note', 'Die Bezahlung läuft direkt zwischen euch. Empfohlen: PayPal „Waren und Dienstleistungen“, sonst gibt es bei Betrug kein Geld zurück.'));
       if (o.seller) {
         act('Als verkauft markieren', 'btn primary', async () => {
-          if (!(await askConfirm('Als verkauft markieren? Das Teil verschwindet aus deinem Kleiderschrank und landet im Kleiderschrank des Käufers (ohne deine Notizen und den Preis).', 'Verkauft'))) return;
-          const { data: sold, error: soldErr } = await Cloud.client().rpc('mark_sold', { p_item: o.item_id });
-          if (soldErr) throw soldErr;
+          if (!(await askConfirm('Als verkauft markieren? Das Teil wird privat gestellt. Es wechselt in den Kleiderschrank des Käufers, sobald er den Erhalt bestätigt.', 'Verkauft'))) return;
+          await rpc('mark_sold', { p_item: o.item_id });
           const it = typeof itemById === 'function' ? itemById(o.item_id) : null;
-          if (it && sold && sold.transferred) {
-            // Das Teil gehört jetzt dem Käufer: nur lokal entfernen (nicht löschen, der Server hat es schon übergeben)
-            setPinned(it.id, false);
-            await rawDel('items', it.id);
-            const p = JSON.parse(localStorage.getItem('jawnz-pending-' + (Cloud.user() || {}).id) || '{}'); delete p['items/' + it.id]; try { localStorage.setItem('jawnz-pending-' + Cloud.user().id, JSON.stringify(p)); } catch (e) { /* egal */ }
-            items = items.filter((x) => x.id !== it.id);
-            if (typeof renderCloset === 'function') renderCloset();
-            toast('Verkauft, das Teil ist jetzt beim Käufer');
-            return;
-          } else if (it) {
+          if (it) {
             applyVisibility(it, 'private');
             setPinned(it.id, false);
             await dbPut('items', it);

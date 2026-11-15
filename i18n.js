@@ -134,7 +134,7 @@ const I18N = {
     'Der Verkäufer hat noch nicht geantwortet.': 'The seller has not replied yet.',
     'Dieses Teil ist verkauft.': 'This item is sold.',
     'Die Bezahlung läuft direkt zwischen euch. Empfohlen: PayPal „Waren und Dienstleistungen“, sonst gibt es bei Betrug kein Geld zurück.': 'Payment is arranged directly between you two. Recommended: PayPal “Goods and services”, otherwise there is no refund in case of fraud.',
-    'Als verkauft markieren? Das Teil verschwindet aus deinem Kleiderschrank und landet im Kleiderschrank des Käufers (ohne deine Notizen und den Preis).': 'Mark as sold? The item leaves your closet and moves to the buyer\'s closet (without your notes and the price).', 'Verkauft, das Teil ist jetzt beim Käufer': 'Sold, the item is now with the buyer', 'Gekauftes Teil ist jetzt in deinem Kleiderschrank': 'The item you bought is now in your closet', 'Verlauf': 'History',
+    'Als verkauft markieren? Das Teil wird privat gestellt. Es wechselt in den Kleiderschrank des Käufers, sobald er den Erhalt bestätigt.': 'Mark as sold? The item is set to private. It moves to the buyer\'s closet once they confirm receipt.', 'Erhalt bestätigen, alles passt': 'Confirm receipt, all good', 'Alles passt': 'All good', 'Bestätigt, das Teil kommt in deinen Kleiderschrank': 'Confirmed, the item is coming to your closet', 'Gekauftes Teil ist jetzt in deinem Kleiderschrank': 'The item you bought is now in your closet', 'Verlauf': 'History',
     'Als verkauft markiert': 'Marked as sold',
     'Wieder im Angebot': 'Back on offer',
     'Angebot angenommen. Die Bezahlung läuft direkt zwischen euch.': 'Offer accepted. Payment is arranged directly between you two.',
