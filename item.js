@@ -46,7 +46,7 @@ function buildItemView(it) {
   const v = $('itView');
   v.replaceChildren();
   const h = document.createElement('h2'); h.className = 'item-name'; h.textContent = it.name || 'Teil'; v.append(h);
-  if (it.vis === 'sale' && it.price != null) { const p = document.createElement('p'); p.className = 'item-price'; p.textContent = Number(it.price).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }); v.append(p); }
+  if (it.price != null) { const p = document.createElement('p'); p.className = 'item-price'; p.textContent = Number(it.price).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }); v.append(p); }
   const dl = document.createElement('dl'); dl.className = 'item-facts';
   for (const [k, val] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : ''], ['Artikelnummer', it.sku], ['Sichtbarkeit', VIS.items[visOf(it)]], ['Notizen', it.note]]) {
     if (!val) continue;

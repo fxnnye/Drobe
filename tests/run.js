@@ -51,7 +51,7 @@ group('Sichtbarkeit sammelweise');
 const vis = (rec, v) => { const r = JSON.parse(JSON.stringify(rec)); W('applyVisibility')(r, v); return r; };
 test('applyVisibility: privat entfernt vis, Marke bleibt', () => eq(vis({ name: 'A', brand: 'Nike', vis: 'public' }, 'private'), { name: 'A', brand: 'Nike' }));
 test('applyVisibility: öffentlich setzt vis', () => eq(vis({ name: 'A' }, 'public').vis, 'public'));
-test('applyVisibility: Verkauf → öffentlich verwirft den Preis', () => { const r = vis({ name: 'A', vis: 'sale', price: 50 }, 'public'); eq([r.vis, r.price], ['public', undefined]); });
+test('applyVisibility: Verkauf → öffentlich behält den Preis', () => { const r = vis({ name: 'A', vis: 'sale', price: 50 }, 'public'); eq([r.vis, r.price], ['public', 50]); });
 
 
 group('IDs');
@@ -91,7 +91,7 @@ const cd = (src, kind = 'items') => W('cleanDetails')(src, kind);
 test('privat wird nicht gespeichert (Standard)', () => eq(cd({ vis: 'private' }), {}));
 test('ungültige Sichtbarkeit entfällt', () => eq(cd({ vis: 'hacker' }), {}));
 test('öffentlich bleibt', () => eq(cd({ vis: 'public' }), { vis: 'public' }));
-test('Preis nur bei Verkauf', () => eq(cd({ vis: 'public', price: 20 }), { vis: 'public' }));
+test('Preis bleibt auch ohne Verkauf', () => eq(cd({ vis: 'public', price: 20 }), { vis: 'public', price: 20 }));
 test('Preis bei Verkauf', () => eq(cd({ vis: 'sale', price: 20 }), { vis: 'sale', price: 20 }));
 test('negativer Preis entfällt', () => eq(cd({ vis: 'sale', price: -1 }), { vis: 'sale' }));
 test('absurder Preis entfällt', () => eq(cd({ vis: 'sale', price: 1e9 }), { vis: 'sale' }));

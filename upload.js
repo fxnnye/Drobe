@@ -3,7 +3,7 @@
 const upDlg = $('uploadDialog');
 const BG_LIB = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm';
 // Nach dem Hinzufügen zurück zur Liste, in die die Teile gekommen sind
-const leaveAddPage = () => { if (upAdded && state.view === 'add') { ['upName', 'upBrand', 'upSize', 'upCond', 'upColor'].forEach((id) => { $(id).value = ''; }); $('upVis').value = 'public'; showView('closet'); } };
+const leaveAddPage = () => { if (upAdded && state.view === 'add') { ['upName', 'upBrand', 'upSize', 'upCond', 'upColor', 'upPrice', 'upNote'].forEach((id) => { $(id).value = ''; }); $('upVis').value = 'public'; showView('closet'); } };
 let upQueue = [], upCur = null, upTotal = 0, upDone = 0, upAdded = 0;
 
 function trimAlpha(canvas) {
@@ -619,10 +619,18 @@ async function doRemoveBg() {
 }
 bindTool('remove', doRemoveBg);
 // Marke, Größe und Zustand sind bei Teilen Pflicht; Sichtbarkeit ist vorausgewählt „Öffentlich“
+function upPriceValue() {
+  const raw = $('upPrice').value.trim().replace(',', '.');
+  if (!raw) return undefined;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : undefined;
+}
 function upItemDetails() {
   const need = [['upBrand', 'die Marke'], ['upSize', 'die Größe'], ['upCond', 'den Zustand']].find(([id]) => !$(id).value.trim());
   if (need) { toast('Bitte gib ' + need[1] + ' an'); $(need[0]).focus(); return null; }
-  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, color: $('upColor').value, vis: $('upVis').value, price: undefined }, 'items');
+  const raw = $('upPrice').value.trim().replace(',', '.');
+  if (raw && !(Number.isFinite(Number(raw)) && Number(raw) >= 0 && Number(raw) <= PRICE_MAX)) { toast('Der Preis sieht nicht richtig aus'); $('upPrice').focus(); return null; }
+  return cleanDetails({ brand: $('upBrand').value, size: $('upSize').value, cond: $('upCond').value, color: $('upColor').value, vis: $('upVis').value, price: upPriceValue() }, 'items');
 }
 $('upAdd').addEventListener('click', async () => {
   const u = upCur;
@@ -636,6 +644,8 @@ $('upAdd').addEventListener('click', async () => {
   };
   if (res.source) { rec.source = res.source; rec.srcBox = res.srcBox; }
   Object.assign(rec, det);
+  const nt = $('upNote').value.trim();
+  if (nt) rec.note = nt;
   if (!rec.color) applyColor(rec, await detectColor(res.blob)); // von Hand gewählte Farbe hat Vorrang
   await dbPut(coll.store, rec);
   coll.list.push(rec);
@@ -668,6 +678,7 @@ $('upAll').addEventListener('click', async () => {
         try { blob = await removeBackground(blob); } catch (e) { failed++; } // bei Fehler: Original behalten
       }
       const rec = { id: uid(), name: j.name, category, blob, created: Date.now(), ...det };
+      if ($('upNote').value.trim()) rec.note = $('upNote').value.trim();
       if (!rec.color) applyColor(rec, await detectColor(blob));
       if (j.res && j.res.source) { rec.source = j.res.source; rec.srcBox = j.res.srcBox; }
       const coll = upColl();

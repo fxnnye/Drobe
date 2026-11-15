@@ -303,6 +303,12 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <label class="field">Sichtbarkeit
       <select id="upVis"><option value="public" selected>Öffentlich (im Feed sichtbar)</option><option value="sale" id="upVisSale" hidden>Zum Verkauf</option><option value="private">Privat</option></select>
     </label>
+    <label class="field">Preis in € (optional)
+      <input type="text" id="upPrice" inputmode="decimal" maxlength="9" autocomplete="off" placeholder="z. B. 25">
+    </label>
+    <label class="field">Notizen (optional, bleiben privat)
+      <textarea id="upNote" rows="2" maxlength="120" placeholder="z. B. Gekauft bei …, Pflegehinweis"></textarea>
+    </label>
     <div class="add-actions">
     <div class="batch" id="upBatch" hidden>
       <label class="check"><input type="checkbox" id="upAllBg"> Bei allen den Hintergrund entfernen</label>

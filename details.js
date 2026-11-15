@@ -25,7 +25,7 @@ function cleanDetails(src, kind) {
     if (COLORS.includes(src.color)) { out.color = src.color; if (/^#[0-9a-f]{6}$/.test(src.hex || '')) out.hex = src.hex; }
   }
   if (src.vis && src.vis !== 'private' && VIS[kind][src.vis]) out.vis = src.vis;
-  if (kind === 'items' && out.vis === 'sale' && num(src.price) && src.price >= 0 && src.price <= PRICE_MAX) out.price = src.price;
+  if (kind === 'items' && num(src.price) && src.price >= 0 && src.price <= PRICE_MAX) out.price = src.price;
   return out;
 }
 
@@ -44,7 +44,7 @@ function buildDetails(box, p, kind) {
       + sel('color', 'Farbe', '<option value="">–</option>' + COLORS.map((c) => `<option>${c}</option>`).join(''))
     : '';
   const sale = kind === 'items'
-    ? `<label class="field" id="${p}priceRow" hidden>Preis (€)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
+    ? `<label class="field" id="${p}priceRow">Preis (€, optional)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
         <label class="check" id="${p}pinRow" hidden><input type="checkbox" id="${p}pin"> Oben im Profil anpinnen (Showcase, max. 6)</label>`
     : '';
   box.innerHTML = `<details class="more"><summary>Details und Sichtbarkeit</summary>
@@ -56,8 +56,7 @@ function buildDetails(box, p, kind) {
 function syncVisRows(p) {
   const v = $(p + 'vis').value;
   if ($(p + 'priceRow')) {
-    $(p + 'priceRow').hidden = v !== 'sale';
-    $(p + 'pinRow').hidden = v === 'private'; // Anpinnen nur bei Teilen, die andere überhaupt sehen
+        $(p + 'pinRow').hidden = v === 'private'; // Anpinnen nur bei Teilen, die andere überhaupt sehen
   }
 }
 function fillDetails(p, rec) {
@@ -79,7 +78,7 @@ function readDetails(p, kind, rec) {
   if (kind === 'items') {
     src.cond = $(p + 'cond').value; src.rarity = $(p + 'rarity').value; src.color = $(p + 'color').value; src.hex = src.color && src.color === rec.color ? rec.hex : '';
     const raw = $(p + 'price').value.trim().replace(',', '.');
-    if (src.vis === 'sale' && raw) {
+    if (raw) {
       const n = Number(raw);
       if (!Number.isFinite(n) || n < 0 || n > PRICE_MAX) { toast('Der Preis sieht nicht richtig aus'); return false; }
       src.price = Math.round(n * 100) / 100;

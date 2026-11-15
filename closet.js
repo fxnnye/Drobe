@@ -62,7 +62,7 @@ function renderCloset() {
   }
 }
 
-// Sichtbarkeit eines Teils ändern, alle anderen Angaben bleiben (Preis nur bei „Verkauf“)
+// Sichtbarkeit eines Teils ändern, alle anderen Angaben bleiben (der Preis bleibt erhalten)
 function applyVisibility(it, vis) {
   setDetails(it, cleanDetails({ ...it, vis }, 'items'));
 }
@@ -88,8 +88,6 @@ $('bulkBar').querySelectorAll('[data-vis]').forEach((b) => {
   b.onclick = async () => {
     const vis = b.dataset.vis, sel = selectedItems().filter((i) => visOf(i) !== vis);
     if (!sel.length) return toast('Schon so eingestellt');
-    const lost = sel.filter((i) => visOf(i) === 'sale' && i.price != null).length;
-    if (lost && !(await askConfirm(`${lost} ${lost === 1 ? 'Teil ist' : 'Teile sind'} zum Verkauf, der Preis geht dabei verloren. Trotzdem ändern?`, 'Ändern'))) return;
     for (const it of sel) {
       applyVisibility(it, vis);
       if (vis === 'private' && typeof Profile !== 'undefined') Profile.setPinned(it.id, false); // privat gehört nicht auf das Profil
