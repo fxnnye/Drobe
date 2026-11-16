@@ -1262,3 +1262,17 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .item-history { margin-top: 16px; }
 .item-history h3 { font-size: 15px; margin: 0 0 6px; }
 .item-history ul { margin: 0; padding-left: 18px; color: var(--muted, #666); font-size: 14px; display: grid; gap: 2px; }
+
+/* Untere Leiste (nur Handy): milchiges Glas, gleitender Auswahl-Hintergrund, hüpfendes Symbol, Druck-Effekt */
+.tab-pill { display: none; }
+@media (max-width: 700px) {
+  .tabs { background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); position: fixed; }
+  .tab-pill { display: block; position: absolute; top: 6px; left: 0; height: calc(100% - 12px - env(safe-area-inset-bottom)); border-radius: 14px; background: var(--gray); pointer-events: none; transition: transform .35s var(--ease-out), width .35s var(--ease-out), opacity .2s ease; will-change: transform; }
+  .tab { z-index: 1; transition: color .2s ease, transform .15s var(--ease-out); }
+  .tab:active { transform: scale(.9); }
+  .tab .tab-ic { transition: transform .3s var(--ease-out); }
+  .tab.active .tab-ic { transform: translateY(-1px) scale(1.08); stroke-width: 2.4; }
+  .tab.pop .tab-ic { animation: tab-pop .38s var(--ease-out); }
+  @keyframes tab-pop { 0% { transform: scale(.8); } 55% { transform: translateY(-3px) scale(1.2); } 100% { transform: translateY(-1px) scale(1.08); } }
+}
+@media (prefers-reduced-motion: reduce) { .tab-pill { transition: none !important; } .tab.pop .tab-ic { animation: none; } }

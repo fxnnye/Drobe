@@ -192,3 +192,32 @@ function fillSelect(sel) {
   sel.innerHTML = TOP.map((c) => GROUPS[c]
     ? `<optgroup label="${c}">${GROUPS[c].map(opt).join('')}</optgroup>` : opt(c)).join('');
 }
+
+// Untere Leiste (Handy): runder Hintergrund gleitet zum aktiven Reiter, Symbol hüpft beim Wechsel
+(() => {
+  const nav = document.querySelector('nav.tabs');
+  if (!nav) return;
+  const pill = document.createElement('span');
+  pill.className = 'tab-pill';
+  pill.setAttribute('aria-hidden', 'true');
+  nav.prepend(pill);
+  const place = (animate) => {
+    const a = nav.querySelector('.tab.active');
+    if (!a || !a.offsetWidth) { pill.style.opacity = '0'; return; }
+    pill.style.transition = animate ? '' : 'none';
+    pill.style.opacity = '1';
+    pill.style.width = a.offsetWidth + 'px';
+    pill.style.transform = 'translateX(' + a.offsetLeft + 'px)';
+  };
+  let last = null;
+  const sync = () => {
+    const a = nav.querySelector('.tab.active');
+    place(last !== null);
+    if (a && a !== last) { if (last) { a.classList.remove('pop'); void a.offsetWidth; a.classList.add('pop'); } last = a; }
+  };
+  new MutationObserver(sync).observe(nav, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  if (window.ResizeObserver) new ResizeObserver(() => place(false)).observe(nav);
+  window.addEventListener('resize', () => place(false));
+  window.addEventListener('orientationchange', () => setTimeout(() => place(false), 200));
+  setTimeout(sync, 0);
+})();
