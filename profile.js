@@ -493,6 +493,15 @@ const Profile = (() => {
       facts.append(row);
     }
     if (facts.children.length) info.append(facts);
+    if (it.vis !== 'private') { // Notizen sind öffentlich, sobald das Teil öffentlich ist
+      Cloud.client()?.rpc('public_item_note', { p_username: data.username, p_id: id }).then((r) => {
+        if (r.error || !r.data || !same()) return;
+        const row = el('div', 'item-fact');
+        row.append(el('dt', null, 'Notizen'), el('dd', null, r.data));
+        facts.append(row);
+        if (!facts.isConnected) info.insertBefore(facts, info.querySelector('.seller'));
+      }, () => {}); // Migration 0050 fehlt noch: dann eben ohne Notizen
+    }
 
     const seller = el('button', 'seller');
     seller.type = 'button';
