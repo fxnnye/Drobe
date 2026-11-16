@@ -202,6 +202,7 @@ function fillSelect(sel) {
   pill.setAttribute('aria-hidden', 'true');
   nav.prepend(pill);
   const place = (animate) => {
+    if (nav.offsetHeight) document.documentElement.style.setProperty('--tabs-h', nav.offsetHeight + 'px');
     const a = nav.querySelector('.tab.active');
     if (!a || !a.offsetWidth) { pill.style.opacity = '0'; return; }
     pill.style.transition = animate ? '' : 'none';

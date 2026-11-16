@@ -1284,3 +1284,10 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   #threadPane.ghost { padding: 12px 12px 8px; height: auto !important; display: flex; flex-direction: column; }
   .view.ghost { padding: 12px; display: block; }
 }
+
+/* Schreibleiste in der Unterhaltung (Handy): sitzt genau da, wo sonst die untere Leiste ist, gleiche Höhe */
+@media (max-width: 700px) {
+  body.in-thread .thread-form, .ghost .thread-form { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; box-sizing: border-box; height: var(--tabs-h, 64px); align-items: center; gap: 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--gray-hover); }
+  body.in-thread #threadPane:not([hidden]) { height: calc(100dvh - 110px); }
+  body.in-thread .thread-msgs { padding-bottom: calc(var(--tabs-h, 64px) + 8px); }
+}
