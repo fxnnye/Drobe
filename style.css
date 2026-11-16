@@ -1272,3 +1272,14 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   .tab:active { transform: scale(.96); }
 }
 @media (prefers-reduced-motion: reduce) { .tab-pill { transition: none !important; } }
+
+/* Beim Wegwischen (Handy) liegt die Seite über der vorherigen, die dahinter sichtbar wird */
+@media (max-width: 700px) {
+  body.peek.viewing-profile main { display: block; }
+  body.peek.in-thread #inboxList, body.peek.in-thread #msgTabs { display: block !important; }
+  body.peek.in-thread #inboxList[hidden], body.peek.in-thread #msgTabs[hidden] { display: block !important; }
+  body.peek.in-thread .tabs { display: flex; }
+  .peeking { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 15; overflow-y: auto; background: var(--bg); box-shadow: -8px 0 24px rgba(0, 0, 0, .12); }
+  #threadPane.peeking { padding: 12px 12px 8px; }
+  .view.peeking { padding: 12px; }
+}
