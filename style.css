@@ -1311,3 +1311,7 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   body.in-thread .thread-form, .ghost .thread-form { padding-bottom: var(--tabs-pb); }
   main { padding-bottom: calc(112px + env(safe-area-inset-bottom) - 14px); }
 }
+
+/* Suchfeld aktiv: alles außer Feld und Verlauf ausgegraut (wie bei Vinted) */
+#view-search.so-focus > :not(.so-head):not(#soHistory) { opacity: .3; filter: grayscale(1); pointer-events: none; transition: opacity .2s ease; }
+#view-search.so-focus .so-history { background: var(--bg); border-radius: 16px; padding: 8px 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, .12); position: relative; z-index: 1; }

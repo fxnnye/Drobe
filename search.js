@@ -14,6 +14,7 @@ function renderHistory() {
   const box = $('soHistory'), list = readHistory();
   box.replaceChildren();
   box.hidden = !list.length || $('soInput').value.trim() !== '' || document.activeElement !== $('soInput'); // nur beim Antippen des Suchfelds
+  $('view-search').classList.toggle('so-focus', !box.hidden); // Rest der Seite ausgegraut, solange der Verlauf offen ist
   if (box.hidden) return;
   const head = document.createElement('div');
   head.className = 'so-history-head';
@@ -162,6 +163,7 @@ async function runSearch() {
 }
 $('soInput').addEventListener('focus', renderHistory);
 $('soInput').addEventListener('blur', () => setTimeout(renderHistory, 200));
+$('view-search').addEventListener('click', (e) => { if ($('view-search').classList.contains('so-focus') && !e.target.closest('.so-head, #soHistory')) $('soInput').blur(); });
 $('soHistory').addEventListener('mousedown', (e) => e.preventDefault()); // Tippen auf einen Eintrag soll das Suchfeld nicht verlassen
 $('soInput').addEventListener('input', () => { state.showResults = false; syncFilters(); clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
