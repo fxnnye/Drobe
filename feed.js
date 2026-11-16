@@ -241,11 +241,12 @@ function fillSelect(sel) {
   // Die Seite wird als Abbild darübergelegt und bewegt; darunter wird die vorherige Seite sichtbar
   function startPeek(c) {
     if (c.ghost) return c.ghost;
+    const rc = c.page.getBoundingClientRect(), cs = getComputedStyle(c.page);
     const gh = c.page.cloneNode(true);
     gh.classList.add('ghost');
     gh.removeAttribute('hidden');
     gh.inert = true;
-    gh.style.cssText = '';
+    gh.style.cssText = 'top:' + rc.top + 'px;padding-left:' + (parseFloat(cs.paddingLeft) + rc.left) + 'px;padding-right:' + (parseFloat(cs.paddingRight) + innerWidth - rc.right) + 'px';
     const src = c.page.querySelector('.thread-msgs'), dst = gh.querySelector('.thread-msgs');
     document.body.append(gh);
     if (src && dst) dst.scrollTop = src.scrollTop;
