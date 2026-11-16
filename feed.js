@@ -193,7 +193,7 @@ function fillSelect(sel) {
     ? `<optgroup label="${c}">${GROUPS[c].map(opt).join('')}</optgroup>` : opt(c)).join('');
 }
 
-// Untere Leiste (Handy): runder Hintergrund gleitet zum aktiven Reiter, Symbol hüpft beim Wechsel
+// Untere Leiste (Handy): runder Hintergrund gleitet zum aktiven Reiter
 (() => {
   const nav = document.querySelector('nav.tabs');
   if (!nav) return;
@@ -213,7 +213,7 @@ function fillSelect(sel) {
   const sync = () => {
     const a = nav.querySelector('.tab.active');
     place(last !== null);
-    if (a && a !== last) { if (last) { a.classList.remove('pop'); void a.offsetWidth; a.classList.add('pop'); } last = a; }
+    last = a;
   };
   new MutationObserver(sync).observe(nav, { subtree: true, attributes: true, attributeFilter: ['class'] });
   if (window.ResizeObserver) new ResizeObserver(() => place(false)).observe(nav);
