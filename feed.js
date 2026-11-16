@@ -229,11 +229,16 @@ function fillSelect(sel) {
   const visible = (b) => b && b.offsetParent !== null && b.getBoundingClientRect().width > 0;
   // sichtbarer Zurück-Knopf und die Seite, die er schließt
   function current() {
+    const dlg = [...document.querySelectorAll('dialog[open]')].pop();
+    if (dlg) { // offener Dialog: Zurück im Dialog (z. B. Einstellungen), sonst schließen
+      const inner = [...dlg.querySelectorAll('.back-btn, #setBack')].find(visible);
+      return { btn: inner || null, page: dlg, close: () => { if (inner) inner.click(); else dlg.close(); } };
+    }
     const btns = [...document.querySelectorAll('#publicView .back-btn, #threadPane .back-btn, .view.active .back-btn')].filter(visible);
     const b = btns[0];
     if (!b) return null;
     const page = b.closest('#publicView') || b.closest('#threadPane') || b.closest('.view');
-    return page ? { btn: b, page } : null;
+    return page ? { btn: b, page, close: () => b.click() } : null;
   }
   const OUT = 'transform .24s var(--ease-out), opacity .24s ease';
   function reset(page) { page.style.transition = 'none'; page.style.transform = ''; page.style.opacity = ''; page.style.boxShadow = ''; void page.offsetWidth; page.style.transition = ''; }
@@ -242,13 +247,14 @@ function fillSelect(sel) {
     page.style.transition = OUT;
     page.style.transform = 'translateX(100%)';
     page.style.opacity = '.6';
-    btn.dataset.go = '1';
-    setTimeout(() => { btn.click(); delete btn.dataset.go; setTimeout(() => reset(page), 30); }, calm.matches ? 0 : 200);
+    if (btn) btn.dataset.go = '1';
+    setTimeout(() => { c.close(); if (btn) delete btn.dataset.go; setTimeout(() => reset(page), 30); }, calm.matches ? 0 : 200);
   }
   // Tipp auf Zurück: erst wegwischen, dann zurück
   document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('.back-btn');
     if (!b || b.dataset.go || !mq.matches || calm.matches) return;
+    if (b.closest('dialog') && !b.closest('dialog[open]')) return;
     const c = current();
     if (!c || c.btn !== b) return;
     e.stopImmediatePropagation(); e.preventDefault();
@@ -260,7 +266,7 @@ function fillSelect(sel) {
     g = null;
     if (!mq.matches || e.touches.length !== 1) return;
     const t = e.touches[0];
-    if (t.clientX > 24) return;
+    if (t.clientX > 30) return;
     const c = current();
     if (c) g = { c, x: t.clientX, y: t.clientY, t: Date.now(), on: false, dead: false };
   }, { passive: true });
