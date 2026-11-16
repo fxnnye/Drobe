@@ -27,7 +27,7 @@ const I18N = {
     // Outfits
     'PNG': 'PNG', 'Farben': 'Colors', 'Farben, die zusammenpassen': 'Colors that go together',
     // Nachrichten und Anfragen
-    'Dein Angebot (€)': 'Your offer (€)', 'Bitte gib dein Angebot ein.': 'Please enter your offer.', 'Das Angebot darf nicht über dem Preis liegen.': 'The offer cannot be higher than the price.', 'JAWNZ Bot': 'JAWNZ Bot', 'Anfrage': 'Request', 'Kaufanfrage': 'Purchase request', 'Kaufanfrage senden': 'Send purchase request', 'Anfrage senden': 'Send request', 'Hab ich': 'I have it',
+    'Dein Angebot (€)': 'Your offer (€)', 'Bitte gib dein Angebot ein.': 'Please enter your offer.', 'Das Angebot darf nicht über dem Preis liegen.': 'The offer cannot be higher than the price.', 'JAWNZ Bot': 'JAWNZ Bot', 'Bestellungen': 'Orders', 'Bestellverlauf': 'Order history', 'Noch keine Bestellungen.': 'No orders yet.', 'Der Bestellverlauf konnte nicht geladen werden.': 'The order history could not be loaded.', 'reserviert': 'reserved', 'verkauft, wartet auf Erhalt': 'sold, waiting for receipt', 'abgeschlossen': 'completed', 'Anfrage': 'Request', 'Kaufanfrage': 'Purchase request', 'Kaufanfrage senden': 'Send purchase request', 'Anfrage senden': 'Send request', 'Hab ich': 'I have it',
     'Nachricht (optional)': 'Message (optional)', 'Betrugsverdacht': 'Suspected fraud', 'Fälschung': 'Counterfeit', 'Belästigung': 'Harassment', 'Spam': 'Spam', 'Sonstiges': 'Other',
     // Anmelden
     'Anmelden': 'Log in', 'Benutzername': 'Username', 'Passwort vergessen?': 'Forgot password?', 'Neues Konto erstellen': 'Create new account', 'Neues Passwort': 'New password',
@@ -201,7 +201,7 @@ const I18N_PATTERNS = {
     [/^(\d+) Teile? sind? zum Verkauf, der Preis geht dabei verloren\. Trotzdem ändern\?$/, '$1 item(s) for sale, the price will be lost. Change anyway?'],
     [/^Auf diesem Gerät liegen noch (\d+) Teile und (\d+) Outfits von vor dem Login\. In dein Konto übernehmen\?$/, 'There are still $1 items and $2 outfits on this device from before login. Add them to your account?'],
     [/^(.+) sperren\? Die Person kann dir dann nichts mehr schicken\.$/, 'Block $1? They will no longer be able to send you anything.'],
-    [/^(.+) von (.+) ansehen$/, 'View $1 by $2'], [/^(\d+) Follower$/, '$1 followers'], [/^(\d+) Folge ich$/, '$1 following'],
+    [/^(.+) von (.+) ansehen$/, 'View $1 by $2'], [/^Gekauft von @(.+)$/, 'Bought from @$1'], [/^Verkauft an @(.+)$/, 'Sold to @$1'], [/^(\d+) Follower$/, '$1 followers'], [/^(\d+) Folge ich$/, '$1 following'],
   ],
 };
 

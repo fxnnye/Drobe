@@ -184,7 +184,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <div class="me-info">
         <strong id="meName"></strong>
         <span class="muted small" id="meCounts"></span>
-        <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button> · <button class="linkish" type="button" id="meRating">0 Bewertungen</button></span>
+        <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button> · <button class="linkish" type="button" id="meRating">0 Bewertungen</button> · <button class="linkish" type="button" id="meOrders">Bestellungen</button></span>
       </div>
       <button class="btn" type="button" id="meProfile">Bearbeiten</button>
       <button class="btn menu" id="menuBtn" aria-label="Einstellungen" title="Einstellungen">
@@ -478,6 +478,17 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <span class="spacer"></span>
       <button class="btn" type="button" id="intCancel">Abbrechen</button>
       <button class="btn primary" type="button" id="intSend">Senden</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="ordersDialog" class="sheet">
+  <form method="dialog" onsubmit="return false">
+    <h2>Bestellverlauf</h2>
+    <div id="ordersList" class="rev-list"></div>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="ordersClose">Schließen</button>
     </div>
   </form>
 </dialog>

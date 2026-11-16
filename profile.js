@@ -664,6 +664,32 @@ const Profile = (() => {
     } catch (e) { console.error(e); message(box, 'Die Liste konnte nicht geladen werden.', { retry: () => loadPeople(which, box) }); }
   }
 
+  // Bestellverlauf: meine Käufe und Verkäufe (angenommene Angebote)
+  const ORDER_STATE = { reserved: 'reserviert', sold: 'verkauft, wartet auf Erhalt', done: 'abgeschlossen' };
+  async function openOrders() {
+    const d = $('ordersDialog'), box = $('ordersList'), sb = Cloud.client();
+    if (!d.open) d.showModal();
+    if (!sb || !navigator.onLine) return message(box, 'Dafür brauchst du eine Internetverbindung.');
+    message(box, 'Lade …', { loading: true });
+    try {
+      const { data, error } = await sb.rpc('my_orders');
+      if (error) throw error;
+      box.replaceChildren();
+      if (!data || !data.length) return message(box, 'Noch keine Bestellungen.');
+      for (const o of data) {
+        const b = el('button', 'member order');
+        b.type = 'button';
+        const t = el('span', 'order-text');
+        t.append(el('b', null, [o.brand, o.name].filter(Boolean).join(' ')),
+          el('span', 'muted small', (o.buyer ? 'Gekauft von @' : 'Verkauft an @') + o.other + ' · ' + new Date(o.at).toLocaleDateString('de-DE')),
+          el('span', 'muted small', ORDER_STATE[o.state] || o.state));
+        b.append(t, el('b', 'order-price', money(o.amount)));
+        b.onclick = () => { d.close(); showView('messages'); };
+        box.append(b);
+      }
+    } catch (e) { console.error(e); message(box, 'Der Bestellverlauf konnte nicht geladen werden.', { retry: openOrders }); }
+  }
+
   // Liste im Fenster: eigene Follower/Folge ich (name leer) oder die eines fremden Profils
   async function openPeople(which, name, known) {
     const d = $('peopleDialog'), box = $('peopleList');
@@ -1260,6 +1286,8 @@ const Profile = (() => {
     $('pfPhotoDel').onclick = () => { pendingAvatar = ''; $('pfCrop').hidden = true; $('pfAvatar').hidden = false; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
     $('revClose').onclick = () => $('reviewsDialog').close();
+    $('ordersClose').onclick = () => $('ordersDialog').close();
+    $('meOrders').onclick = openOrders;
     $('peopleClose').onclick = () => $('peopleDialog').close();
     document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.onclick = () => { inboxTab = t.dataset.tab; renderInbox(); }; });
     $('intCancel').onclick = () => $('interestDialog').close();
