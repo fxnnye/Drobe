@@ -1302,3 +1302,12 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .order-price { white-space: nowrap; }
 
 .msg-tabs .msg-orders { flex: none; margin: 0 0 4px 4px; width: 40px; height: 40px; align-self: center; }
+
+/* Handy: untere Leiste näher an den unteren Rand (Home-Streifen), wie bei Vinted */
+@media (max-width: 700px) {
+  :root { --tabs-pb: max(6px, calc(env(safe-area-inset-bottom) - 14px)); }
+  .tabs { padding-bottom: var(--tabs-pb); }
+  .tab-pill { height: calc(100% - 6px - var(--tabs-pb)); }
+  body.in-thread .thread-form, .ghost .thread-form { padding-bottom: var(--tabs-pb); }
+  main { padding-bottom: calc(112px + env(safe-area-inset-bottom) - 14px); }
+}
