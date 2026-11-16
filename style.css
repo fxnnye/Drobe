@@ -1300,3 +1300,5 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .member.order { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; width: 100%; }
 .order-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .order-price { white-space: nowrap; }
+
+.msg-tabs .msg-orders { flex: none; margin: 0 0 4px 4px; width: 40px; height: 40px; align-self: center; }
