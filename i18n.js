@@ -53,7 +53,7 @@ const I18N = {
     'Eigenes Teil hinzufügen': 'Add your own item', 'Als Flex entfernen': 'Remove from Flex',
     // Anmelden und Willkommen
     'Wir haben dir einen Code per Mail geschickt. Trag ihn hier ein.': 'We sent you a code by email. Enter it here.',
-    'Code aus der Mail': 'Code from the email', 'Noch einmal': 'Once more', 'E-Mail-Adresse': 'Email address', 'Passwort': 'Password',
+    'Code aus der Mail': 'Code from the email', 'Noch einmal': 'Once more', 'E-Mail-Adresse': 'Email address', 'E-Mail-Adresse oder Benutzername': 'Email address or username', 'Gib deine E-Mail-Adresse oder deinen Benutzernamen ein.': 'Enter your email address or username.', 'E-Mail-Adresse, Benutzername oder Passwort stimmt nicht.': 'Email address, username or password is wrong.', 'Passwort': 'Password',
     'Wir schicken dir eine Mail, mit der du die Adresse bestätigst. Erst danach kannst du dich anmelden. Der Benutzername ist später für andere sichtbar, die E-Mail-Adresse nicht.':
       'We will send you an email to confirm your address. You can only log in after that. Your username is visible to others later, your email address is not.',
     'Ich habe die': 'I have read the', 'und die': 'and the', 'gelesen und bin einverstanden.': 'and I agree.', 'Nutzung': 'Terms', 'AGB': 'Terms', 'Ich akzeptiere die': 'I accept the', ', bestätige, dass ich mindestens 18 Jahre alt bin, und habe die': ', confirm that I am at least 18 years old, and have read the', 'gelesen.': '.', 'Bitte akzeptiere die AGB, bestätige, dass du mindestens 18 Jahre alt bist, und die Datenschutzerklärung.': 'Please accept the terms, confirm that you are at least 18 years old, and the privacy policy.',

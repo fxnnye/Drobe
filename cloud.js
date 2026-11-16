@@ -249,7 +249,7 @@ const Cloud = (() => {
 
   function authError(e) {
     const m = String((e && e.message) || e);
-    if (/invalid login/i.test(m)) return 'E-Mail-Adresse oder Passwort stimmt nicht.';
+    if (/invalid login/i.test(m)) return 'E-Mail-Adresse, Benutzername oder Passwort stimmt nicht.';
     if (/Benutzername vergeben|Database error saving/i.test(m)) return 'Dieser Benutzername ist schon vergeben.';
     if (/already registered|already been registered/i.test(m)) return 'Diese E-Mail-Adresse ist schon registriert.';
     if (/not confirmed/i.test(m)) return 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir dazu eine Mail geschickt.';
@@ -331,7 +331,7 @@ const Cloud = (() => {
     $('authMailRow').hidden = !reg;
     $('authMail').required = reg;
     $('authForgot').hidden = reg;
-    $('authNameLabel').textContent = reg ? 'Benutzername' : 'E-Mail-Adresse';
+    $('authNameLabel').textContent = reg ? 'Benutzername' : 'E-Mail-Adresse oder Benutzername';
     $('authName').maxLength = reg ? 20 : 120;
     $('authConsentRow').hidden = !reg;
     $('authPass').autocomplete = reg ? 'new-password' : 'current-password';
@@ -410,11 +410,17 @@ const Cloud = (() => {
         } finally { $('authSubmit').disabled = false; }
         return;
       }
-      // Anmelden: nur mit E-Mail-Adresse
-      const email = typed.toLowerCase();
-      if (!MAIL_OK.test(email)) { err.textContent = 'Gib deine E-Mail-Adresse ein.'; return; }
+      // Anmelden: mit E-Mail-Adresse oder Benutzername
+      let email = typed.toLowerCase();
+      const byName = !email.includes('@');
+      if (byName ? !NAME_OK.test(email) : !MAIL_OK.test(email)) { err.textContent = 'Gib deine E-Mail-Adresse oder deinen Benutzernamen ein.'; return; }
       $('authSubmit').disabled = true;
       try {
+        if (byName) {
+          const r = await sb.rpc('login_email', { p_name: email, p_pass: pass });
+          if (r.error || !r.data) throw new Error(r.error ? r.error.message : 'invalid login');
+          email = r.data;
+        }
         const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
         if (!data.session) throw new Error('Anmeldung nicht abgeschlossen. Bitte versuche es erneut.');
