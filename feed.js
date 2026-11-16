@@ -251,6 +251,7 @@ function fillSelect(sel) {
     if (src && dst) dst.scrollTop = src.scrollTop;
     c.page.style.visibility = 'hidden';
     document.body.classList.add('peek');
+    if (c.page.classList.contains('view')) { const u = document.getElementById('view-' + (state.lastMe || 'closet')); if (u && u !== c.page) { u.classList.add('peek-under'); c.under = u; c.page.style.display = 'none'; } }
     c.ghost = gh;
     return gh;
   }
@@ -258,6 +259,7 @@ function fillSelect(sel) {
     if (!c.ghost) return;
     c.ghost.remove(); c.ghost = null;
     c.page.style.visibility = '';
+    if (c.under) { c.under.classList.remove('peek-under'); c.under = null; c.page.style.display = ''; }
     document.body.classList.remove('peek');
   }
   function slideOut(c) {
