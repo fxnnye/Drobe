@@ -237,16 +237,36 @@ function fillSelect(sel) {
     return page ? { btn: b, page, close: () => b.click() } : null;
   }
   const OUT = 'transform .24s var(--ease-out), opacity .24s ease';
-  const peek = (page, on) => { document.body.classList.toggle('peek', on); page.classList.toggle('peeking', on); };
-  function reset(page) { peek(page, false); page.style.transition = 'none'; page.style.transform = ''; page.style.opacity = ''; page.style.boxShadow = ''; void page.offsetWidth; page.style.transition = ''; }
-  function slideOut(c, from) {
-    const { btn, page } = c;
-    peek(page, true);
-    page.style.transition = OUT;
-    page.style.transform = 'translateX(100%)';
-    page.style.opacity = '.6';
+  // Die Seite wird als Abbild darübergelegt und bewegt; darunter wird die vorherige Seite sichtbar
+  function startPeek(c) {
+    if (c.ghost) return c.ghost;
+    const gh = c.page.cloneNode(true);
+    gh.classList.add('ghost');
+    gh.removeAttribute('hidden');
+    gh.inert = true;
+    gh.style.cssText = '';
+    const src = c.page.querySelector('.thread-msgs'), dst = gh.querySelector('.thread-msgs');
+    document.body.append(gh);
+    if (src && dst) dst.scrollTop = src.scrollTop;
+    c.page.style.visibility = 'hidden';
+    document.body.classList.add('peek');
+    c.ghost = gh;
+    return gh;
+  }
+  function endPeek(c) {
+    if (!c.ghost) return;
+    c.ghost.remove(); c.ghost = null;
+    c.page.style.visibility = '';
+    document.body.classList.remove('peek');
+  }
+  function slideOut(c) {
+    const { btn } = c, gh = startPeek(c);
+    void gh.offsetWidth;
+    gh.style.transition = OUT;
+    gh.style.transform = 'translateX(100%)';
+    gh.style.opacity = '.6';
     if (btn) btn.dataset.go = '1';
-    setTimeout(() => { c.close(); if (btn) delete btn.dataset.go; setTimeout(() => reset(page), 30); }, calm.matches ? 0 : 200);
+    setTimeout(() => { c.close(); if (btn) delete btn.dataset.go; setTimeout(() => endPeek(c), 30); }, calm.matches ? 0 : 200);
   }
   // Tipp auf Zurück: erst wegwischen, dann zurück
   document.addEventListener('click', (e) => {
@@ -272,17 +292,17 @@ function fillSelect(sel) {
     const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
     if (!g.on) {
       if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { g.dead = true; return; }
-      if (dx > 10) { g.on = true; peek(g.c.page, true); g.c.page.style.transition = 'none'; g.c.page.style.boxShadow = '-8px 0 24px rgba(0,0,0,.12)'; } else return;
+      if (dx > 10) { g.on = true; g.gh = startPeek(g.c); g.gh.style.transition = 'none'; } else return;
     }
     e.preventDefault();
-    g.c.page.style.transform = 'translateX(' + Math.max(0, dx) + 'px)';
+    g.gh.style.transform = 'translateX(' + Math.max(0, dx) + 'px)';
   }, { passive: false });
   const end = (e) => {
     if (!g || !g.on) { g = null; return; }
     const t = e.changedTouches[0], dx = t.clientX - g.x, v = dx / Math.max(1, Date.now() - g.t);
     const c = g.c; g = null;
     if (dx > innerWidth * 0.33 || v > 0.6) slideOut(c);
-    else { c.page.style.transition = 'transform .25s var(--ease-out)'; c.page.style.transform = 'translateX(0)'; setTimeout(() => reset(c.page), 260); }
+    else { c.ghost.style.transition = 'transform .25s var(--ease-out)'; c.ghost.style.transform = 'translateX(0)'; setTimeout(() => endPeek(c), 260); }
   };
   document.addEventListener('touchend', end);
   document.addEventListener('touchcancel', end);
