@@ -13,7 +13,7 @@ function rememberSearch() {
 function renderHistory() {
   const box = $('soHistory'), list = readHistory();
   box.replaceChildren();
-  box.hidden = !list.length || $('soInput').value.trim() !== '';
+  box.hidden = !list.length || $('soInput').value.trim() !== '' || document.activeElement !== $('soInput'); // nur beim Antippen des Suchfelds
   if (box.hidden) return;
   const head = document.createElement('div');
   head.className = 'so-history-head';
@@ -160,6 +160,9 @@ async function runSearch() {
     box.append(b);
   }
 }
+$('soInput').addEventListener('focus', renderHistory);
+$('soInput').addEventListener('blur', () => setTimeout(renderHistory, 200));
+$('soHistory').addEventListener('mousedown', (e) => e.preventDefault()); // Tippen auf einen Eintrag soll das Suchfeld nicht verlassen
 $('soInput').addEventListener('input', () => { state.showResults = false; syncFilters(); clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
