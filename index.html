@@ -151,6 +151,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="msg-tabs" id="msgTabs" role="tablist">
       <button class="msg-tab active" type="button" role="tab" data-tab="buy">Kaufen <span class="badge" id="msgBuyBadge"></span></button>
       <button class="msg-tab" type="button" role="tab" data-tab="sell">Verkaufen <span class="badge" id="msgSellBadge"></span></button>
+      <button class="msg-tab" type="button" id="msgOrders">Bestellungen</button>
     </div>
     <div class="empty" id="inboxEmpty"></div>
     <div id="inboxList"></div>
@@ -184,7 +185,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <div class="me-info">
         <strong id="meName"></strong>
         <span class="muted small" id="meCounts"></span>
-        <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button> · <button class="linkish" type="button" id="meRating">0 Bewertungen</button> · <button class="linkish" type="button" id="meOrders">Bestellungen</button></span>
+        <span class="muted small me-social"><button class="linkish" type="button" id="meFollowers">0 Follower</button> · <button class="linkish" type="button" id="meFollowing">0 Folge ich</button> · <button class="linkish" type="button" id="meRating">0 Bewertungen</button></span>
       </div>
       <button class="btn" type="button" id="meProfile">Bearbeiten</button>
       <button class="btn menu" id="menuBtn" aria-label="Einstellungen" title="Einstellungen">

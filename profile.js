@@ -834,7 +834,7 @@ const Profile = (() => {
     const box = $('inboxList');
     const buyN = inboxData.filter((m) => sideOf(m) === 'buy' && m.unread).length, sellN = inboxData.filter((m) => sideOf(m) === 'sell' && m.unread).length;
     $('msgBuyBadge').textContent = buyN || ''; $('msgSellBadge').textContent = sellN || '';
-    document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.classList.toggle('active', t.dataset.tab === inboxTab); t.setAttribute('aria-selected', String(t.dataset.tab === inboxTab)); });
+    document.querySelectorAll('#msgTabs .msg-tab[data-tab]').forEach((t) => { t.classList.toggle('active', t.dataset.tab === inboxTab); t.setAttribute('aria-selected', String(t.dataset.tab === inboxTab)); });
     const list = inboxData.filter((m) => sideOf(m) === inboxTab);
     $('inboxEmpty').classList.toggle('show', !list.length);
     if (!list.length) setEmpty($('inboxEmpty'), inboxTab === 'buy'
@@ -1287,9 +1287,9 @@ const Profile = (() => {
     $('profTextSave').onclick = saveOwnText;
     $('revClose').onclick = () => $('reviewsDialog').close();
     $('ordersClose').onclick = () => $('ordersDialog').close();
-    $('meOrders').onclick = openOrders;
+    $('msgOrders').onclick = openOrders;
     $('peopleClose').onclick = () => $('peopleDialog').close();
-    document.querySelectorAll('#msgTabs .msg-tab').forEach((t) => { t.onclick = () => { inboxTab = t.dataset.tab; renderInbox(); }; });
+    document.querySelectorAll('#msgTabs .msg-tab[data-tab]').forEach((t) => { t.onclick = () => { inboxTab = t.dataset.tab; renderInbox(); }; });
     $('intCancel').onclick = () => $('interestDialog').close();
     $('repCancel').onclick = () => $('reportDialog').close();
     $('repSend').onclick = sendReport;
