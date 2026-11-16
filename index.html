@@ -464,6 +464,10 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   <form method="dialog" onsubmit="return false">
     <h2 id="intTitle"></h2>
     <p class="muted" id="intWhat"></p>
+    <label class="field" id="intAmtWrap" hidden><span id="intAmtLbl">Dein Angebot (€)</span>
+      <input type="text" id="intAmt" inputmode="decimal" autocomplete="off">
+    </label>
+    <p class="muted small" id="intAmtHint" hidden></p>
     <label class="field">Nachricht (optional)
       <input type="text" id="intMsg" maxlength="200">
     </label>

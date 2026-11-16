@@ -27,7 +27,7 @@ const I18N = {
     // Outfits
     'PNG': 'PNG', 'Farben': 'Colors', 'Farben, die zusammenpassen': 'Colors that go together',
     // Nachrichten und Anfragen
-    'Anfrage': 'Request', 'Kaufanfrage': 'Purchase request', 'Kaufanfrage senden': 'Send purchase request', 'Anfrage senden': 'Send request', 'Hab ich': 'I have it',
+    'Dein Angebot (€)': 'Your offer (€)', 'Bitte gib dein Angebot ein.': 'Please enter your offer.', 'Das Angebot darf nicht über dem Preis liegen.': 'The offer cannot be higher than the price.', 'JAWNZ Bot': 'JAWNZ Bot', 'Anfrage': 'Request', 'Kaufanfrage': 'Purchase request', 'Kaufanfrage senden': 'Send purchase request', 'Anfrage senden': 'Send request', 'Hab ich': 'I have it',
     'Nachricht (optional)': 'Message (optional)', 'Betrugsverdacht': 'Suspected fraud', 'Fälschung': 'Counterfeit', 'Belästigung': 'Harassment', 'Spam': 'Spam', 'Sonstiges': 'Other',
     // Anmelden
     'Anmelden': 'Log in', 'Benutzername': 'Username', 'Passwort vergessen?': 'Forgot password?', 'Neues Konto erstellen': 'Create new account', 'Neues Passwort': 'New password',

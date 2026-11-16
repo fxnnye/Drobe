@@ -739,16 +739,31 @@ const Profile = (() => {
     $('intMsg').value = '';
     $('intError').textContent = '';
     $('intMsg').placeholder = 'z. B. Ist es noch da?';
+    const priced = buy && rec.price != null;
+    $('intAmtWrap').hidden = $('intAmtHint').hidden = !priced;
+    if (priced) {
+      $('intAmt').value = String(rec.price).replace('.', ',');
+      $('intAmtHint').textContent = 'Preis ' + money(rec.price) + '. Du kannst höchstens 25 % darunter bieten, mindestens ' + money(Math.ceil(rec.price * 75) / 100) + '.';
+    }
     $('interestDialog').showModal();
   }
   async function sendInterest() {
     const c = intCtx, sb = Cloud.client();
     if (!c || !sb) return;
+    let amount = null;
+    if (!$('intAmtWrap').hidden) {
+      amount = Number($('intAmt').value.trim().replace(',', '.'));
+      const price = Number(c.rec.price), min = Math.ceil(price * 75) / 100;
+      if (!isFinite(amount) || !$('intAmt').value.trim()) { $('intError').textContent = 'Bitte gib dein Angebot ein.'; return; }
+      if (amount > price) { $('intError').textContent = 'Das Angebot darf nicht über dem Preis liegen.'; return; }
+      if (amount < min) { $('intError').textContent = 'Dein Angebot darf höchstens 25 % unter dem Preis liegen (mindestens ' + money(min) + ').'; return; }
+    }
     $('intSend').disabled = true;
     try {
       const { error } = await sb.rpc('send_interest', {
         p_to: c.to, p_kind: c.kind, p_record_id: c.rec.id,
         p_message: $('intMsg').value.trim() || null, p_ref_item: null,
+        ...(amount != null ? { p_amount: amount } : {}),
       });
       if (error) throw error;
       $('interestDialog').close();
@@ -949,7 +964,8 @@ const Profile = (() => {
     }
     box.replaceChildren();
     for (const m of msgs) {
-      const b = el('div', 'bubble' + (m.mine ? ' mine' : ''));
+      const b = el('div', 'bubble' + (m.system ? ' system' : m.mine ? ' mine' : ''));
+      if (m.system) b.append(el('b', 'bot-tag', 'JAWNZ Bot'));
       if (m.image) {
         const a = el('a', 'bubble-img');
         a.href = urls[m.image] || '#'; a.target = '_blank'; a.rel = 'noopener';

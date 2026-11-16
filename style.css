@@ -1292,3 +1292,7 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   body.in-thread .thread-msgs { padding-bottom: calc(var(--tabs-h, 64px) + 8px); }
 }
 @media (max-width: 700px) { .view.peek-under { display: block; } }
+
+/* Systemnachrichten im Chat: als Bot gekennzeichnet */
+.bubble.system { align-self: center; max-width: 88%; background: transparent; border: 1px dashed var(--gray-hover); color: var(--muted, inherit); text-align: center; align-items: center; }
+.bubble.system .bot-tag { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; opacity: .7; }

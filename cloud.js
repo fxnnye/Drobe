@@ -181,7 +181,7 @@ const Cloud = (() => {
         if (!(await dbGet('items', t.id))) {
           const res = await sb.storage.from('images').download(t.path);
           if (res.error || !res.data) continue; // später nochmal
-          const rec = { ...(t.data || {}), id: t.id, blob: res.data, vis: 'private', created: Date.now(), bought: Date.now() };
+          const rec = { ...(t.data || {}), id: t.id, blob: res.data, vis: 'public', created: Date.now(), bought: Date.now() };
           delete rec.price; delete rec.note;
           await dbPut('items', rec);
           added++;
