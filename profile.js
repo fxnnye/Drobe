@@ -673,6 +673,29 @@ const Profile = (() => {
     } catch (e) { console.error(e); message(box, 'Die Liste konnte nicht geladen werden.', { retry: () => loadPeople(which, box) }); }
   }
 
+  // Die alte Anzeige hinter einer Unterhaltung, auch nach Verkauf und Übergabe
+  async function showOldItem(it) {
+    const d = $('oldItemDialog'), box = $('oldItemBody');
+    $('oldItemTitle').textContent = 'Anzeige';
+    box.replaceChildren();
+    const ph = el('div', 'item-photo');
+    box.append(ph);
+    box.append(el('h3', 'item-name', [it.brand, it.name].filter(Boolean).join(' ') || 'Teil'));
+    if (it.amount != null) box.append(el('p', 'item-price', money(it.amount)));
+    const facts = el('dl', 'item-facts');
+    for (const [k, v] of [['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : ''], ['Verkäufer', it.seller ? '@' + it.seller : ''], ['Status', ORDER_STATE_OLD[it.state] || '']]) {
+      if (!v) continue;
+      const row = el('div', 'item-fact');
+      row.append(el('dt', null, k), el('dd', null, v));
+      facts.append(row);
+    }
+    box.append(facts, el('p', 'muted small', 'Diese Anzeige ist nicht mehr öffentlich.'));
+    if (!d.open) d.showModal();
+    const sb = Cloud.client();
+    if (sb && it.path) signedUrls(sb, [it.path]).then((u) => { if (u[it.path] && d.open) { const i = el('img'); i.alt = it.name || ''; i.src = u[it.path]; ph.append(i); } });
+  }
+  const ORDER_STATE_OLD = { open: 'Angebot offen', accepted: 'reserviert', declined: 'Angebot abgelehnt', withdrawn: 'Angebot zurückgezogen', sold: 'verkauft, wartet auf Erhalt', done: 'verkauft und übergeben' };
+
   // Bestellverlauf: meine Käufe und Verkäufe (angenommene Angebote)
   const ORDER_STATE = { reserved: 'reserviert', sold: 'verkauft, wartet auf Erhalt', done: 'abgeschlossen' };
   async function openOrders() {
@@ -1041,7 +1064,14 @@ const Profile = (() => {
     const owner = m.mine ? m.other : (Cloud.user() && Cloud.user().name);
     const box = $('threadItemBox');
     box.disabled = !(m.kind === 'interest' && m.record_id && owner);
-    box.onclick = () => { if (!box.disabled) location.hash = itemLink(owner, m.record_id); };
+    box.onclick = async () => {
+      if (box.disabled) return;
+      const sb = Cloud.client();
+      let it = null;
+      try { if (sb && navigator.onLine) { const r = await sb.rpc('thread_item', { p_thread: m.id }); if (!r.error) it = r.data; } } catch (e) { /* Migration 0051 fehlt noch: dann wie bisher zum Teil */ }
+      if (!it || it.available) { location.hash = itemLink(owner, m.record_id); return; }
+      showOldItem(it); // Anzeige ist nicht mehr öffentlich (verkauft oder übergeben): trotzdem ansehen
+    };
     $('threadOffer').hidden = true;
     $('threadErr').hidden = true;
     $('threadInput').value = '';
@@ -1295,6 +1325,7 @@ const Profile = (() => {
     $('pfPhotoDel').onclick = () => { pendingAvatar = ''; $('pfCrop').hidden = true; $('pfAvatar').hidden = false; paintAvatar($('pfAvatar'), null, Cloud.user().name); $('pfPhotoDel').hidden = true; };
     $('profTextSave').onclick = saveOwnText;
     $('revClose').onclick = () => $('reviewsDialog').close();
+    $('oldItemClose').onclick = () => $('oldItemDialog').close();
     $('ordersClose').onclick = () => $('ordersDialog').close();
     $('msgOrders').onclick = openOrders;
     $('peopleClose').onclick = () => $('peopleDialog').close();
