@@ -221,3 +221,66 @@ function fillSelect(sel) {
   window.addEventListener('orientationchange', () => setTimeout(() => place(false), 200));
   setTimeout(sync, 0);
 })();
+
+// „Zurück“ wie in einer App (Handy): die Seite wird nach rechts weggewischt, per Tipp auf Zurück oder per Wischen vom linken Rand
+(() => {
+  const mq = matchMedia('(max-width: 700px)');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)');
+  const visible = (b) => b && b.offsetParent !== null && b.getBoundingClientRect().width > 0;
+  // sichtbarer Zurück-Knopf und die Seite, die er schließt
+  function current() {
+    const btns = [...document.querySelectorAll('#publicView .back-btn, #threadPane .back-btn, .view.active .back-btn')].filter(visible);
+    const b = btns[0];
+    if (!b) return null;
+    const page = b.closest('#publicView') || b.closest('#threadPane') || b.closest('.view');
+    return page ? { btn: b, page } : null;
+  }
+  const OUT = 'transform .24s var(--ease-out), opacity .24s ease';
+  function reset(page) { page.style.transition = 'none'; page.style.transform = ''; page.style.opacity = ''; page.style.boxShadow = ''; void page.offsetWidth; page.style.transition = ''; }
+  function slideOut(c, from) {
+    const { btn, page } = c;
+    page.style.transition = OUT;
+    page.style.transform = 'translateX(100%)';
+    page.style.opacity = '.6';
+    btn.dataset.go = '1';
+    setTimeout(() => { btn.click(); delete btn.dataset.go; setTimeout(() => reset(page), 30); }, calm.matches ? 0 : 200);
+  }
+  // Tipp auf Zurück: erst wegwischen, dann zurück
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('.back-btn');
+    if (!b || b.dataset.go || !mq.matches || calm.matches) return;
+    const c = current();
+    if (!c || c.btn !== b) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    slideOut(c);
+  }, true);
+  // Wischen vom linken Rand
+  let g = null;
+  document.addEventListener('touchstart', (e) => {
+    g = null;
+    if (!mq.matches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if (t.clientX > 24) return;
+    const c = current();
+    if (c) g = { c, x: t.clientX, y: t.clientY, t: Date.now(), on: false, dead: false };
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!g || g.dead) return;
+    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.on) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { g.dead = true; return; }
+      if (dx > 10) { g.on = true; g.c.page.style.transition = 'none'; g.c.page.style.boxShadow = '-8px 0 24px rgba(0,0,0,.12)'; } else return;
+    }
+    e.preventDefault();
+    g.c.page.style.transform = 'translateX(' + Math.max(0, dx) + 'px)';
+  }, { passive: false });
+  const end = (e) => {
+    if (!g || !g.on) { g = null; return; }
+    const t = e.changedTouches[0], dx = t.clientX - g.x, v = dx / Math.max(1, Date.now() - g.t);
+    const c = g.c; g = null;
+    if (dx > innerWidth * 0.33 || v > 0.6) slideOut(c);
+    else { c.page.style.transition = 'transform .25s var(--ease-out)'; c.page.style.transform = 'translateX(0)'; setTimeout(() => reset(c.page), 260); }
+  };
+  document.addEventListener('touchend', end);
+  document.addEventListener('touchcancel', end);
+})();
