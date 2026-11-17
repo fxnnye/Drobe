@@ -1326,3 +1326,8 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .legit-ok { margin: 8px 0; font-size: 14px; color: #2e8b57; }
 .legit-row { display: flex; gap: 8px; margin-top: 10px; }
 .legit-row .btn { flex: 1; }
+
+/* Runde Knöpfe werden viereckig abgerundet, wie der Einstellungsknopf */
+.thread-photo, .so-photo, .add-btn, .heart-btn, .zoom-close, .welcome-x { border-radius: var(--r-ctrl); }
+.brand-hint { border-radius: var(--r-ctrl); }
+.card .warn { border-radius: 8px; }
