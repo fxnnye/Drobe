@@ -1315,3 +1315,14 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 /* Suchfeld aktiv: alles außer Feld und Verlauf ausgegraut (wie bei Vinted) */
 #view-search.so-focus > :not(.so-head):not(#soHistory) { opacity: .3; filter: grayscale(1); pointer-events: none; transition: opacity .2s ease; }
 #view-search.so-focus .so-history { background: var(--bg); border-radius: 16px; padding: 8px 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, .12); position: relative; z-index: 1; }
+
+/* Legit-Check */
+.legit { margin: 16px 0; padding: 14px 16px; border: 1px solid var(--line, rgba(128,128,128,.25)); border-radius: 16px; }
+.legit h3 { margin: 0 0 4px; font-size: 15px; }
+.legit-counts { display: flex; gap: 16px; margin: 10px 0 6px; font-weight: 600; }
+.legit-fake { color: #c0392b; }
+.legit-real { color: #2e8b57; }
+.legit-frozen { margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: rgba(192, 57, 43, .12); color: #c0392b; font-size: 14px; }
+.legit-ok { margin: 8px 0; font-size: 14px; color: #2e8b57; }
+.legit-row { display: flex; gap: 8px; margin-top: 10px; }
+.legit-row .btn { flex: 1; }

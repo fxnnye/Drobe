@@ -471,6 +471,11 @@
     if (r.target) card.append(accountActions(r.target, { banned: r.target_banned, isAdmin: r.target_is_admin }, { reportId: r.id, refresh }));
     const g = el('div', 'group sep'); g.style.marginTop = '12px'; g.append(el('h4', null, 'Meldung'));
     const row = el('div', 'row');
+    if (r.record_id && (r.note || '').startsWith('Community-Prüfung')) row.append(btn('Ist echt, Einfrieren aufheben', 'primary', async () => {
+      const ok = await confirmAction({ title: 'Teil als echt bestätigen?', intro: 'Das Teil ist wieder normal sichtbar, Anfragen sind möglich, und die Community kann es nicht mehr automatisch einfrieren lassen.', confirmLabel: 'Ist echt' });
+      if (!ok) return;
+      if (!(await call('admin_legit_clear', { p_report: r.id }, 'Teil als echt bestätigt.')).failed) refresh();
+    }));
     row.append(btn('Als erledigt markieren', null, async () => {
       const a = await confirmAction({ title: 'Meldung als erledigt markieren?', intro: 'Die Meldung verschwindet aus der Liste. Am Konto und an den Inhalten ändert sich nichts.', confirmLabel: 'Als erledigt markieren' });
       if (!a) return;

@@ -443,6 +443,54 @@ const Profile = (() => {
     toast(placed ? placed + ' von ' + total + ' Teilen eingesetzt. Tippe ein Teil in der Liste, um es zu tauschen.' : 'Kein passendes Teil in deinem Schrank gefunden. Wähle Teile aus der Liste.');
   }
 
+  /* ---------- Legit-Check durch die Community ---------- */
+  const LEGIT_LIMIT = 5; // ab so vielen Fake-Stimmen wird das Teil eingefroren (Server: Migration 0052)
+  function legitBox(owner, id, own, loggedIn, askLogin, same, onFrozen) {
+    const box = el('div', 'legit');
+    box.hidden = true;
+    const sb = Cloud.client();
+    if (!sb) return box;
+    const render = (d) => {
+      if (!d || !same()) return;
+      box.hidden = false;
+      box.replaceChildren();
+      box.append(el('h3', null, 'Legit-Check'));
+      box.append(el('p', 'muted small', 'Die Community entscheidet mit, ob dieses Teil echt ist.'));
+      const counts = el('p', 'legit-counts');
+      counts.append(el('span', 'legit-real', '\u2713 ' + d.real + ' echt'), el('span', 'legit-fake', '\u2717 ' + d.fake + ' fake'));
+      box.append(counts);
+      if (d.status === 'frozen') box.append(el('p', 'legit-frozen', 'Eingefroren: Dieses Teil wird gerade vom JAWNZ-Team geprüft. Neue Anfragen sind erst danach möglich.'));
+      else if (d.status === 'cleared') box.append(el('p', 'legit-ok', 'Vom JAWNZ-Team geprüft.'));
+      else if (d.fake > 0) box.append(el('p', 'muted small', 'Ab ' + LEGIT_LIMIT + ' Fake-Stimmen wird das Teil eingefroren und vom Team geprüft.'));
+      if (onFrozen) onFrozen(d.status === 'frozen');
+      if (own || d.status === 'cleared') return;
+      const row = el('div', 'legit-row');
+      for (const [v, label] of [['real', 'Sieht echt aus'], ['fake', 'Sieht fake aus']]) {
+        const b = el('button', 'btn' + (d.mine === v ? ' primary' : ''), label);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', d.mine === v ? 'true' : 'false');
+        b.onclick = async () => {
+          if (!loggedIn) return askLogin();
+          row.querySelectorAll('button').forEach((x) => { x.disabled = true; });
+          try {
+            const r = await sb.rpc('legit_vote', { p_username: owner, p_id: id, p_verdict: d.mine === v ? null : v });
+            if (r.error) throw r.error;
+            render(r.data);
+            if (r.data && r.data.mine) toast('Danke für deine Stimme');
+          } catch (e) {
+            console.error(e);
+            toast((e && e.message) || 'Das hat nicht geklappt.');
+            render(d);
+          }
+        };
+        row.append(b);
+      }
+      box.append(row);
+    };
+    if (navigator.onLine) sb.rpc('legit_info', { p_username: owner, p_id: id }).then((r) => { if (!r.error) render(r.data); }, () => {}); // Migration 0052 fehlt noch: dann ohne Legit-Check
+    return box;
+  }
+
   /* ---------- Detailseite eines Teils (#/i/<name>/<id>) ---------- */
   async function renderItem(name, id) {
     const box = $('publicView');
@@ -511,6 +559,9 @@ const Profile = (() => {
     seller.onclick = () => { location.hash = '#/u/' + data.username; };
     info.append(seller);
 
+    let goBtn = null;
+    if (it.vis !== 'private') info.append(legitBox(data.username, id, own, !!me, askLogin, same, (frozen) => { if (goBtn) goBtn.disabled = frozen; }));
+
     if (!own) {
       const buy = it.vis === 'sale';
       if (it.vis === 'public') { // nur gezeigt, nicht angeboten: hier gibt es nichts zu erfragen, nur zu merken
@@ -519,6 +570,7 @@ const Profile = (() => {
         const go = el('button', 'btn primary full', 'Kaufanfrage senden');
         go.type = 'button';
         go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
+        goBtn = go;
         info.append(go);
         info.append(saveBtn(it, data.username, 'full'));
       }
