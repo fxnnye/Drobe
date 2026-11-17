@@ -34,11 +34,21 @@
   textarea { resize: vertical; min-height: 96px; }
   .sect { margin-bottom: 28px; } .sect h3 { margin: 0 0 4px; font-size: 16px; }
   select { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line, #ccc); background: var(--card, transparent); color: inherit; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
-  .tabs button { white-space: nowrap; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .tabgroup { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .tablabel { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-right: 2px; }
+  .tabs button { white-space: nowrap; min-height: 36px; padding: 6px 12px; font-size: 14px; }
   .tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
   .stat b { display: block; font-size: 26px; }
+  button.stat { display: block; text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 0; }
+  button.stat.hot b { color: var(--red); }
+  button.stat span { display: block; }
+  button.stat .go { font-size: 12px; margin-top: 4px; color: var(--muted); }
+  @media (hover: hover) { button.stat:hover { border-color: var(--text); filter: none; } }
+  .ov h3 { margin: 22px 0 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .ov h3:first-child { margin-top: 0; }
+  button.user { background: none; padding: 0; min-height: 0; border-radius: 4px; font: inherit; font-weight: 700; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; display: inline; }
   .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
   .toolbar .spacer { flex: 1; }
   pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: var(--bg); border-radius: 8px; padding: 8px; margin: 8px 0 0; }
@@ -126,17 +136,21 @@
       <button id="logout" type="button">Abmelden</button>
     </header>
     <div class="tabs" role="tablist">
-      <button role="tab" data-tab="overview" aria-selected="true">Übersicht</button>
-      <button role="tab" data-tab="reports" aria-selected="false">Meldungen</button>
-      <button role="tab" data-tab="legit" aria-selected="false">Legit-Check <span class="badge" id="legitBadge" hidden></span></button>
-      <button role="tab" data-tab="sales" aria-selected="false">Verkäufe <span class="badge" id="salesBadge" hidden></span></button>
-      <button role="tab" data-tab="reviews" aria-selected="false">Bewertungen</button>
-      <button role="tab" data-tab="members" aria-selected="false">Mitglieder</button>
-      <button role="tab" data-tab="moderation" aria-selected="false">Moderation</button>
-      <button role="tab" data-tab="flex" aria-selected="false">Flex</button>
-      <button role="tab" data-tab="roles" aria-selected="false">Rollen</button>
-      <button role="tab" data-tab="errors" aria-selected="false">Fehlerprotokoll</button>
-      <button role="tab" data-tab="log" aria-selected="false">Protokoll</button>
+      <div class="tabgroup"><button role="tab" data-tab="overview" aria-selected="true">Übersicht</button></div>
+      <div class="tabgroup"><span class="tablabel">Prüfen</span>
+        <button role="tab" data-tab="reports" aria-selected="false">Meldungen</button>
+        <button role="tab" data-tab="legit" aria-selected="false">Legit-Check <span class="badge" id="legitBadge" hidden></span></button>
+        <button role="tab" data-tab="moderation" aria-selected="false">Moderation</button></div>
+      <div class="tabgroup"><span class="tablabel">Handel</span>
+        <button role="tab" data-tab="sales" aria-selected="false">Verkäufe <span class="badge" id="salesBadge" hidden></span></button>
+        <button role="tab" data-tab="reviews" aria-selected="false">Bewertungen</button></div>
+      <div class="tabgroup"><span class="tablabel">Community</span>
+        <button role="tab" data-tab="members" aria-selected="false">Mitglieder</button>
+        <button role="tab" data-tab="flex" aria-selected="false">Flex</button>
+        <button role="tab" data-tab="roles" aria-selected="false">Rollen</button></div>
+      <div class="tabgroup"><span class="tablabel">System</span>
+        <button role="tab" data-tab="errors" aria-selected="false">Fehlerprotokoll</button>
+        <button role="tab" data-tab="log" aria-selected="false">Protokoll</button></div>
     </div>
     <div id="overview"></div>
     <div id="reports" hidden></div>
@@ -390,13 +404,18 @@
     loadReports();
   }
   const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), errors: () => loadErrors(), log: () => loadLog() };
-  document.querySelectorAll('.tabs button').forEach((b) => {
-    b.onclick = () => {
-      document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
-      for (const k of Object.keys(loaders)) $(k).hidden = k !== b.dataset.tab;
-      loaders[b.dataset.tab]();
-    };
-  });
+  function goTab(id) {
+    document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.tab === id)));
+    for (const k of Object.keys(loaders)) $(k).hidden = k !== id;
+    loaders[id]();
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll('.tabs button').forEach((b) => { b.onclick = () => goTab(b.dataset.tab); });
+  // Benutzername zum Anklicken: springt zu dieser Person in „Mitglieder“
+  let openUser = null;
+  function openMember(name) { openUser = name; memberQuery = name; $('members').replaceChildren(); goTab('members'); }
+  const userBtn = (name) => { if (!name) return el('span', 'who', '?'); const b = btn(name, 'user', () => openMember(name)); b.title = 'Mitglied öffnen'; return b; };
+  const factUser = (label, name) => { const d = el('div'); d.append(el('span', null, label), userBtn(name)); return d; };
   const loading = (box, text) => box.replaceChildren(el('p', 'muted', text || 'Lade …'));
   const failed = (box, text, retry) => { box.replaceChildren(el('p', 'err', text)); box.append(btn('Nochmal versuchen', null, retry)); };
   function setBadge(n) { $('repBadge').hidden = !n; $('repBadge').textContent = n; }
@@ -408,11 +427,24 @@
     try {
       const { data, error } = await sb.rpc('admin_overview');
       if (error) throw error;
-      const grid = el('div', 'stats');
-      for (const [k, label] of [['members', 'Mitglieder'], ['new_members', 'Neu (7 Tage)'], ['items', 'Teile'], ['outfits', 'Outfits'], ['open_reports', 'Offene Meldungen'], ['errors_24h', 'Fehler (24 h)'], ['frozen', 'Eingefrorene Teile'], ['listings_active', 'Teile im Verkauf'], ['open_sales', 'Offene Verkäufe'], ['stuck_orders', 'Hängende Bestellungen'], ['open_transfers', 'Offene Übergaben'], ['reviews_7d', 'Bewertungen (7 Tage)']]) {
-        const c = el('div', 'card stat'); c.append(el('b', null, String(data[k] ?? 0)), el('span', 'muted small', label)); grid.append(c);
+      const groups = [
+        ['Community', [['members', 'Mitglieder', 'members'], ['new_members', 'Neu (7 Tage)', 'members'], ['items', 'Teile', 'members'], ['outfits', 'Outfits', 'members']]],
+        ['Prüfen', [['open_reports', 'Offene Meldungen', 'reports', true], ['frozen', 'Eingefrorene Teile', 'legit', true]]],
+        ['Handel', [['listings_active', 'Teile im Verkauf', 'sales'], ['open_sales', 'Offene Verkäufe', 'sales'], ['stuck_orders', 'Hängende Bestellungen', 'sales', true], ['open_transfers', 'Offene Übergaben', 'sales'], ['reviews_7d', 'Bewertungen (7 Tage)', 'reviews']]],
+        ['System', [['errors_24h', 'Fehler (24 h)', 'errors', true]]],
+      ];
+      const wrap = el('div', 'ov');
+      for (const [title, tiles] of groups) {
+        wrap.append(el('h3', null, title));
+        const grid = el('div', 'stats');
+        for (const [k, label, tab, warn] of tiles) {
+          const c = btn('', 'stat' + (warn && data[k] > 0 ? ' hot' : ''), () => goTab(tab));
+          c.append(el('b', null, String(data[k] ?? 0)), el('span', 'muted small', label), el('span', 'go', 'Öffnen →'));
+          grid.append(c);
+        }
+        wrap.append(grid);
       }
-      box.replaceChildren(grid);
+      box.replaceChildren(wrap);
       setBadge(data.open_reports);
       for (const [id, n] of [['legitBadge', data.frozen], ['salesBadge', data.stuck_orders]]) { const b = $(id); if (b) { b.hidden = !n; b.textContent = n || ''; } }
     } catch (e) { console.error(e); failed(box, 'Die Übersicht fehlt noch. Ist Migration 0018 ausgeführt?', loadOverview); }
@@ -459,7 +491,7 @@
   function reportCard(r) {
     const card = el('div', 'card');
     const head = el('div', 'rep-head');
-    head.append(el('span', 'reason', REASONS[r.reason] || r.reason), el('span', 'who', r.target || '?'));
+    head.append(el('span', 'reason', REASONS[r.reason] || r.reason), userBtn(r.target));
     if (r.target_banned) head.append(el('span', 'tag ban', 'gesperrt'));
     if (r.target_is_admin) head.append(el('span', 'tag', 'Admin'));
     if (r.target_reports > 1) { const t = btn(r.target_reports + ' Meldungen', 'tag warn linktag', () => reportsFlow(r.target)); head.append(t); }
@@ -506,7 +538,7 @@
     const box = $('members');
     if (!box.querySelector('.search')) {
       const form = el('form', 'search');
-      const input = el('input'); input.type = 'search'; input.placeholder = 'Benutzername oder E-Mail'; input.maxLength = 80;
+      const input = el('input'); input.type = 'search'; input.placeholder = 'Benutzername oder E-Mail'; input.maxLength = 80; input.value = memberQuery;
       const go = el('button', 'primary', 'Suchen'); go.type = 'submit';
       form.append(input, go);
       form.onsubmit = (ev) => { ev.preventDefault(); memberQuery = input.value; loadMembers(); };
@@ -520,10 +552,11 @@
       list.replaceChildren();
       if (!data.length) return list.append(el('p', 'muted', 'Keine Mitglieder gefunden.'));
       for (const m of data) list.append(memberCard(m));
+      if (openUser) { const c = [...list.children].find((x) => x.dataset && x.dataset.user === openUser); openUser = null; if (c) { c.open = true; c.scrollIntoView({ block: 'start' }); } }
     } catch (e) { console.error(e); failed(list, 'Die Mitglieder konnten nicht geladen werden. Ist Migration 0019 ausgeführt?', loadMembers); }
   }
   function memberCard(m) {
-    const card = el('details', 'card member');
+    const card = el('details', 'card member'); card.dataset.user = m.username;
     const sum = el('summary', 'rep-head');
     sum.append(el('span', 'who', m.username));
     if (m.banned) sum.append(el('span', 'tag ban', 'gesperrt'));
@@ -613,7 +646,7 @@
         list.replaceChildren(el('p', 'muted small', rows.length + ' von ' + data.length + ' Einträgen'));
         for (const l of rows) {
           const card = el('div', 'card');
-          card.append(el('b', null, l.action + ' · ' + (l.target || '?')));
+          const lh = el('div'); lh.append(el('b', null, l.action + ' · '), l.target ? userBtn(l.target) : el('b', null, '?')); card.append(lh);
           card.append(el('div', 'muted small', fmt(l.created_at) + (l.admin ? ' · von ' + l.admin : '')));
           if (l.detail) card.append(el('p', 'small', l.detail));
           list.append(card);
@@ -674,7 +707,7 @@
       for (const x of data) {
         const card = el('div', 'card');
         const h = el('div', 'rep-head');
-        h.append(el('span', 'who', x.name), el('span', 'muted small', (x.brand ? x.brand + ' · ' : '') + 'von ' + x.username), el('span', 'tag' + (x.status === 'frozen' ? ' ban' : ' warn'), x.status === 'frozen' ? 'eingefroren' : 'unter Beobachtung'));
+        h.append(el('span', 'who', x.name), el('span', 'muted small', (x.brand ? x.brand + ' · ' : '') + 'von'), userBtn(x.username), el('span', 'tag' + (x.status === 'frozen' ? ' ban' : ' warn'), x.status === 'frozen' ? 'eingefroren' : 'unter Beobachtung'));
         card.append(h);
         const facts = el('div', 'facts'); facts.append(fact('Echt-Stimmen', String(x.real)), fact('Fake-Stimmen', String(x.fake), x.fake >= 5)); card.append(facts);
         const row = el('div', 'row'); row.style.marginTop = '10px';
@@ -711,7 +744,7 @@
     if (o.stuck_days != null && o.stuck_days >= 7) h.append(el('span', 'tag warn', 'seit ' + o.stuck_days + ' Tagen offen'));
     card.append(h);
     const facts = el('div', 'facts');
-    facts.append(fact('Käufer', o.buyer), fact('Verkäufer', o.seller), fact('Angebot vom', day(o.created_at)),
+    facts.append(factUser('Käufer', o.buyer), factUser('Verkäufer', o.seller), fact('Angebot vom', day(o.created_at)),
       fact('Angenommen', o.decided_at && o.offer_status === 'accepted' ? day(o.decided_at) : '–'), fact('Erhalt bestätigt', o.confirmed_at ? day(o.confirmed_at) : '–'),
       fact('Bewertungen', String(o.reviews)), fact('Übergabe', o.transfer === 'pending' ? 'offen' : o.transfer === 'done' ? 'erledigt' : '–'));
     card.append(facts);
@@ -770,11 +803,11 @@
     await simpleLoad('reviews', 'admin_reviews', {}, (box, data) => {
       const s1 = section('Durchschnitt pro Mitglied', 'Die 50 Mitglieder mit den meisten Bewertungen.');
       if (!data.stats.length) s1.append(el('p', 'muted', 'Noch keine Bewertungen.'));
-      for (const s of data.stats) { const d = el('div', 'content-row'); d.append(el('span', null, s.username + ' · ' + String(s.avg).replace('.', ',') + ' von 5 Sternen · ' + s.n + (s.n === 1 ? ' Bewertung' : ' Bewertungen'))); s1.append(d); }
+      for (const s of data.stats) { const d = el('div', 'content-row'); const sp = el('span'); sp.append(userBtn(s.username), ' · ' + String(s.avg).replace('.', ',') + ' von 5 Sternen · ' + s.n + (s.n === 1 ? ' Bewertung' : ' Bewertungen')); d.append(sp); s1.append(d); }
       const s2 = section('Letzte Bewertungen', 'Missbräuchliche lassen sich löschen. Der Autor kann danach den Kauf erneut bewerten.');
       for (const r of data.reviews) {
         const c = el('div', 'card'); const h = el('div', 'rep-head');
-        h.append(el('span', 'who', '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)), el('span', 'muted small', r.reviewer + ' bewertet ' + r.reviewee + ' · ' + fmt(r.at)));
+        h.append(el('span', 'who', '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)), userBtn(r.reviewer), el('span', 'muted small', 'bewertet'), userBtn(r.reviewee), el('span', 'muted small', '· ' + fmt(r.at)));
         c.append(h, r.comment ? el('div', 'note', r.comment) : el('div', 'muted small', 'Ohne Text.'));
         c.append(btn('Löschen …', 'danger', async () => {
           const a = await confirmAction({ title: 'Bewertung löschen?', intro: 'Die Bewertung von ' + r.reviewer + ' für ' + r.reviewee + ' wird endgültig gelöscht und fließt nicht mehr in den Durchschnitt ein.', reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Bewertung löschen', danger: true });
@@ -798,7 +831,7 @@
       if (!banned.data.length) s1.append(el('p', 'muted', 'Keine gesperrten Konten.'));
       for (const b of banned.data) {
         const c = el('div', 'card'); const h = el('div', 'rep-head');
-        h.append(el('span', 'who', b.username), el('span', 'tag ban', 'gesperrt'), el('span', 'muted small sumline', b.email));
+        h.append(userBtn(b.username), el('span', 'tag ban', 'gesperrt'), el('span', 'muted small sumline', b.email));
         c.append(h, el('div', 'note', 'Gesperrt am ' + fmt(b.banned_at) + (b.reason ? ' · Grund: ' + b.reason : '')));
         const row = el('div', 'row'); row.style.marginTop = '10px';
         row.append(btn('Konto entsperren', 'primary', async () => { if (await banFlow(b.username, true)) loadModeration(); }), btn('Nachricht schreiben', null, () => messageFlow(b.username)));
@@ -865,7 +898,7 @@
       const s1 = section('Aktuelle Rollen', 'Admins dürfen alles in dieser Verwaltung. Die Verwaltungsseite selbst ist nur für Admins offen.');
       for (const r of data) {
         const d = el('div', 'content-row');
-        d.append(el('span', null, r.username + ' · ' + (ROLE_NAMES[r.role] || r.role) + ' · seit ' + day(r.granted_at) + ' · ' + r.email));
+        const sp = el('span'); sp.append(userBtn(r.username), ' · ' + (ROLE_NAMES[r.role] || r.role) + ' · seit ' + day(r.granted_at) + ' · ' + r.email); d.append(sp);
         if (!(r.role === 'admin' && r.me)) d.append(btn('Entziehen …', 'danger', async () => {
           const a = await confirmAction({ title: (ROLE_NAMES[r.role] || r.role) + '-Rolle von ' + r.username + ' entziehen?', intro: r.role === 'admin' ? r.username + ' kommt danach nicht mehr in die Verwaltung.' : r.username + ' verliert die Helfer-Rolle.', reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Rolle entziehen', danger: true });
           if (a && !(await call('admin_set_role', { p_username: r.username, p_role: r.role, p_grant: false, p_reason: a.reason }, 'Rolle entzogen.')).failed) loadRoles();
