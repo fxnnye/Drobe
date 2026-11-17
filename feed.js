@@ -15,6 +15,7 @@ function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';
   const prev = state.view;
+  if (prev === 'feed' && name !== 'feed') feed.scrollY = window.scrollY; // beim Zurückkommen wieder dort weitermachen
   state.view = name;
   if (['closet', 'outfits', 'saved'].includes(name)) state.lastMe = name;
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
@@ -24,13 +25,15 @@ function showView(name) {
   if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
-  if (name === 'feed') loadFeed(true);
+  // Zurück zum Feed (z. B. vom Profil): Der geladene Feed bleibt stehen und wird nicht neu geholt. Ein Tipp auf „Feed“ im Feed oder ein alter Stand (über 10 Minuten) lädt neu.
+  const keepFeed = name === 'feed' && prev !== 'feed' && !!feed.loadedAt && Date.now() - feed.loadedAt < 10 * 60 * 1000 && $('feedGrid').children.length > 0 && !feed.loading;
+  if (name === 'feed' && !keepFeed) loadFeed(true);
   if (name === 'saved') renderSaved();
   if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
   if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
   if (name === 'followers' || name === 'following') Profile.loadPeople(name, $(name === 'followers' ? 'followersList' : 'followingList'));
   if (ME_VIEWS.includes(name)) renderMeHead();
-  window.scrollTo(0, 0);
+  window.scrollTo(0, keepFeed ? (feed.scrollY || 0) : 0);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
 // Tipp auf „JAWNZ“ oben links: wie der Reiter Feed (verlässt auch ein geöffnetes Profil)
@@ -82,6 +85,7 @@ async function loadFeed(reset) {
     // „Für dich“ wird nach Punkten sortiert: beim Nachladen kann sich die Reihenfolge verschieben, Doppelte fallen weg
     const fresh = kind === 'foryou' ? list.filter((r) => { const k = (r.outfit ? 'o/' : 'i/') + r.username + '/' + r.id; if (feed.seen.has(k)) return false; feed.seen.add(k); return true; }) : list;
     await Profile.showFeed(fresh, grid, kind);
+    if (reset) feed.loadedAt = Date.now();
     if (list.length) feed.before = kind === 'foryou' ? (feed.before || 0) + list.length : list[list.length - 1].ts;
     more.hidden = list.length < 30;
     empty.hidden = grid.children.length > 0;

@@ -141,9 +141,9 @@ async function startApp(userId) {
   backfillTrim();
 }
 
-// Startbildschirm ausblenden: erst wenn die App bereit ist, mindestens 3 Sekunden nach dem Start. Danach wartet er noch, bis der Feed geladen ist
+// Startbildschirm ausblenden: erst wenn die App bereit ist, mindestens 2,5 Sekunden nach dem Start. Danach wartet er noch, bis der Feed geladen ist
 // und die ersten Fotos in Feed und Kleiderschrank da sind (höchstens bis 8 Sekunden), spätestens nach 12 Sekunden geht er auf jeden Fall weg.
-const SPLASH_MIN_MS = 3000, SPLASH_PRELOAD_MAX_MS = 8000;
+const SPLASH_MIN_MS = 2500, SPLASH_PRELOAD_MAX_MS = 8000;
 let splashHiding = false;
 function contentReady() {
   if (!Cloud.user()) return true; // abgemeldet gibt es nichts vorzuladen
