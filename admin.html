@@ -32,6 +32,8 @@
   label { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
   input, textarea { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: 16px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
   textarea { resize: vertical; min-height: 96px; }
+  .sect { margin-bottom: 28px; } .sect h3 { margin: 0 0 4px; font-size: 16px; }
+  select { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line, #ccc); background: var(--card, transparent); color: inherit; }
   .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
   .tabs button { white-space: nowrap; }
   .tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
@@ -126,13 +128,25 @@
     <div class="tabs" role="tablist">
       <button role="tab" data-tab="overview" aria-selected="true">Übersicht</button>
       <button role="tab" data-tab="reports" aria-selected="false">Meldungen</button>
+      <button role="tab" data-tab="legit" aria-selected="false">Legit-Check <span class="badge" id="legitBadge" hidden></span></button>
+      <button role="tab" data-tab="sales" aria-selected="false">Verkäufe <span class="badge" id="salesBadge" hidden></span></button>
+      <button role="tab" data-tab="reviews" aria-selected="false">Bewertungen</button>
       <button role="tab" data-tab="members" aria-selected="false">Mitglieder</button>
+      <button role="tab" data-tab="moderation" aria-selected="false">Moderation</button>
+      <button role="tab" data-tab="flex" aria-selected="false">Flex</button>
+      <button role="tab" data-tab="roles" aria-selected="false">Rollen</button>
       <button role="tab" data-tab="errors" aria-selected="false">Fehlerprotokoll</button>
       <button role="tab" data-tab="log" aria-selected="false">Protokoll</button>
     </div>
     <div id="overview"></div>
     <div id="reports" hidden></div>
+    <div id="legit" hidden></div>
+    <div id="sales" hidden></div>
+    <div id="reviews" hidden></div>
     <div id="members" hidden></div>
+    <div id="moderation" hidden></div>
+    <div id="flex" hidden></div>
+    <div id="roles" hidden></div>
     <div id="errors" hidden></div>
     <div id="log" hidden></div>
   </section>
@@ -375,7 +389,7 @@
     loadOverview();
     loadReports();
   }
-  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), members: () => loadMembers(), errors: () => loadErrors(), log: () => loadLog() };
+  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), errors: () => loadErrors(), log: () => loadLog() };
   document.querySelectorAll('.tabs button').forEach((b) => {
     b.onclick = () => {
       document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
@@ -395,11 +409,12 @@
       const { data, error } = await sb.rpc('admin_overview');
       if (error) throw error;
       const grid = el('div', 'stats');
-      for (const [k, label] of [['members', 'Mitglieder'], ['new_members', 'Neu (7 Tage)'], ['items', 'Teile'], ['outfits', 'Outfits'], ['open_reports', 'Offene Meldungen'], ['errors_24h', 'Fehler (24 h)']]) {
+      for (const [k, label] of [['members', 'Mitglieder'], ['new_members', 'Neu (7 Tage)'], ['items', 'Teile'], ['outfits', 'Outfits'], ['open_reports', 'Offene Meldungen'], ['errors_24h', 'Fehler (24 h)'], ['frozen', 'Eingefrorene Teile'], ['listings_active', 'Teile im Verkauf'], ['open_sales', 'Offene Verkäufe'], ['stuck_orders', 'Hängende Bestellungen'], ['open_transfers', 'Offene Übergaben'], ['reviews_7d', 'Bewertungen (7 Tage)']]) {
         const c = el('div', 'card stat'); c.append(el('b', null, String(data[k] ?? 0)), el('span', 'muted small', label)); grid.append(c);
       }
       box.replaceChildren(grid);
       setBadge(data.open_reports);
+      for (const [id, n] of [['legitBadge', data.frozen], ['salesBadge', data.stuck_orders]]) { const b = $(id); if (b) { b.hidden = !n; b.textContent = n || ''; } }
     } catch (e) { console.error(e); failed(box, 'Die Übersicht fehlt noch. Ist Migration 0018 ausgeführt?', loadOverview); }
   }
 
@@ -578,6 +593,7 @@
   }
 
   /* ---------- Protokoll der Verwaltung ---------- */
+  let logFilter = { action: '', person: '' };
   async function loadLog() {
     const box = $('log');
     loading(box);
@@ -585,15 +601,293 @@
       const { data, error } = await sb.rpc('admin_log_list');
       if (error) throw error;
       box.replaceChildren();
-      if (!data.length) return box.append(el('p', 'muted', 'Noch keine Aktionen.'));
-      for (const l of data) {
+      const bar = el('div', 'toolbar');
+      const sel = el('select'); const all = el('option', null, 'Alle Aktionen'); all.value = ''; sel.append(all);
+      for (const a of [...new Set(data.map((l) => l.action))].sort()) { const o = el('option', null, a); o.value = a; sel.append(o); }
+      sel.value = logFilter.action;
+      const who = el('input'); who.type = 'search'; who.placeholder = 'Person (Ziel oder Admin)'; who.value = logFilter.person;
+      const list = el('div');
+      const draw = () => {
+        logFilter = { action: sel.value, person: who.value.trim().toLowerCase() };
+        const rows = data.filter((l) => (!logFilter.action || l.action === logFilter.action) && (!logFilter.person || (l.target || '').toLowerCase().includes(logFilter.person) || (l.admin || '').toLowerCase().includes(logFilter.person)));
+        list.replaceChildren(el('p', 'muted small', rows.length + ' von ' + data.length + ' Einträgen'));
+        for (const l of rows) {
+          const card = el('div', 'card');
+          card.append(el('b', null, l.action + ' · ' + (l.target || '?')));
+          card.append(el('div', 'muted small', fmt(l.created_at) + (l.admin ? ' · von ' + l.admin : '')));
+          if (l.detail) card.append(el('p', 'small', l.detail));
+          list.append(card);
+        }
+      };
+      sel.onchange = draw; who.oninput = draw;
+      bar.append(sel, who); box.append(bar, list); draw();
+    } catch (e) { console.error(e); failed(box, 'Das Protokoll konnte nicht geladen werden.', loadLog); }
+  }
+
+  /* ---------- Gemeinsame Bausteine der neuen Reiter ---------- */
+  const section = (title, hint) => { const s = el('div', 'sect'); s.append(el('h3', null, title)); if (hint) s.append(el('p', 'muted small', hint)); return s; };
+  const money = (n) => Number(n).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+  async function simpleLoad(boxId, fn, args, render, retry) {
+    const box = $(boxId);
+    loading(box);
+    try {
+      const { data, error } = await sb.rpc(fn, args || {});
+      if (error) throw error;
+      box.replaceChildren();
+      render(box, data);
+    } catch (e) { console.error(e); failed(box, 'Das konnte nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', retry); }
+  }
+
+  /* ---------- Legit-Check ---------- */
+  async function votesFlow(username, id, name) {
+    const list = el('div', 'thread'); list.style.maxHeight = '420px'; list.append(el('p', 'muted', 'Lade …'));
+    openModal('Stimmen zu „' + name + '“', [list], [btn('Schließen', null, () => closeModal())]);
+    const { data, error } = await sb.rpc('admin_legit_votes', { p_username: username, p_id: id });
+    list.replaceChildren();
+    if (error) { list.append(el('p', 'err', 'Die Stimmen konnten nicht geladen werden.')); return; }
+    if (!data.length) { list.append(el('p', 'muted', 'Keine Stimmen.')); return; }
+    for (const v of data) {
+      const c = el('div', 'card'); c.style.margin = '0';
+      const h = el('div', 'rep-head');
+      h.append(el('span', 'who', v.voter || '(gelöschtes Konto)'), el('span', 'tag' + (v.verdict === 'fake' ? ' warn' : ''), v.verdict === 'fake' ? 'Fake' : 'Echt'));
+      if (v.fresh) h.append(el('span', 'tag warn', 'Konto neu'));
+      if (v.only_fake) h.append(el('span', 'tag warn', 'stimmt nur „Fake“'));
+      if (v.banned) h.append(el('span', 'tag ban', 'gesperrt'));
+      c.append(h, el('div', 'muted small', 'Abgestimmt am ' + fmt(v.at) + ' · Konto seit ' + day(v.voter_since) + ' · insgesamt ' + v.voter_votes + ' Stimmen, davon ' + v.voter_fake + ' „Fake“'));
+      list.append(c);
+    }
+  }
+  async function fakeFlow(username, id, name) {
+    const r = await confirmAction({
+      title: '„' + name + '“ als Fake entfernen?',
+      intro: 'In einem Schritt:',
+      bullets: ['Das Teil von ' + username + ' wird gelöscht, auch auf den Geräten des Mitglieds. Das lässt sich nicht rückgängig machen.', 'Offene Meldungen zu diesem Teil gelten als erledigt.', username + ' bekommt eine Nachricht von „JAWNZ“.', 'Der Eingriff steht im Protokoll.'],
+      reasonLabel: 'Nachricht an ' + username + ' (leer lassen für den Standardtext)',
+      confirmLabel: 'Entfernen und Nachricht senden', danger: true,
+    });
+    if (!r) return false;
+    return !(await call('admin_legit_fake', { p_username: username, p_id: id, p_message: r.reason || null }, 'Teil entfernt, Nachricht gesendet.')).failed;
+  }
+  async function loadLegit() {
+    await simpleLoad('legit', 'admin_legit_list', {}, (box, data) => {
+      if (!data.length) return box.append(el('p', 'muted', 'Keine eingefrorenen Teile und keine auffälligen Abstimmungen.'));
+      for (const x of data) {
         const card = el('div', 'card');
-        card.append(el('b', null, l.action + ' · ' + (l.target || '?')));
-        card.append(el('div', 'muted small', fmt(l.created_at) + (l.admin ? ' · von ' + l.admin : '')));
-        if (l.detail) card.append(el('p', 'small', l.detail));
-        box.append(card);
+        const h = el('div', 'rep-head');
+        h.append(el('span', 'who', x.name), el('span', 'muted small', (x.brand ? x.brand + ' · ' : '') + 'von ' + x.username), el('span', 'tag' + (x.status === 'frozen' ? ' ban' : ' warn'), x.status === 'frozen' ? 'eingefroren' : 'unter Beobachtung'));
+        card.append(h);
+        const facts = el('div', 'facts'); facts.append(fact('Echt-Stimmen', String(x.real)), fact('Fake-Stimmen', String(x.fake), x.fake >= 5)); card.append(facts);
+        const row = el('div', 'row'); row.style.marginTop = '10px';
+        row.append(btn('Stimmen ansehen', null, () => votesFlow(x.username, x.id, x.name)));
+        row.append(btn('Ist echt', 'primary', async () => {
+          const ok = await confirmAction({ title: 'Teil als echt bestätigen?', intro: 'Das Teil ist wieder normal sichtbar, Anfragen sind möglich, und die Community kann es nicht mehr automatisch einfrieren lassen.', confirmLabel: 'Ist echt' });
+          if (ok && !(await call('admin_legit_clear_item', { p_username: x.username, p_id: x.id }, 'Teil als echt bestätigt.')).failed) { loadLegit(); loadOverview(); }
+        }));
+        row.append(btn('Ist fake …', 'danger', async () => { if (await fakeFlow(x.username, x.id, x.name)) { loadLegit(); loadOverview(); } }));
+        card.append(row); box.append(card);
       }
-    } catch (e) { console.error(e); failed(box, 'Das Protokoll konnte nicht geladen werden. Ist Migration 0019 ausgeführt?', loadLog); }
+    }, loadLegit);
+  }
+
+  /* ---------- Verkäufe und Bestellungen ---------- */
+  async function chatFlow(o) {
+    const list = el('div', 'thread'); list.style.maxHeight = '420px'; list.append(el('p', 'muted', 'Lade …'));
+    openModal('Chat: ' + o.buyer + ' und ' + o.seller, [list, el('p', 'muted small', 'Das Lesen steht im Protokoll.')], [btn('Schließen', null, () => closeModal())]);
+    const { data, error } = await sb.rpc('admin_order_chat', { p_offer: o.id });
+    list.replaceChildren();
+    if (error) { list.append(el('p', 'err', 'Der Chat konnte nicht geladen werden.')); return; }
+    if (!data.length) { list.append(el('p', 'muted', 'Keine Nachrichten.')); return; }
+    for (const m of data) {
+      const b = el('div', 'msg' + (m.sender === o.seller ? ' me' : ''), m.photo && !m.body ? '(Foto)' : m.body);
+      b.append(el('small', null, (m.system ? 'JAWNZ Bot' : (m.sender || '?')) + ' · ' + fmt(m.at)));
+      list.append(b);
+    }
+  }
+  function orderCard(o, refresh) {
+    const card = el('div', 'card');
+    const h = el('div', 'rep-head');
+    h.append(el('span', 'who', o.items), el('span', 'muted small', money(o.amount)));
+    h.append(el('span', 'tag', o.offer_status === 'open' ? 'Angebot offen' : (o.listing_status === 'sold' ? (o.confirmed_at ? 'abgeschlossen' : 'verkauft, Erhalt offen') : 'angenommen')));
+    if (o.stuck_days != null && o.stuck_days >= 7) h.append(el('span', 'tag warn', 'seit ' + o.stuck_days + ' Tagen offen'));
+    card.append(h);
+    const facts = el('div', 'facts');
+    facts.append(fact('Käufer', o.buyer), fact('Verkäufer', o.seller), fact('Angebot vom', day(o.created_at)),
+      fact('Angenommen', o.decided_at && o.offer_status === 'accepted' ? day(o.decided_at) : '–'), fact('Erhalt bestätigt', o.confirmed_at ? day(o.confirmed_at) : '–'),
+      fact('Bewertungen', String(o.reviews)), fact('Übergabe', o.transfer === 'pending' ? 'offen' : o.transfer === 'done' ? 'erledigt' : '–'));
+    card.append(facts);
+    const row = el('div', 'row'); row.style.marginTop = '10px';
+    row.append(btn('Chat ansehen', null, () => chatFlow(o)));
+    const open = o.offer_status === 'accepted' && o.listing_status === 'sold' && !o.confirmed_at;
+    if (open) {
+      row.append(btn('Erhalt erzwingen …', 'primary', async () => {
+        const r = await confirmAction({ title: 'Erhalt für ' + o.buyer + ' bestätigen?', intro: 'Das Team bestätigt an Stelle des Käufers:', bullets: ['Das Teil verschwindet bei ' + o.seller + ' und kommt in den Kleiderschrank von ' + o.buyer + '.', 'Beide können sich danach bewerten.', 'Das lässt sich nicht zurücknehmen.'], reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Erhalt bestätigen' });
+        if (r && !(await call('admin_force_receipt', { p_offer: o.id, p_reason: r.reason }, 'Erhalt bestätigt.')).failed) refresh();
+      }));
+      row.append(btn('Verkauf rückgängig …', 'danger', async () => {
+        const r = await confirmAction({ title: 'Verkauf rückgängig machen?', intro: 'Das Angebot wird zurückgezogen und das Teil von ' + o.seller + ' ist wieder im Verkauf. Es wurde noch nichts übergeben. Im Chat steht ein Hinweis.', reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Verkauf rückgängig machen', danger: true });
+        if (r && !(await call('admin_undo_sale', { p_offer: o.id, p_reason: r.reason }, 'Verkauf rückgängig gemacht.')).failed) refresh();
+      }));
+    }
+    card.append(row);
+    return card;
+  }
+  let listingFilter = '';
+  async function loadSales() {
+    const box = $('sales');
+    loading(box);
+    try {
+      const [orders, transfers, listings] = await Promise.all([sb.rpc('admin_orders'), sb.rpc('admin_open_transfers'), sb.rpc('admin_listings', { p_status: listingFilter || null })]);
+      for (const r of [orders, transfers, listings]) if (r.error) throw r.error;
+      box.replaceChildren();
+      const refresh = () => { loadSales(); loadOverview(); };
+      const stuck = orders.data.filter((o) => o.stuck_days != null && o.stuck_days >= 7);
+      const s1 = section('Hängende Bestellungen', 'Verkauft, aber der Käufer hat den Erhalt seit mindestens 7 Tagen nicht bestätigt.');
+      if (!stuck.length) s1.append(el('p', 'muted', 'Keine.')); else for (const o of stuck) s1.append(orderCard(o, refresh));
+      const s2 = section('Offene Übergaben', 'Teile, die auf die Abholung in den Kleiderschrank des Käufers warten (passiert beim nächsten Abgleich der App).');
+      if (!transfers.data.length) s2.append(el('p', 'muted', 'Keine.'));
+      for (const t of transfers.data) { const c = el('div', 'card'); c.append(el('b', null, t.name + ' · ' + t.from + ' an ' + t.to), el('div', 'muted small', 'wartet seit ' + day(t.created_at) + ' (' + t.days + ' Tagen)')); s2.append(c); }
+      const s3 = section('Alle Angebote und Bestellungen', 'Offene und angenommene Angebote, neueste zuerst.');
+      const rest = orders.data.filter((o) => !stuck.includes(o));
+      if (!rest.length) s3.append(el('p', 'muted', 'Keine.')); else for (const o of rest) s3.append(orderCard(o, refresh));
+      const s4 = section('Anzeigen');
+      const sel = el('select'); for (const [v, l] of [['', 'Alle'], ['active', 'Aktiv'], ['reserved', 'Reserviert'], ['sold', 'Verkauft']]) { const op = el('option', null, l); op.value = v; sel.append(op); }
+      sel.value = listingFilter; sel.onchange = () => { listingFilter = sel.value; loadSales(); };
+      s4.append(sel);
+      if (!listings.data.length) s4.append(el('p', 'muted', 'Keine Anzeigen.'));
+      for (const l of listings.data) {
+        const c = el('div', 'card'); const h = el('div', 'rep-head');
+        h.append(el('span', 'who', l.name), el('span', 'muted small', money(l.price) + ' · von ' + l.seller), el('span', 'tag' + (l.status === 'sold' ? '' : ' warn'), { active: 'aktiv', reserved: 'reserviert', sold: 'verkauft' }[l.status] || l.status));
+        if (l.frozen) h.append(el('span', 'tag ban', 'eingefroren'));
+        c.append(h, el('div', 'muted small', 'Eingestellt ' + day(l.since) + ' · zuletzt geändert ' + fmt(l.updated)));
+        s4.append(c);
+      }
+      box.append(s1, s2, s3, s4);
+    } catch (e) { console.error(e); failed(box, 'Die Verkäufe konnten nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', loadSales); }
+  }
+
+  /* ---------- Bewertungen ---------- */
+  async function loadReviews() {
+    await simpleLoad('reviews', 'admin_reviews', {}, (box, data) => {
+      const s1 = section('Durchschnitt pro Mitglied', 'Die 50 Mitglieder mit den meisten Bewertungen.');
+      if (!data.stats.length) s1.append(el('p', 'muted', 'Noch keine Bewertungen.'));
+      for (const s of data.stats) { const d = el('div', 'content-row'); d.append(el('span', null, s.username + ' · ' + String(s.avg).replace('.', ',') + ' von 5 Sternen · ' + s.n + (s.n === 1 ? ' Bewertung' : ' Bewertungen'))); s1.append(d); }
+      const s2 = section('Letzte Bewertungen', 'Missbräuchliche lassen sich löschen. Der Autor kann danach den Kauf erneut bewerten.');
+      for (const r of data.reviews) {
+        const c = el('div', 'card'); const h = el('div', 'rep-head');
+        h.append(el('span', 'who', '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)), el('span', 'muted small', r.reviewer + ' bewertet ' + r.reviewee + ' · ' + fmt(r.at)));
+        c.append(h, r.comment ? el('div', 'note', r.comment) : el('div', 'muted small', 'Ohne Text.'));
+        c.append(btn('Löschen …', 'danger', async () => {
+          const a = await confirmAction({ title: 'Bewertung löschen?', intro: 'Die Bewertung von ' + r.reviewer + ' für ' + r.reviewee + ' wird endgültig gelöscht und fließt nicht mehr in den Durchschnitt ein.', reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Bewertung löschen', danger: true });
+          if (a && !(await call('admin_review_delete', { p_id: r.id, p_reason: a.reason }, 'Bewertung gelöscht.')).failed) loadReviews();
+        }));
+        s2.append(c);
+      }
+      box.append(s1, s2);
+    }, loadReviews);
+  }
+
+  /* ---------- Moderation: versteckte Inhalte, gesperrte Konten ---------- */
+  async function loadModeration() {
+    const box = $('moderation');
+    loading(box);
+    try {
+      const [hidden, banned] = await Promise.all([sb.rpc('admin_hidden_list'), sb.rpc('admin_banned_list')]);
+      for (const r of [hidden, banned]) if (r.error) throw r.error;
+      box.replaceChildren();
+      const s1 = section('Gesperrte Konten');
+      if (!banned.data.length) s1.append(el('p', 'muted', 'Keine gesperrten Konten.'));
+      for (const b of banned.data) {
+        const c = el('div', 'card'); const h = el('div', 'rep-head');
+        h.append(el('span', 'who', b.username), el('span', 'tag ban', 'gesperrt'), el('span', 'muted small sumline', b.email));
+        c.append(h, el('div', 'note', 'Gesperrt am ' + fmt(b.banned_at) + (b.reason ? ' · Grund: ' + b.reason : '')));
+        const row = el('div', 'row'); row.style.marginTop = '10px';
+        row.append(btn('Konto entsperren', 'primary', async () => { if (await banFlow(b.username, true)) loadModeration(); }), btn('Nachricht schreiben', null, () => messageFlow(b.username)));
+        c.append(row); s1.append(c);
+      }
+      const s2 = section('Vom Team versteckte Inhalte', 'Teile und Outfits, die im Feed, in der Suche und im Profil nicht erscheinen. Bei gesperrten Konten ist alles versteckt und hier nicht aufgeführt.');
+      if (!hidden.data.length) s2.append(el('p', 'muted', 'Keine.'));
+      for (const x of hidden.data) {
+        const d = el('div', 'content-row');
+        d.append(el('span', null, (x.kind === 'items' ? 'Teil' : 'Outfit') + ': ' + x.name + ' · von ' + x.username));
+        d.append(btn('Freigeben …', null, async () => {
+          const a = await confirmAction({ title: '„' + x.name + '“ freigeben?', intro: 'Der Inhalt von ' + x.username + ' ist wieder sichtbar.', reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Freigeben' });
+          if (a && !(await call('admin_set_hidden', { p_username: x.username, p_kind: x.kind, p_id: x.id, p_hidden: false, p_reason: a.reason }, 'Freigegeben.')).failed) loadModeration();
+        }));
+        s2.append(d);
+      }
+      box.append(s1, s2);
+    } catch (e) { console.error(e); failed(box, 'Das konnte nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', loadModeration); }
+  }
+
+  /* ---------- Flex of the Week ---------- */
+  async function loadFlex() {
+    await simpleLoad('flex', 'admin_flex_list', {}, (box, data) => {
+      const s1 = section('Diese Woche (ab ' + day(data.week_start) + ')', 'Steht oben im Feed. Nur öffentliche Teile und Outfits lassen sich eintragen.');
+      if (!data.entries.length) s1.append(el('p', 'muted', 'Diese Woche ist noch niemand eingetragen.'));
+      for (const e of data.entries) {
+        const d = el('div', 'content-row');
+        d.append(el('span', null, (e.kind === 'item' ? 'Teil' : 'Outfit') + ': ' + (e.name || '?') + ' · von ' + e.username + (e.note ? ' · „' + e.note + '“' : '')));
+        d.append(btn('Entfernen …', 'danger', async () => {
+          const a = await confirmAction({ title: 'Aus dem Flex der Woche nehmen?', intro: '„' + (e.name || '?') + '“ von ' + e.username + ' verschwindet aus dem Flex. Das Teil selbst bleibt unverändert.', confirmLabel: 'Entfernen', danger: true });
+          if (a && !(await call('admin_remove_flex', { p_entry: e.id }, 'Entfernt.')).failed) loadFlex();
+        }));
+        s1.append(d);
+      }
+      const s2 = section('Jemanden eintragen');
+      const form = el('form', 'search'); const input = el('input'); input.placeholder = 'Benutzername'; input.maxLength = 20; input.autocapitalize = 'none';
+      const go = el('button', 'primary', 'Öffentliche Inhalte zeigen'); go.type = 'submit'; form.append(input, go);
+      const list = el('div'); s2.append(form, list);
+      form.onsubmit = async (ev) => {
+        ev.preventDefault(); const name = input.value.trim().toLowerCase(); if (!name) return;
+        loading(list);
+        const { data: c, error } = await sb.rpc('admin_member_content', { p_username: name });
+        list.replaceChildren();
+        if (error) return list.append(el('p', 'err', 'Das Profil wurde nicht gefunden.'));
+        const pub = c.filter((x) => x.vis === 'public' || x.vis === 'sale');
+        if (!pub.length) return list.append(el('p', 'muted', name + ' hat keine öffentlichen Inhalte.'));
+        for (const x of pub) {
+          const d = el('div', 'content-row'); d.append(el('span', null, (x.kind === 'items' ? 'Teil' : 'Outfit') + ': ' + (x.name || '(ohne Name)')));
+          d.append(btn('Eintragen …', 'primary', async () => {
+            const a = await confirmAction({ title: '„' + (x.name || 'Inhalt') + '“ zum Flex der Woche machen?', intro: 'Der Inhalt von ' + name + ' steht diese Woche oben im Feed.', reasonLabel: 'Kurzer Text dazu (optional, bis 140 Zeichen)', confirmLabel: 'Eintragen' });
+            if (a && !(await call('admin_set_flex', { p_username: name, p_kind: x.kind === 'items' ? 'item' : 'outfit', p_id: x.id, p_note: a.reason || null }, 'Eingetragen.')).failed) loadFlex();
+          }));
+          list.append(d);
+        }
+      };
+      box.append(s1, s2);
+    }, loadFlex);
+  }
+
+  /* ---------- Rollen ---------- */
+  const ROLE_NAMES = { admin: 'Admin', moderator: 'Helfer' };
+  async function loadRoles() {
+    await simpleLoad('roles', 'admin_roles_list', {}, (box, data) => {
+      const s1 = section('Aktuelle Rollen', 'Admins dürfen alles in dieser Verwaltung. Die Verwaltungsseite selbst ist nur für Admins offen.');
+      for (const r of data) {
+        const d = el('div', 'content-row');
+        d.append(el('span', null, r.username + ' · ' + (ROLE_NAMES[r.role] || r.role) + ' · seit ' + day(r.granted_at) + ' · ' + r.email));
+        if (!(r.role === 'admin' && r.me)) d.append(btn('Entziehen …', 'danger', async () => {
+          const a = await confirmAction({ title: (ROLE_NAMES[r.role] || r.role) + '-Rolle von ' + r.username + ' entziehen?', intro: r.role === 'admin' ? r.username + ' kommt danach nicht mehr in die Verwaltung.' : r.username + ' verliert die Helfer-Rolle.', reasonLabel: 'Grund (im Protokoll, optional)', confirmLabel: 'Rolle entziehen', danger: true });
+          if (a && !(await call('admin_set_role', { p_username: r.username, p_role: r.role, p_grant: false, p_reason: a.reason }, 'Rolle entzogen.')).failed) loadRoles();
+        }));
+        s1.append(d);
+      }
+      const s2 = section('Rolle vergeben');
+      const form = el('form', 'search'); const input = el('input'); input.placeholder = 'Benutzername'; input.maxLength = 20; input.autocapitalize = 'none';
+      const sel = el('select'); for (const [v, l] of [['moderator', 'Helfer'], ['admin', 'Admin']]) { const op = el('option', null, l); op.value = v; sel.append(op); }
+      const go = el('button', 'primary', 'Vergeben …'); go.type = 'submit'; form.append(input, sel, go); s2.append(form);
+      form.onsubmit = async (ev) => {
+        ev.preventDefault(); const name = input.value.trim().toLowerCase(); if (!name) return;
+        const adm = sel.value === 'admin';
+        const a = await confirmAction({
+          title: name + ' zum ' + (adm ? 'Admin' : 'Helfer') + ' machen?',
+          intro: adm ? 'Ein Admin sieht alle Mitglieder samt E-Mail, kann Konten sperren und löschen und Rollen vergeben.' : 'Die Helfer-Rolle wird vergeben.',
+          reasonLabel: 'Grund (im Protokoll, optional)', typeName: adm ? name : undefined, confirmLabel: 'Rolle vergeben', danger: adm,
+        });
+        if (a && !(await call('admin_set_role', { p_username: name, p_role: sel.value, p_grant: true, p_reason: a.reason }, 'Rolle vergeben.')).failed) { input.value = ''; loadRoles(); }
+      };
+      box.append(s1, s2);
+    }, loadRoles);
   }
 
   /* ---------- Anmeldung ---------- */
