@@ -10,17 +10,18 @@ const Cloud = (() => {
   const KINDS = ['items', 'outfits'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
   const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp', '_tfp'];
-  // Kleine Vorschau (480 px) für Raster und Feed, damit nicht jedes Mal das große Bild geladen wird
+  // Kleine Vorschau (max. 500 px, WebP 0,78, Seitenverhältnis bleibt, nie hochskaliert; WebP behält die Transparenz der Freisteller) für Raster, Feed und Suche,
+  // damit nicht jedes Mal das große Bild geladen wird. Liegt als „…-t“ neben dem Vollbild; fehlt sie (alte Teile), zeigt die App das Vollbild.
   const thumbPath = (kind, id) => `${user.id}/${kind}-${id}-t`;
   async function makeThumb(blob) {
     const url = URL.createObjectURL(blob);
     try {
       const img = await loadImage(url);
-      const k = Math.min(1, 480 / Math.max(img.naturalWidth, img.naturalHeight));
+      const k = Math.min(1, 500 / Math.max(img.naturalWidth, img.naturalHeight));
       const c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      return await canvasBlob(c, 'image/webp', 0.8);
+      return await canvasBlob(c, 'image/webp', 0.78);
     } finally { URL.revokeObjectURL(url); }
   }
   async function pushThumb(kind, id, blob) {

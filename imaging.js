@@ -311,18 +311,18 @@ function cutOut(canvas, tol = 30) {
   return out;
 }
 
-// Verkleinert Uploads auf max. 1400px, damit der Browser-Speicher nicht vollläuft
+// Verkleinert Uploads auf max. 1200px (Vollbild, WebP 0,80 mit Transparenz; nie hochskaliert), damit Speicher und Datenabruf klein bleiben
 async function shrink(file, removeBg) {
   const src = URL.createObjectURL(file);
   try {
     const img = await loadImage(src);
-    const scale = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+    const scale = Math.min(1, 1200 / Math.max(img.naturalWidth, img.naturalHeight));
     let c = document.createElement('canvas');
     c.width = Math.round(img.naturalWidth * scale);
     c.height = Math.round(img.naturalHeight * scale);
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
     if (removeBg) c = cutOut(c);
-    return (await canvasBlob(c, 'image/webp', 0.92)) || (await canvasBlob(c, 'image/png'));
+    return (await canvasBlob(c, 'image/webp', 0.8)) || (await canvasBlob(c, 'image/png'));
   } finally {
     URL.revokeObjectURL(src);
   }

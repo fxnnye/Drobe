@@ -952,7 +952,7 @@ const Profile = (() => {
       box.append(row);
     }
     if (rows.length && sb) { // Fotos der Teile nachladen (nur öffentliche sind abrufbar)
-      const urls = await signedUrls(sb, [...new Set(rows.map((r) => r.m.record_path))]);
+      const urls = await thumbUrls(sb, [...new Set(rows.map((r) => r.m.record_path))]);
       for (const { m, thumb } of rows) if (urls[m.record_path]) { const i = el('img'); i.alt = ''; i.src = urls[m.record_path]; thumb.append(i); }
     }
   }
@@ -1112,7 +1112,7 @@ const Profile = (() => {
     th.replaceChildren();
     const ownIt = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null;
     if (ownIt && ownIt.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(ownIt); th.append(i); }
-    else if (m.record_path && m.kind !== 'team' && Cloud.client()) signedUrls(Cloud.client(), [m.record_path]).then((u) => { if (u[m.record_path] && thread && thread.id === m.id) { const i = el('img'); i.alt = ''; i.src = u[m.record_path]; th.replaceChildren(i); } });
+    else if (m.record_path && m.kind !== 'team' && Cloud.client()) thumbUrls(Cloud.client(), [m.record_path]).then((u) => { if (u[m.record_path] && thread && thread.id === m.id) { const i = el('img'); i.alt = ''; i.src = u[m.record_path]; th.replaceChildren(i); } });
     const owner = m.mine ? m.other : (Cloud.user() && Cloud.user().name);
     const box = $('threadItemBox');
     box.disabled = !(m.kind === 'interest' && m.record_id && owner);
