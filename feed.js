@@ -11,6 +11,17 @@ async function loginGate(what) {
   if (await askConfirm('Um ' + what + ' zu nutzen, musst du dich anmelden.', 'Anmelden')) $('guestLogin').click();
 }
 const GATE_TEXT = { messages: 'Nachrichten', me: 'dein Profil', add: 'das Hinzufügen' };
+// Schwarzer Strich unter „Schrank / Outfits / Gemerkt“ (Handy): gleitet zum aktiven Reiter, statt zu springen
+function placeSubInd() {
+  const bar = document.querySelector('#meBar .subtabs'), a = bar && bar.querySelector('.subtab.active');
+  if (!a || !bar.offsetWidth) return;
+  const first = !bar.dataset.placed;
+  if (first) bar.classList.add('no-anim');
+  bar.style.setProperty('--ind-x', a.offsetLeft + 'px');
+  bar.style.setProperty('--ind-w', a.offsetWidth + 'px');
+  if (first) { bar.dataset.placed = '1'; void bar.offsetWidth; bar.classList.remove('no-anim'); }
+}
+window.addEventListener('resize', placeSubInd);
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';
@@ -21,6 +32,7 @@ function showView(name) {
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === topTab(name)));
   document.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('active', t.dataset.sub === (name === 'builder' ? 'outfits' : name)));
   $('meBar').hidden = !ME_VIEWS.includes(name);
+  placeSubInd();
   document.body.classList.toggle('not-feed', name !== 'feed'); // Logo nur im Feed
   if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
