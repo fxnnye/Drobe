@@ -141,20 +141,32 @@ async function startApp(userId) {
   backfillTrim();
 }
 
-// Startbildschirm ausblenden: erst wenn die App bereit ist, aber mindestens 1,5 Sekunden nach dem Start (Schriften, Bilder und Daten brauchen die Zeit), spätestens nach 12 Sekunden
-const SPLASH_MIN_MS = 2500;
+// Startbildschirm ausblenden: erst wenn die App bereit ist, mindestens 3 Sekunden nach dem Start. Danach wartet er noch, bis der Feed geladen ist
+// und die ersten Fotos in Feed und Kleiderschrank da sind (höchstens bis 8 Sekunden), spätestens nach 12 Sekunden geht er auf jeden Fall weg.
+const SPLASH_MIN_MS = 3000, SPLASH_PRELOAD_MAX_MS = 8000;
 let splashHiding = false;
+function contentReady() {
+  if (!Cloud.user()) return true; // abgemeldet gibt es nichts vorzuladen
+  const feedGrid = $('feedGrid'), closetGrid = $('closetGrid');
+  if (!feed.stageChecked || feed.loading || feedGrid.querySelector('.skeleton-card')) return false;
+  const imgs = [...feedGrid.querySelectorAll('img')].slice(0, 12).concat([...closetGrid.querySelectorAll('img')].slice(0, 12));
+  return imgs.every((i) => i.complete);
+}
 function hideSplash(force) {
   if (splashHiding) return;
   const wait = force === true ? 0 : Math.max(0, SPLASH_MIN_MS - performance.now());
   splashHiding = true;
-  Promise.race([document.fonts ? document.fonts.ready : null, new Promise((r) => setTimeout(r, 3000))]).catch(() => {}).then(() => setTimeout(() => {
+  const preload = async () => {
+    if (force === true) return;
+    while (performance.now() < SPLASH_PRELOAD_MAX_MS && !contentReady()) await new Promise((r) => setTimeout(r, 150));
+  };
+  Promise.race([document.fonts ? document.fonts.ready : null, new Promise((r) => setTimeout(r, 3000))]).catch(() => {}).then(() => setTimeout(() => preload().then(() => {
     try { window.Capacitor?.Plugins?.SplashScreen?.hide(); } catch (e) { /* kein iOS-App-Rahmen */ }
     const sp = document.getElementById('splash');
     if (!sp || sp.classList.contains('gone')) return;
     sp.classList.add('gone');
     setTimeout(() => sp.remove(), 400);
-  }, wait));
+  }), wait));
 }
 setTimeout(() => hideSplash(true), 12000);
 Cloud.boot().then(() => hideSplash(), () => hideSplash());
