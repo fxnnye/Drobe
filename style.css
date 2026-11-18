@@ -1334,8 +1334,8 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 
 /* Handy: der Strich unter den Profil-Reitern gleitet zum aktiven Reiter */
 @media (max-width: 700px) {
-  #meBar .subtabs { position: relative; }
-  #meBar .subtab.active { border-bottom-color: transparent; }
-  #meBar .subtabs::after { content: ''; position: absolute; left: 0; bottom: -1px; height: 2px; width: var(--ind-w, 0); transform: translateX(var(--ind-x, 0)); background: var(--text); transition: transform .3s cubic-bezier(.2, .8, .2, 1), width .3s cubic-bezier(.2, .8, .2, 1); }
-  #meBar .subtabs.no-anim::after { transition: none; }
+  #meBar .subtabs, #publicView .subtabs { position: relative; }
+  #meBar .subtab.active, #publicView .subtab.active { border-bottom-color: transparent; }
+  #meBar .subtabs::after, #publicView .subtabs::after { content: ''; position: absolute; left: 0; bottom: -1px; height: 2px; width: var(--ind-w, 0); transform: translateX(var(--ind-x, 0)); background: var(--text); transition: transform .3s cubic-bezier(.2, .8, .2, 1), width .3s cubic-bezier(.2, .8, .2, 1); }
+  #meBar .subtabs.no-anim::after, #publicView .subtabs.no-anim::after { transition: none; }
 }

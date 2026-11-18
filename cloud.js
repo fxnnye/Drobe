@@ -9,7 +9,7 @@ const Cloud = (() => {
   const isPseudo = (m) => String(m || '').toLowerCase().endsWith('@' + MAIL_DOMAIN);
   const KINDS = ['items', 'outfits'];
   const imgKey = (kind) => (kind === 'outfits' ? 'thumb' : 'blob');
-  const LOCAL_ONLY = ['blob', 'thumb', 'source', '_fp', '_sfp', '_tfp'];
+  const LOCAL_ONLY = ['blob', 'thumb', 'source', 'tb', '_fp', '_sfp', '_tfp', '_tbfp'];
   // Kleine Vorschau (max. 500 px, WebP 0,78, Seitenverhältnis bleibt, nie hochskaliert; WebP behält die Transparenz der Freisteller) für Raster, Feed und Suche,
   // damit nicht jedes Mal das große Bild geladen wird. Liegt als „…-t“ neben dem Vollbild; fehlt sie (alte Teile), zeigt die App das Vollbild.
   const thumbPath = (kind, id) => `${user.id}/${kind}-${id}-t`;

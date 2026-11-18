@@ -2,6 +2,56 @@
 /* ---------- Schrank ---------- */
 // Auswahlmodus: `closetSel` ist null (aus) oder die Menge der ausgewählten Teile; es zählen nur Teile, die gerade sichtbar sind
 let closetSel = null, closetShown = [], closetLpAt = 0;
+/* ---------- Kleine Vorschau fürs Raster (nur lokal, wird nicht hochgeladen) ---------- */
+// Das Raster zeigt statt des großen Fotos eine Vorschau (max. 500 px, WebP, Transparenz bleibt). Das spart Arbeitsspeicher am Handy.
+// Sie wird einmal im Hintergrund erzeugt und im Teil gespeichert (tb); ändert sich das Foto, passt _tbfp nicht mehr und sie wird neu gemacht.
+const tbUrls = new Map(); // id -> { fp, url }
+const tbQueue = []; let tbBusy = false;
+const tbFp = (it) => String(it.blob.size);
+function gridUrl(it) {
+  if (it.tb && it._tbfp === tbFp(it)) {
+    const c = tbUrls.get(it.id);
+    if (c && c.fp === it._tbfp) return c.url;
+    if (c) URL.revokeObjectURL(c.url);
+    const url = URL.createObjectURL(it.tb);
+    tbUrls.set(it.id, { fp: it._tbfp, url });
+    return url;
+  }
+  if (!tbQueue.includes(it.id)) tbQueue.push(it.id);
+  if (!tbBusy) { tbBusy = true; setTimeout(tbWork, 300); }
+  return urlFor(it); // bis die Vorschau fertig ist: das große Foto
+}
+async function tbWork() {
+  while (tbQueue.length) {
+    const it = items.find((x) => x.id === tbQueue.shift());
+    if (!it || !it.blob || (it.tb && it._tbfp === tbFp(it))) continue;
+    const fp = tbFp(it);
+    try {
+      const src = URL.createObjectURL(it.blob);
+      let small;
+      try {
+        const img = await loadImage(src);
+        const k = Math.min(1, 500 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        small = await canvasBlob(c, 'image/webp', 0.78);
+        c.width = c.height = 0;
+      } finally { URL.revokeObjectURL(src); }
+      if (!small || fp !== tbFp(it)) continue;
+      it.tb = small; it._tbfp = fp;
+      // direkt in der Datenbank ablegen, ohne die Bearbeitungszeit zu ändern und ohne Abgleich auszulösen
+      await tx('items', 'readwrite', (o) => {
+        const r = o.get(it.id);
+        r.onsuccess = () => { const cur = r.result; if (cur && cur.blob && tbFp(cur) === fp) { cur.tb = small; cur._tbfp = fp; o.put(cur); } };
+      });
+      const im = document.querySelector(`#closetGrid img[data-id="${it.id}"]`);
+      if (im) im.src = gridUrl(it);
+    } catch (e) { /* bleibt beim großen Foto */ }
+    await new Promise((r) => setTimeout(r, 30)); // zwischendurch durchatmen, damit nichts ruckelt
+  }
+  tbBusy = false;
+}
 function renderCloset() {
   renderChips($('closetFilter'), 'closetFilter', renderCloset);
   // Beim Hochladen gleich die Kategorie vorauswählen, die gerade angezeigt wird
@@ -22,7 +72,7 @@ function renderCloset() {
     card.className = 'card' + (closetSel && closetSel.has(it.id) ? ' selected' : '');
     if (closetSel) card.setAttribute('aria-pressed', closetSel.has(it.id));
     card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>`;
-    const im = card.querySelector('img'); im.loading = 'lazy'; im.decoding = 'async'; im.src = urlFor(it);
+    const im = card.querySelector('img'); im.loading = 'lazy'; im.decoding = 'async'; im.src = gridUrl(it); im.dataset.id = it.id;
     card.querySelector('b').textContent = it.name;
     card.querySelector('span').textContent = [it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');
     // Lange drücken wählt das Teil aus und startet die Auswahl

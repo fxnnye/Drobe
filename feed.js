@@ -12,8 +12,8 @@ async function loginGate(what) {
 }
 const GATE_TEXT = { messages: 'Nachrichten', me: 'dein Profil', add: 'das Hinzufügen' };
 // Schwarzer Strich unter „Schrank / Outfits / Gemerkt“ (Handy): gleitet zum aktiven Reiter, statt zu springen
-function placeSubInd() {
-  const bar = document.querySelector('#meBar .subtabs'), a = bar && bar.querySelector('.subtab.active');
+function placeIndicator(bar) {
+  const a = bar && bar.querySelector('.subtab.active');
   if (!a || !bar.offsetWidth) return;
   const first = !bar.dataset.placed;
   if (first) bar.classList.add('no-anim');
@@ -21,6 +21,7 @@ function placeSubInd() {
   bar.style.setProperty('--ind-w', a.offsetWidth + 'px');
   if (first) { bar.dataset.placed = '1'; void bar.offsetWidth; bar.classList.remove('no-anim'); }
 }
+const placeSubInd = () => placeIndicator(document.querySelector('#meBar .subtabs'));
 window.addEventListener('resize', placeSubInd);
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }

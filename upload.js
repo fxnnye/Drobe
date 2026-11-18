@@ -34,36 +34,52 @@ function trimAlphaBox(canvas) {
   return { canvas: out, x: minX, y: minY };
 }
 // KI-Freistellen im Browser (lädt beim ersten Mal das Modell, danach schnell). Ohne Netz: einfache Methode.
+// Am Handy (PWA/WebView) beendet der Browser die Seite, sobald der Arbeitsspeicher knapp wird. Darum dort:
+// 1. die Bildmodelle für Kategorie, Marke und „Ähnliche Teile“ (CLIP) vorher aus dem Speicher nehmen und währenddessen nicht laden,
+// 2. das kleine Freistell-Modell und ein auf 768 px verkleinertes Foto nehmen,
+// 3. nur die Maske (Durchsichtigkeit) aus dem kleinen Ergebnis nehmen und auf das volle Originalfoto legen: bleibt scharf.
 async function removeBackground(blob, onProgress = () => {}, trim = true) {
   const src = URL.createObjectURL(blob);
+  const phone = matchMedia('(pointer: coarse)').matches;
   try {
     const img = await loadImage(src);
-    const c = document.createElement('canvas');
-    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const c = document.createElement('canvas'); // bekommt seine Größe erst, wenn die KI fertig ist (spart Speicher währenddessen)
     try {
-      const lib = await import(BG_LIB);
-      // Am Handy (PWA/WebView) braucht die KI viel Arbeitsspeicher und der Browser beendet die Seite, wenn es zu viel wird:
-      // dort das kleine Modell (halb so groß) und ein auf 1024 px verkleinertes Foto nehmen. Das Ergebnis wird unten wieder auf die Originalgröße gezogen.
-      const phone = matchMedia('(pointer: coarse)').matches;
-      let input = blob;
-      if (phone && Math.max(img.naturalWidth, img.naturalHeight) > 1024) {
-        const k = 1024 / Math.max(img.naturalWidth, img.naturalHeight);
-        const sc = document.createElement('canvas');
-        sc.width = Math.round(img.naturalWidth * k); sc.height = Math.round(img.naturalHeight * k);
-        sc.getContext('2d').drawImage(img, 0, 0, sc.width, sc.height);
-        input = (await canvasBlob(sc, 'image/png')) || blob;
-        sc.width = sc.height = 0; // Speicher sofort freigeben
-      }
-      const out = await lib.removeBackground(input, {
-        ...(phone ? { model: 'isnet_quint8' } : {}),
-        output: { format: 'image/png' },
-        progress: (key, cur, total) => onProgress(key.startsWith('fetch') ? 'download' : 'compute', total ? cur / total : 0),
-      });
-      const oi = await loadImage(URL.createObjectURL(out));
-      c.getContext('2d').drawImage(oi, 0, 0, c.width, c.height);
+      if (phone) await releaseEmbedder();
+      heavyBusy++;
+      let out;
+      try {
+        const lib = await import(BG_LIB);
+        let input = blob;
+        if (phone && Math.max(W, H) > 768) {
+          const k = 768 / Math.max(W, H);
+          const sc = document.createElement('canvas');
+          sc.width = Math.round(W * k); sc.height = Math.round(H * k);
+          sc.getContext('2d').drawImage(img, 0, 0, sc.width, sc.height);
+          input = (await canvasBlob(sc, 'image/png')) || blob;
+          sc.width = sc.height = 0; // Speicher sofort freigeben
+        }
+        out = await lib.removeBackground(input, {
+          ...(phone ? { model: 'isnet_quint8' } : {}),
+          output: { format: 'image/png' },
+          progress: (key, cur, total) => onProgress(key.startsWith('fetch') ? 'download' : 'compute', total ? cur / total : 0),
+        });
+      } finally { heavyBusy--; }
+      const maskUrl = URL.createObjectURL(out);
+      let mask;
+      try { mask = await loadImage(maskUrl); } finally { URL.revokeObjectURL(maskUrl); }
+      c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      ctx.globalCompositeOperation = 'destination-in'; // behält vom Original nur, was die Maske sichtbar lässt
+      ctx.drawImage(mask, 0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+      mask.src = '';
       return canvasBlob(trim ? trimAlpha(c) : c, 'image/webp', 0.8);
     } catch (e) {
       console.warn('KI-Freistellen nicht verfügbar, nutze einfache Methode', e);
+      c.width = W; c.height = H;
       c.getContext('2d').drawImage(img, 0, 0);
       const simple = cutOut(c);
       if (simple === c) throw new Error('Hintergrund nicht erkannt');

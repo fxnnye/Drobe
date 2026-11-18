@@ -258,17 +258,21 @@ const Profile = (() => {
       if (!own) withHeart(c, 'item', data.username, it.id);
       return c;
     };
+    // Die Reiter werden nur einmal gebaut, damit der schwarze Strich beim Wechsel gleiten kann (placeIndicator in feed.js)
+    const tabBtns = new Map();
+    for (const [k, label, count] of tabDefs) {
+      const b2 = el('button', 'subtab');
+      b2.type = 'button';
+      b2.setAttribute('role', 'tab');
+      b2.append(label);
+      if (count != null) { b2.append(' '); b2.append(el('span', 'badge', String(count))); }
+      b2.onclick = () => { tab = k; paint(); };
+      tabs.append(b2);
+      tabBtns.set(k, b2);
+    }
     const paint = () => {
-      tabs.replaceChildren();
-      for (const [k, label, count] of tabDefs) {
-        const b2 = el('button', 'subtab' + (k === tab ? ' active' : ''));
-        b2.type = 'button';
-        b2.setAttribute('role', 'tab');
-        b2.append(label);
-        if (count != null) { b2.append(' '); b2.append(el('span', 'badge', String(count))); }
-        b2.onclick = () => { tab = k; paint(); };
-        tabs.append(b2);
-      }
+      tabBtns.forEach((b2, k) => b2.classList.toggle('active', k === tab));
+      placeIndicator(tabs);
       pane.replaceChildren();
       if (tab === 'closet') {
         if (pinned.length) pane.append(section('Showcase', pinned.map(itemTile), 'pub-showcase'));

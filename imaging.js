@@ -17,8 +17,12 @@ function canvasBlob(canvas, type, q) {
 const EMBED_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/+esm';
 const EMBED_MODEL = 'Xenova/clip-vit-base-patch32';
 let embedder = null;
+// Solange das Freistellen läuft (großes KI-Modell), werden die Bildmodelle weder geladen noch benutzt: am Handy würde der Speicher knapp
+let heavyBusy = 0;
+const busyErr = () => new Error('Freistellen läuft, Bildmodell pausiert');
 async function loadEmbedder() {
   if (!embedder) {
+    if (heavyBusy) throw busyErr();
     embedder = (async () => {
       const T = await import(EMBED_LIB);
       const processor = await T.AutoProcessor.from_pretrained(EMBED_MODEL);
@@ -58,6 +62,7 @@ const CLASS_PROMPTS = {
 let textModel = null;
 function loadTextModel() {
   if (!textModel) {
+    if (heavyBusy) return Promise.reject(busyErr());
     textModel = (async () => {
       const { T } = await loadEmbedder();
       const tok = await T.AutoTokenizer.from_pretrained(EMBED_MODEL);
@@ -66,6 +71,14 @@ function loadTextModel() {
     })().catch((e) => { textModel = null; throw e; });
   }
   return textModel;
+}
+// Bildmodelle (Bild und Text) aus dem Speicher nehmen; beim nächsten Gebrauch werden sie neu geladen (aus dem Cache, ohne Download)
+async function releaseEmbedder() {
+  const parts = [embedder, textModel];
+  embedder = null; textModel = null;
+  for (const p of parts) {
+    try { const m = await p; if (m) for (const k of ['model', 'tm']) if (m[k] && m[k].dispose) await m[k].dispose(); } catch (e) { /* war nie geladen */ }
+  }
 }
 const textVec = async (p) => {
   const { tok, tm } = await loadTextModel();
