@@ -1339,3 +1339,10 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   #meBar .subtabs::after, #publicView .subtabs::after { content: ''; position: absolute; left: 0; bottom: -1px; height: 2px; width: var(--ind-w, 0); transform: translateX(var(--ind-x, 0)); background: var(--text); transition: transform .3s cubic-bezier(.2, .8, .2, 1), width .3s cubic-bezier(.2, .8, .2, 1); }
   #meBar .subtabs.no-anim::after, #publicView .subtabs.no-anim::after { transition: none; }
 }
+
+/* Handy: Bild-Zoom (z. B. Outfit antippen) sauber: undurchsichtiger Hintergrund, Bild mit Rand und runden Ecken, Schließen-Knopf immer oben drauf */
+@media (max-width: 700px) {
+  .zoom-view { background: #000; }
+  .zoom-view img { max-width: calc(100% - 24px); max-height: calc(100% - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 64px); border-radius: 16px; margin-top: calc(56px + env(safe-area-inset-top) / 2); }
+  .zoom-close { z-index: 2; top: max(12px, env(safe-area-inset-top)); }
+}
