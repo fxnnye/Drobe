@@ -42,7 +42,20 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
     c.width = img.naturalWidth; c.height = img.naturalHeight;
     try {
       const lib = await import(BG_LIB);
-      const out = await lib.removeBackground(blob, {
+      // Am Handy (PWA/WebView) braucht die KI viel Arbeitsspeicher und der Browser beendet die Seite, wenn es zu viel wird:
+      // dort das kleine Modell (halb so groß) und ein auf 1024 px verkleinertes Foto nehmen. Das Ergebnis wird unten wieder auf die Originalgröße gezogen.
+      const phone = matchMedia('(pointer: coarse)').matches;
+      let input = blob;
+      if (phone && Math.max(img.naturalWidth, img.naturalHeight) > 1024) {
+        const k = 1024 / Math.max(img.naturalWidth, img.naturalHeight);
+        const sc = document.createElement('canvas');
+        sc.width = Math.round(img.naturalWidth * k); sc.height = Math.round(img.naturalHeight * k);
+        sc.getContext('2d').drawImage(img, 0, 0, sc.width, sc.height);
+        input = (await canvasBlob(sc, 'image/png')) || blob;
+        sc.width = sc.height = 0; // Speicher sofort freigeben
+      }
+      const out = await lib.removeBackground(input, {
+        ...(phone ? { model: 'isnet_quint8' } : {}),
         output: { format: 'image/png' },
         progress: (key, cur, total) => onProgress(key.startsWith('fetch') ? 'download' : 'compute', total ? cur / total : 0),
       });
