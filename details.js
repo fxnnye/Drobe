@@ -251,7 +251,7 @@ const SIZE_BY_CATEGORY = {
   Jacken: ['Kleidung'], Pullover: ['Kleidung'], Shirts: ['Kleidung'],
   Hosen: ['Kleidung', 'Hosen'], // Jogger und Shorts gibt es oft in S bis XL
   Schuhe: ['Schuhe'],
-  Caps: ['Kleidung'], Gürtel: ['Kleidung'], Taschen: [], Schmuck: [],
+  Caps: [], Gürtel: [], Taschen: [], Schmuck: [], // nur One Size
 };
 const sizeOrder = (category) => {
   const allowed = SIZE_BY_CATEGORY[category];

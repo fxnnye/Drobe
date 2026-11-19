@@ -32,6 +32,7 @@ test('sizeMatches: ohne Kategorie alle Gruppen in fester Reihenfolge', () => eq(
 test('sizeMatches: Schuhe zeigt nur Schuhgrößen und One Size', () => eq(W('sizeMatches')('', 'Schuhe').map(([g]) => g), ['Schuhe', 'Einheitsgröße']));
 test('sizeMatches: Jacken zeigt nur Kleidergrößen und One Size', () => eq(W('sizeMatches')('', 'Jacken').map(([g]) => g), ['Kleidung', 'Einheitsgröße']));
 test('sizeMatches: Hosen zeigt W-Größen und Kleidergrößen', () => eq(W('sizeMatches')('', 'Hosen').map(([g]) => g), ['Kleidung', 'Hosen', 'Einheitsgröße']));
+test('sizeMatches: Caps, Gürtel, Taschen und Schmuck zeigen nur One Size', () => ['Caps', 'Gürtel', 'Taschen', 'Schmuck'].forEach((c) => eq(W('sizeMatches')('', c), [['Einheitsgröße', ['One Size']]], c)));
 test('sizeMatches: One Size steht ganz unten', () => { const g = W('sizeMatches')('', 'Jacken'); eq(g[g.length - 1][1], ['One Size']); });
 test('sizeMatches: Schuhgrößen 36 bis 48', () => { const s = W('sizeMatches')('', 'Schuhe')[0][1]; eq([s[0], s[s.length - 1], s.length], ['36', '48', 13]); });
 test('sizeMatches: xl findet XL zuerst', () => eq(W('sizeMatches')('xl', 'Jacken')[0][1][0], 'XL'));
