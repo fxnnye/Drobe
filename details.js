@@ -246,7 +246,17 @@ const SIZE_GROUPS = {
   Hosen: Array.from({ length: 15 }, (_, i) => 'W' + (26 + i)),
   Einheitsgröße: ['One Size'],
 };
-const sizeOrder = () => Object.keys(SIZE_GROUPS); // feste Reihenfolge: Kleidung, Schuhe, Hosen, ganz unten One Size
+// Je nach Kategorie nur die passenden Größen; ohne (bekannte) Kategorie die ganze Liste. Reihenfolge fest, One Size ganz unten.
+const SIZE_BY_CATEGORY = {
+  Jacken: ['Kleidung'], Pullover: ['Kleidung'], Shirts: ['Kleidung'],
+  Hosen: ['Kleidung', 'Hosen'], // Jogger und Shorts gibt es oft in S bis XL
+  Schuhe: ['Schuhe'],
+  Caps: ['Kleidung'], Gürtel: ['Kleidung'], Taschen: [], Schmuck: [],
+};
+const sizeOrder = (category) => {
+  const allowed = SIZE_BY_CATEGORY[category];
+  return Object.keys(SIZE_GROUPS).filter((g) => !allowed || g === 'Einheitsgröße' || allowed.includes(g));
+};
 // Passende Größen zu einer Eingabe, gruppiert; ohne Eingabe die ganze Liste
 function sizeMatches(q, category) {
   const nq = brandKey(q);
