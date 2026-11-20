@@ -1346,3 +1346,7 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
   .zoom-view img { max-width: calc(100% - 24px); max-height: calc(100% - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 64px); border-radius: 16px; margin-top: calc(56px + env(safe-area-inset-top) / 2); }
   .zoom-close { z-index: 2; top: max(12px, env(safe-area-inset-top)); }
 }
+
+/* Teilbild: Bild füllt genau den (ggf. in der Höhe begrenzten) Rahmen, nichts wird unten abgeschnitten */
+.item-photo { position: relative; }
+.item-photo img { position: absolute; inset: 0; width: 100%; height: 100%; }

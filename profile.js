@@ -567,15 +567,13 @@ const Profile = (() => {
     if (it.vis !== 'private') info.append(legitBox(data.username, id, own, !!me, askLogin, same, (frozen) => { if (goBtn) goBtn.disabled = frozen; }));
 
     if (!own) {
-      // Erst „Merken“, darunter „Kaufanfrage senden“ (nur bei Teilen zum Verkauf; nur gezeigte Teile lassen sich bloß merken)
+      // Erst „Merken“, darunter „Kaufanfrage senden“ (bei jedem fremden Teil, auch wenn es nur gezeigt und nicht angeboten wird)
       info.append(saveBtn(it, data.username, 'full'));
-      if (it.vis === 'sale') {
-        const go = el('button', 'btn primary full', 'Kaufanfrage senden');
-        go.type = 'button';
-        go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
-        goBtn = go;
-        info.append(go);
-      }
+      const go = el('button', 'btn primary full', 'Kaufanfrage senden');
+      go.type = 'button';
+      go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
+      goBtn = go;
+      info.append(go);
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
       rp.onclick = me ? () => askReport(data.username, it) : askLogin;
