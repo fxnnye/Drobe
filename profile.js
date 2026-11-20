@@ -422,6 +422,36 @@ const Profile = (() => {
     }
     page.append(photo, info);
     box.append(page);
+
+    // Staff Pick: Kennzeichnung für alle; Admins und Moderatoren können das Teil auswählen oder wieder entfernen
+    if (it.vis !== 'private') (async () => {
+      const sb = Cloud.client();
+      if (!sb) return;
+      let st;
+      try { const r = await sb.rpc('staff_pick_state', { p_username: data.username, p_id: id }); if (r.error) return; st = r.data; } catch (e) { return; }
+      if (!st || !same()) return;
+      const pickBox = info.querySelector('.pick-box');
+      const paint = () => {
+        pickBadge.hidden = !st.picked;
+        if (!pickBox || !st.can || own) return;
+        pickBox.hidden = false;
+        pickBox.replaceChildren();
+        const b = el('button', 'btn full', st.picked ? 'Aus Staff Picks entfernen' : 'Zu Staff Picks hinzufügen');
+        b.type = 'button';
+        b.onclick = async () => {
+          b.disabled = true;
+          try {
+            const r = await sb.rpc('staff_pick_set', { p_username: data.username, p_id: id, p_on: !st.picked });
+            if (r.error) throw r.error;
+            st = { ...st, picked: !st.picked };
+            document.dispatchEvent(new Event('picks-changed')); // Feed beim nächsten Mal neu laden
+          } catch (e) { toast(e.message || 'Das hat nicht geklappt.'); }
+          paint();
+        };
+        pickBox.append(b);
+      };
+      paint();
+    })();
   }
 
   // Outfit eines anderen als Vorlage: für jedes Teil das passende aus dem eigenen Schrank (gleiche Kategorie, am liebsten gleiche Marke und gleicher Name)
@@ -535,6 +565,9 @@ const Profile = (() => {
     if (urls[it.path]) { const i = el('img'); i.alt = it.name || ''; i.src = urls[it.path]; photo.append(i); }
     const info = el('div', 'item-info');
     info.append(el('h2', 'item-name', it.name || 'Teil'));
+    const pickBadge = el('span', 'pick-badge', 'Staff Pick');
+    pickBadge.hidden = true;
+    info.append(pickBadge);
     if (it.vis === 'sale' && it.price != null) info.append(el('p', 'item-price', money(it.price)));
 
     const facts = el('dl', 'item-facts');
@@ -574,6 +607,9 @@ const Profile = (() => {
       go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
       goBtn = go;
       info.append(go);
+      const pickBox = el('div', 'pick-box');
+      pickBox.hidden = true;
+      info.append(pickBox);
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
       rp.onclick = me ? () => askReport(data.username, it) : askLogin;
@@ -1456,6 +1492,11 @@ const Profile = (() => {
       const list = Array.isArray(data) ? data.slice() : [];
       try { const o = await sb.rpc('my_outfit_saves'); if (!o.error && Array.isArray(o.data)) list.push(...o.data); } catch (e) { /* Funktion fehlt noch */ }
       return list.sort((a, b) => String(b.ts || '').localeCompare(String(a.ts || '')));
+    }
+    if (kind === 'picks') {
+      const { data, error } = await sb.rpc('staff_pick_list');
+      if (error) throw error;
+      return before ? [] : (Array.isArray(data) ? data : []);
     }
     if (kind === 'foryou') {
       const { data, error } = await sb.rpc('feed_ranked', { p_offset: before || 0 });

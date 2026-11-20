@@ -100,7 +100,7 @@ async function loadFeed(reset) {
     await Profile.showFeed(fresh, grid, kind);
     if (reset) feed.loadedAt = Date.now();
     if (list.length) feed.before = kind === 'foryou' ? (feed.before || 0) + list.length : list[list.length - 1].ts;
-    more.hidden = list.length < 30;
+    more.hidden = kind === 'picks' || list.length < 30;
     empty.hidden = grid.children.length > 0;
     feedEmptyState(kind);
   } catch (e) {
@@ -116,19 +116,33 @@ async function loadFeed(reset) {
 // Leerer Feed: sagt, warum, und bietet den nächsten Schritt an
 function feedEmptyState(kind) {
   const e = $('feedEmpty');
-  if (kind === 'saved') setEmpty(e, { ic: 'heart', title: 'Noch nichts gemerkt', text: 'Auf der Seite eines Teils kannst du es mit „Merken“ speichern.' });
+  if (kind === 'picks') setEmpty(e, { ic: 'closet', title: 'Noch keine Staff Picks', text: 'Das JAWNZ-Team wählt hier bald Teile aus.' });
+  else if (kind === 'saved') setEmpty(e, { ic: 'heart', title: 'Noch nichts gemerkt', text: 'Auf der Seite eines Teils kannst du es mit „Merken“ speichern.' });
   else if (kind === 'outfits') setEmpty(e, { ic: 'outfit', title: 'Noch keine Outfits von anderen', text: 'Sobald jemand ein Outfit öffentlich stellt, erscheint es hier.' });
   else setEmpty(e, { ic: 'closet', title: 'Noch keine Teile von anderen', text: 'Sobald jemand etwas freigibt, erscheint es hier.', cta: 'Eigenes Teil hinzufügen', fn: () => showView('add') });
 }
 $('feedRetry').onclick = () => loadFeed(false);
+// Umschalten zwischen den Reitern und den Staff Picks (Flammen-Knopf oben rechts)
+function paintFeedKind() {
+  document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', feed.kind !== 'picks' && x.dataset.kind === feed.kind));
+  $('picksBtn').classList.toggle('active', feed.kind === 'picks');
+  $('picksBtn').setAttribute('aria-pressed', feed.kind === 'picks' ? 'true' : 'false');
+  $('picksNote').hidden = feed.kind !== 'picks';
+}
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
   c.onclick = () => {
     if (isGuest() && c.dataset.kind === 'saved') { loginGate('„Gemerkt“'); return; }
     feed.kind = c.dataset.kind;
-    document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === c));
+    paintFeedKind();
     loadFeed(true);
   };
 });
+document.addEventListener('picks-changed', () => { feed.loadedAt = 0; });
+$('picksBtn').onclick = () => {
+  feed.kind = feed.kind === 'picks' ? (document.querySelector('#feedSwitch [data-kind=foryou]').hidden ? 'items' : 'foryou') : 'picks';
+  paintFeedKind();
+  loadFeed(true);
+};
 $('feedMore').onclick = () => loadFeed(false);
 
 /* ---------- Filter-Chips ---------- */
