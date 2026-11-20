@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>Drobe Verwaltung</title>
+<title>JAWNZ Verwaltung</title>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <style>
   :root { --bg: #f6f6f6; --surface: #fff; --text: #111; --muted: #767676; --line: #e2e2e2; --red: #e60023; --red-soft: #fdecee; --amber: #b45309; --amber-soft: #fef3c7; --gray: #efefef; --ok: #1a7f37; --backdrop: rgba(0,0,0,.45); }
@@ -117,8 +117,8 @@
 <main>
   <!-- Anmeldung -->
   <section id="loginView" class="card login" hidden>
-    <h1 style="font-size:20px;margin:0 0 4px">Drobe Verwaltung</h1>
-    <p class="muted small" style="margin:0 0 16px">Eigene Anmeldung mit dem Verwaltungskonto, getrennt von der App.</p>
+    <h1 style="font-size:20px;margin:0 0 4px">JAWNZ Verwaltung</h1>
+    <p class="muted small" style="margin:0 0 16px">Eigene Anmeldung für Admins und Helfer, getrennt von der App.</p>
     <form id="loginForm">
       <label>E-Mail <input id="email" type="email" autocomplete="username" required></label>
       <label>Passwort <input id="pass" type="password" autocomplete="current-password" required></label>
@@ -130,25 +130,27 @@
   <!-- Verwaltung -->
   <section id="adminView" hidden>
     <header>
-      <h1>Drobe Verwaltung <span class="badge" id="repBadge" hidden></span></h1>
+      <h1>JAWNZ Verwaltung <span class="badge" id="repBadge" hidden></span></h1>
       <span class="muted small" id="who"></span>
       <a class="btn" href="./">Zur App</a>
       <button id="logout" type="button">Abmelden</button>
     </header>
     <div class="tabs" role="tablist">
-      <div class="tabgroup"><button role="tab" data-tab="overview" aria-selected="true">Übersicht</button></div>
-      <div class="tabgroup"><span class="tablabel">Prüfen</span>
+      <div class="tabgroup" data-admin><button role="tab" data-tab="overview" aria-selected="true">Übersicht</button></div>
+      <div class="tabgroup" data-admin><span class="tablabel">Prüfen</span>
         <button role="tab" data-tab="reports" aria-selected="false">Meldungen</button>
         <button role="tab" data-tab="legit" aria-selected="false">Legit-Check <span class="badge" id="legitBadge" hidden></span></button>
         <button role="tab" data-tab="moderation" aria-selected="false">Moderation</button></div>
-      <div class="tabgroup"><span class="tablabel">Handel</span>
+      <div class="tabgroup" data-admin><span class="tablabel">Handel</span>
         <button role="tab" data-tab="sales" aria-selected="false">Verkäufe <span class="badge" id="salesBadge" hidden></span></button>
         <button role="tab" data-tab="reviews" aria-selected="false">Bewertungen</button></div>
-      <div class="tabgroup"><span class="tablabel">Community</span>
+      <div class="tabgroup" data-admin><span class="tablabel">Community</span>
         <button role="tab" data-tab="members" aria-selected="false">Mitglieder</button>
         <button role="tab" data-tab="flex" aria-selected="false">Flex</button>
         <button role="tab" data-tab="roles" aria-selected="false">Rollen</button></div>
-      <div class="tabgroup"><span class="tablabel">System</span>
+      <div class="tabgroup"><span class="tablabel">Kuratieren</span>
+        <button role="tab" data-tab="picks" aria-selected="false">Staff Picks</button></div>
+      <div class="tabgroup" data-admin><span class="tablabel">System</span>
         <button role="tab" data-tab="errors" aria-selected="false">Fehlerprotokoll</button>
         <button role="tab" data-tab="log" aria-selected="false">Protokoll</button></div>
     </div>
@@ -163,6 +165,7 @@
     <div id="roles" hidden></div>
     <div id="errors" hidden></div>
     <div id="log" hidden></div>
+    <div id="picks" hidden></div>
   </section>
 </main>
 
@@ -389,21 +392,29 @@
   }
 
   /* ---------- Anmeldung und Tabs ---------- */
+  let role = null; // 'admin' sieht alles, 'moderator' (Helfer) nur Staff Picks
   async function enter(user) {
-    let admin = false;
-    try { const { data, error } = await sb.rpc('is_admin'); admin = !error && data === true; } catch (e) { /* offline */ }
-    if (!admin) {
+    role = null;
+    try {
+      const a = await sb.rpc('is_admin');
+      if (!a.error && a.data === true) role = 'admin';
+      else { const m = await sb.rpc('has_role', { p_role: 'moderator' }); if (!m.error && m.data === true) role = 'moderator'; }
+    } catch (e) { /* offline */ }
+    if (!role) {
       await sb.auth.signOut();
       show('login');
       $('loginErr').textContent = 'Dieses Konto hat keinen Zugriff auf die Verwaltung.';
       return;
     }
-    $('who').textContent = user.email;
+    const helper = role !== 'admin';
+    document.querySelectorAll('.tabgroup[data-admin]').forEach((g) => { g.hidden = helper; });
+    $('who').textContent = user.email + (helper ? ' · Helfer' : ' · Admin');
     show('admin');
-    loadOverview();
+    if (helper) { goTab('picks'); return; }
+    goTab('overview');
     loadReports();
   }
-  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), errors: () => loadErrors(), log: () => loadLog() };
+  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), picks: () => loadPicks(), errors: () => loadErrors(), log: () => loadLog() };
   function goTab(id) {
     document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.tab === id)));
     for (const k of Object.keys(loaders)) $(k).hidden = k !== id;
@@ -414,7 +425,7 @@
   // Benutzername zum Anklicken: springt zu dieser Person in „Mitglieder“
   let openUser = null;
   function openMember(name) { openUser = name; memberQuery = name; $('members').replaceChildren(); goTab('members'); }
-  const userBtn = (name) => { if (!name) return el('span', 'who', '?'); const b = btn(name, 'user', () => openMember(name)); b.title = 'Mitglied öffnen'; return b; };
+  const userBtn = (name) => { if (!name) return el('span', 'who', '?'); if (role !== 'admin') return el('b', null, name); const b = btn(name, 'user', () => openMember(name)); b.title = 'Mitglied öffnen'; return b; };
   const factUser = (label, name) => { const d = el('div'); d.append(el('span', null, label), userBtn(name)); return d; };
   const loading = (box, text) => box.replaceChildren(el('p', 'muted', text || 'Lade …'));
   const failed = (box, text, retry) => { box.replaceChildren(el('p', 'err', text)); box.append(btn('Nochmal versuchen', null, retry)); };
@@ -895,7 +906,7 @@
   const ROLE_NAMES = { admin: 'Admin', moderator: 'Helfer' };
   async function loadRoles() {
     await simpleLoad('roles', 'admin_roles_list', {}, (box, data) => {
-      const s1 = section('Aktuelle Rollen', 'Admins dürfen alles in dieser Verwaltung. Die Verwaltungsseite selbst ist nur für Admins offen.');
+      const s1 = section('Aktuelle Rollen', 'Admins sehen alles in dieser Verwaltung. Helfer melden sich hier ebenfalls an, sehen aber nur den Reiter „Staff Picks“.');
       for (const r of data) {
         const d = el('div', 'content-row');
         const sp = el('span'); sp.append(userBtn(r.username), ' · ' + (ROLE_NAMES[r.role] || r.role) + ' · seit ' + day(r.granted_at) + ' · ' + r.email); d.append(sp);
@@ -914,13 +925,78 @@
         const adm = sel.value === 'admin';
         const a = await confirmAction({
           title: name + ' zum ' + (adm ? 'Admin' : 'Helfer') + ' machen?',
-          intro: adm ? 'Ein Admin sieht alle Mitglieder samt E-Mail, kann Konten sperren und löschen und Rollen vergeben.' : 'Die Helfer-Rolle wird vergeben.',
+          intro: adm ? 'Ein Admin sieht alle Mitglieder samt E-Mail, kann Konten sperren und löschen und Rollen vergeben.' : 'Der Helfer kann sich in der Verwaltung anmelden und dort Staff Picks auswählen. Mehr sieht er nicht.',
           reasonLabel: 'Grund (im Protokoll, optional)', typeName: adm ? name : undefined, confirmLabel: 'Rolle vergeben', danger: adm,
         });
         if (a && !(await call('admin_set_role', { p_username: name, p_role: sel.value, p_grant: true, p_reason: a.reason }, 'Rolle vergeben.')).failed) { input.value = ''; loadRoles(); }
       };
       box.append(s1, s2);
     }, loadRoles);
+  }
+
+  /* ---------- Staff Picks (Admins und Helfer) ---------- */
+  async function thumbMap(paths) {
+    const out = {};
+    if (!paths.length) return out;
+    try {
+      const { data } = await sb.storage.from('images').createSignedUrls(paths.map((x) => x + '-t'), 3600);
+      (data || []).forEach((d, i) => { if (d && d.signedUrl) out[paths[i]] = d.signedUrl; });
+      const miss = paths.filter((x) => !out[x]);
+      if (miss.length) {
+        const r = await sb.storage.from('images').createSignedUrls(miss, 3600);
+        (r.data || []).forEach((d, i) => { if (d && d.signedUrl) out[miss[i]] = d.signedUrl; });
+      }
+    } catch (e) { /* ohne Vorschau weiter */ }
+    return out;
+  }
+  const pickRow = (x, urls, actions) => {
+    const d = el('div', 'content-row');
+    const im = el('div'); im.style.cssText = 'width:56px;height:56px;flex:none;border-radius:10px;background:var(--gray);overflow:hidden';
+    if (urls[x.path]) { const i = el('img'); i.src = urls[x.path]; i.alt = ''; i.loading = 'lazy'; i.style.cssText = 'width:100%;height:100%;object-fit:cover'; im.append(i); }
+    const sp = el('span'); sp.append(el('b', null, x.name || '(ohne Namen)'), el('br'));
+    sp.append(el('span', 'muted small', [x.brand, x.size, 'von ' + x.username].filter(Boolean).join(' · ')));
+    d.append(im, sp, ...actions);
+    return d;
+  };
+  async function loadPicks() {
+    await simpleLoad('picks', 'staff_pick_admin_list', {}, async (box, data) => {
+      const urls = await thumbMap(data.map((x) => x.path));
+      const s1 = section('Aktuelle Staff Picks (' + data.length + ')', 'Diese Teile stehen im Feed unter der Flamme. Entfernte, versteckte oder eingefrorene Teile erscheinen dort nicht.');
+      if (!data.length) s1.append(el('p', 'muted', 'Noch keine Staff Picks.'));
+      for (const x of data) {
+        const acts = [];
+        if (!x.live) acts.push(el('span', 'tag', 'nicht sichtbar'));
+        acts.push(btn('Entfernen …', 'danger', async () => {
+          const a = await confirmAction({ title: 'Aus den Staff Picks nehmen?', intro: '„' + (x.name || '?') + '“ von ' + x.username + ' verschwindet aus den Staff Picks. Das Teil selbst bleibt unverändert.', confirmLabel: 'Entfernen', danger: true });
+          if (a && !(await call('staff_pick_set', { p_username: x.username, p_id: x.id, p_on: false }, 'Entfernt.')).failed) loadPicks();
+        }));
+        const r = pickRow(x, urls, acts);
+        if (x.added_by) r.querySelector('span').append(el('br'), el('span', 'muted small', 'ausgewählt von ' + x.added_by + ' · ' + day(x.created_at)));
+        s1.append(r);
+      }
+      const s2 = section('Teile suchen und auswählen', 'Sucht in allen öffentlichen Teilen (Name, Marke oder Benutzername). Ohne Suchwort kommen die neuesten.');
+      const form = el('form', 'search'); const input = el('input'); input.type = 'search'; input.placeholder = 'z. B. Kapital, Nike oder ein Benutzername'; input.maxLength = 60; input.autocapitalize = 'none';
+      const go = el('button', 'primary', 'Suchen'); go.type = 'submit'; form.append(input, go);
+      const list = el('div'); s2.append(form, list);
+      const run = async () => {
+        loading(list);
+        const { data: res, error } = await sb.rpc('staff_item_search', { p_query: input.value.trim() });
+        list.replaceChildren();
+        if (error) return list.append(el('p', 'err', 'Die Suche hat nicht geklappt: ' + error.message));
+        if (!res.length) return list.append(el('p', 'muted', 'Nichts gefunden.'));
+        const u = await thumbMap(res.map((x) => x.path));
+        for (const x of res) {
+          const b = x.picked ? el('span', 'tag', 'schon Pick') : btn('Auswählen', 'primary', async () => {
+            b.disabled = true;
+            if (!(await call('staff_pick_set', { p_username: x.username, p_id: x.id, p_on: true }, 'Zu den Staff Picks hinzugefügt.')).failed) loadPicks(); else b.disabled = false;
+          });
+          list.append(pickRow(x, u, [b]));
+        }
+      };
+      form.onsubmit = (ev) => { ev.preventDefault(); run(); };
+      box.append(s1, s2);
+      run();
+    }, loadPicks);
   }
 
   /* ---------- Anmeldung ---------- */
