@@ -392,7 +392,8 @@
   }
 
   /* ---------- Anmeldung und Tabs ---------- */
-  let role = null; // 'admin' sieht alles, 'moderator' (Helfer) nur Staff Picks
+  let role = null; // 'admin' sieht alles, 'moderator' (Helfer) nur Meldungen und Legit-Check (lesen) sowie Staff Picks
+  const HELPER_TABS = ['reports', 'legit', 'picks'];
   async function enter(user) {
     role = null;
     try {
@@ -407,10 +408,12 @@
       return;
     }
     const helper = role !== 'admin';
-    document.querySelectorAll('.tabgroup[data-admin]').forEach((g) => { g.hidden = helper; });
+    // Helfer sehen nur Meldungen und Legit-Check (lesen) sowie Staff Picks; Gruppen ohne sichtbaren Reiter verschwinden
+    document.querySelectorAll('.tabs button').forEach((b) => { b.hidden = helper && !HELPER_TABS.includes(b.dataset.tab); });
+    document.querySelectorAll('.tabgroup').forEach((g) => { g.hidden = ![...g.querySelectorAll('button')].some((b) => !b.hidden); });
     $('who').textContent = user.email + (helper ? ' · Helfer' : ' · Admin');
     show('admin');
-    if (helper) { goTab('picks'); return; }
+    if (helper) { goTab('reports'); return; }
     goTab('overview');
     loadReports();
   }
@@ -491,7 +494,7 @@
     const box = $('reports');
     loading(box);
     try {
-      const { data, error } = await sb.rpc('admin_reports');
+      const { data, error } = await sb.rpc(role === 'admin' ? 'admin_reports' : 'staff_reports');
       if (error) throw error;
       setBadge(data.length);
       box.replaceChildren();
@@ -505,7 +508,7 @@
     head.append(el('span', 'reason', REASONS[r.reason] || r.reason), userBtn(r.target));
     if (r.target_banned) head.append(el('span', 'tag ban', 'gesperrt'));
     if (r.target_is_admin) head.append(el('span', 'tag', 'Admin'));
-    if (r.target_reports > 1) { const t = btn(r.target_reports + ' Meldungen', 'tag warn linktag', () => reportsFlow(r.target)); head.append(t); }
+    if (r.target_reports > 1) { const t = role === 'admin' ? btn(r.target_reports + ' Meldungen', 'tag warn linktag', () => reportsFlow(r.target)) : el('span', 'tag warn', r.target_reports + ' Meldungen'); head.append(t); }
     card.append(head);
     card.append(el('div', 'muted small', 'Gemeldet von ' + (r.reporter || '?') + ' am ' + fmt(r.created_at)));
     card.append(r.note ? el('div', 'note', r.note) : el('div', 'muted small', 'Keine Notiz vom Melder.'));
@@ -514,7 +517,7 @@
       const t = el('div', 'txt');
       t.append(el('span', 'muted small', 'Gemeldeter Inhalt'), el('div', null, r.content_name ? (r.content_kind === 'outfits' ? 'Outfit: ' : 'Teil: ') + r.content_name : 'Nicht mehr vorhanden'));
       b.append(t);
-      if (r.content_name && r.content_deleted === false) b.append(btn('Inhalt entfernen', 'danger', async () => { if (await removeFlow(r.target, r.content_kind, r.record_id, r.content_name)) loadReports(); }));
+      if (role === 'admin' && r.content_name && r.content_deleted === false) b.append(btn('Inhalt entfernen', 'danger', async () => { if (await removeFlow(r.target, r.content_kind, r.record_id, r.content_name)) loadReports(); }));
       card.append(b);
     }
     const facts = el('div', 'facts');
@@ -522,10 +525,11 @@
       fact('Dabei seit', r.target_since ? day(r.target_since) : '?'),
       fact('Teile', String(r.target_items)), fact('Outfits', String(r.target_outfits)),
       fact('AGB zugestimmt', termsText(r.target_terms_at, r.target_terms_version)),
-      fact('Meldungen gesamt', String(r.target_reports), r.target_reports > 1, r.target ? () => reportsFlow(r.target) : null),
+      fact('Meldungen gesamt', String(r.target_reports), r.target_reports > 1, role === 'admin' && r.target ? () => reportsFlow(r.target) : null),
     );
     card.append(facts);
-    const refresh = () => { loadReports(); loadOverview(); };
+    const refresh = () => { loadReports(); if (role === 'admin') loadOverview(); };
+    if (role !== 'admin') { card.append(el('p', 'muted small', 'Als Helfer kannst du Meldungen ansehen. Maßnahmen ergreifen die Admins.')); return card; }
     if (r.target) card.append(accountActions(r.target, { banned: r.target_banned, isAdmin: r.target_is_admin }, { reportId: r.id, refresh }));
     const g = el('div', 'group sep'); g.style.marginTop = '12px'; g.append(el('h4', null, 'Meldung'));
     const row = el('div', 'row');
@@ -722,7 +726,7 @@
   async function votesFlow(username, id, name) {
     const list = el('div', 'thread'); list.style.maxHeight = '420px'; list.append(el('p', 'muted', 'Lade …'));
     openModal('Stimmen zu „' + name + '“', [list], [btn('Schließen', null, () => closeModal())]);
-    const { data, error } = await sb.rpc('admin_legit_votes', { p_username: username, p_id: id });
+    const { data, error } = await sb.rpc(role === 'admin' ? 'admin_legit_votes' : 'staff_legit_votes', { p_username: username, p_id: id });
     list.replaceChildren();
     if (error) { list.append(el('p', 'err', 'Die Stimmen konnten nicht geladen werden.')); return; }
     if (!data.length) { list.append(el('p', 'muted', 'Keine Stimmen.')); return; }
@@ -749,7 +753,7 @@
     return !(await call('admin_legit_fake', { p_username: username, p_id: id, p_message: r.reason || null }, 'Teil entfernt, Nachricht gesendet.')).failed;
   }
   async function loadLegit() {
-    await simpleLoad('legit', 'admin_legit_list', {}, (box, data) => {
+    await simpleLoad('legit', role === 'admin' ? 'admin_legit_list' : 'staff_legit_list', {}, (box, data) => {
       if (!data.length) return box.append(el('p', 'muted', 'Keine eingefrorenen Teile und keine auffälligen Abstimmungen.'));
       for (const x of data) {
         const card = el('div', 'card');
@@ -759,11 +763,12 @@
         const facts = el('div', 'facts'); facts.append(fact('Echt-Stimmen', String(x.real)), fact('Fake-Stimmen', String(x.fake), x.fake >= 5)); card.append(facts);
         const row = el('div', 'row'); row.style.marginTop = '10px';
         row.append(btn('Stimmen ansehen', null, () => votesFlow(x.username, x.id, x.name)));
-        row.append(btn('Ist echt', 'primary', async () => {
+        if (role === 'admin') row.append(btn('Ist echt', 'primary', async () => {
           const ok = await confirmAction({ title: 'Teil als echt bestätigen?', intro: 'Das Teil ist wieder normal sichtbar, Anfragen sind möglich, und die Community kann es nicht mehr automatisch einfrieren lassen.', confirmLabel: 'Ist echt' });
           if (ok && !(await call('admin_legit_clear_item', { p_username: x.username, p_id: x.id }, 'Teil als echt bestätigt.')).failed) { loadLegit(); loadOverview(); }
         }));
-        row.append(btn('Ist fake …', 'danger', async () => { if (await fakeFlow(x.username, x.id, x.name)) { loadLegit(); loadOverview(); } }));
+        if (role === 'admin') row.append(btn('Ist fake …', 'danger', async () => { if (await fakeFlow(x.username, x.id, x.name)) { loadLegit(); loadOverview(); } }));
+        else row.append(el('span', 'muted small', 'Entscheiden dürfen die Admins.'));
         card.append(row); box.append(card);
       }
     }, loadLegit);
