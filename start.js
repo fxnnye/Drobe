@@ -142,15 +142,14 @@ async function startApp(userId) {
 }
 
 // Startbildschirm ausblenden: erst wenn die App bereit ist, mindestens 2,5 Sekunden nach dem Start. Danach wartet er noch, bis der Feed geladen ist
-// und die ersten Fotos in Feed und Kleiderschrank da sind (höchstens bis 8 Sekunden), spätestens nach 12 Sekunden geht er auf jeden Fall weg.
-const SPLASH_MIN_MS = 2500, SPLASH_PRELOAD_MAX_MS = 8000;
+// und die ersten 6 Fotos im Feed da sind (höchstens bis 3 Sekunden), spätestens dann geht er auf jeden Fall weg. Der Rest lädt in der App.
+const SPLASH_MIN_MS = 2500, SPLASH_PRELOAD_MAX_MS = 3000;
 let splashHiding = false;
 function contentReady() {
   if (!Cloud.user()) return true; // abgemeldet gibt es nichts vorzuladen
-  const feedGrid = $('feedGrid'), closetGrid = $('closetGrid');
+  const feedGrid = $('feedGrid');
   if (!feed.stageChecked || feed.loading || feedGrid.querySelector('.skeleton-card')) return false;
-  const imgs = [...feedGrid.querySelectorAll('img')].slice(0, 12).concat([...closetGrid.querySelectorAll('img')].slice(0, 12));
-  return imgs.every((i) => i.complete);
+  return [...feedGrid.querySelectorAll('img')].slice(0, 6).every((i) => i.complete);
 }
 function hideSplash(force) {
   if (splashHiding) return;
@@ -160,7 +159,7 @@ function hideSplash(force) {
     if (force === true) return;
     while (performance.now() < SPLASH_PRELOAD_MAX_MS && !contentReady()) await new Promise((r) => setTimeout(r, 150));
   };
-  Promise.race([document.fonts ? document.fonts.ready : null, new Promise((r) => setTimeout(r, 3000))]).catch(() => {}).then(() => setTimeout(() => preload().then(() => {
+  Promise.race([document.fonts ? document.fonts.ready : null, new Promise((r) => setTimeout(r, 1500))]).catch(() => {}).then(() => setTimeout(() => preload().then(() => {
     try { window.Capacitor?.Plugins?.SplashScreen?.hide(); } catch (e) { /* kein iOS-App-Rahmen */ }
     const sp = document.getElementById('splash');
     if (!sp || sp.classList.contains('gone')) return;
@@ -168,7 +167,7 @@ function hideSplash(force) {
     setTimeout(() => sp.remove(), 400);
   }), wait));
 }
-setTimeout(() => hideSplash(true), 12000);
+setTimeout(() => hideSplash(true), SPLASH_PRELOAD_MAX_MS);
 Cloud.boot().then(() => hideSplash(), () => hideSplash());
 
 // Tipp auf den abgedunkelten Bereich neben einem Fenster schließt es (außer beim Hochladen, damit nichts verloren geht)
