@@ -92,7 +92,7 @@ function renderMeHead() {
 }
 
 /* ---------- Feed: öffentliche Teile oder Outfits anderer, neueste zuerst ---------- */
-const feed = { kind: 'items', before: null, loading: false, seen: new Set(), stageChecked: false };
+const feed = { kind: 'items', ranked: false, before: null, loading: false, seen: new Set(), stageChecked: false };
 async function loadFeed(reset) {
   if (feed.loading) return;
   const grid = $('feedGrid'), empty = $('feedEmpty'), more = $('feedMore'), retry = $('feedRetry');
@@ -103,12 +103,9 @@ async function loadFeed(reset) {
   if (!feed.stageChecked) { // „Für dich“ erscheint erst, wenn genug aktive Nutzer da sind, und ist dann der Start-Reiter
     feed.stageChecked = true;
     if ((await Profile.feedStage()) >= 1) {
-      const fy = document.querySelector('#feedSwitch [data-kind=foryou]');
-      fy.hidden = false;
-      if (feed.kind === 'items') {
-        feed.kind = 'foryou';
-        document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', x === fy));
-      }
+      feed.ranked = true;
+      if (feed.kind === 'items') feed.kind = 'foryou';
+      paintFeedKind();
     }
   }
   const kind = feed.kind;
@@ -146,7 +143,7 @@ function feedEmptyState(kind) {
 $('feedRetry').onclick = () => loadFeed(false);
 // Umschalten zwischen den Reitern und den Staff Picks (Flammen-Knopf oben rechts)
 function paintFeedKind() {
-  document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', feed.kind !== 'picks' && x.dataset.kind === feed.kind));
+  document.querySelectorAll('#feedSwitch .chip').forEach((x) => x.classList.toggle('active', feed.kind !== 'picks' && x.dataset.kind === (feed.kind === 'items' ? 'foryou' : feed.kind)));
   $('picksBtn').classList.toggle('active', feed.kind === 'picks');
   $('picksBtn').setAttribute('aria-pressed', feed.kind === 'picks' ? 'true' : 'false');
   $('picksNote').hidden = feed.kind !== 'picks';
@@ -154,14 +151,14 @@ function paintFeedKind() {
 document.querySelectorAll('#feedSwitch .chip').forEach((c) => {
   c.onclick = () => {
     if (isGuest() && c.dataset.kind === 'saved') { loginGate('„Gemerkt“'); return; }
-    feed.kind = c.dataset.kind;
+    feed.kind = c.dataset.kind === 'foryou' && !feed.ranked ? 'items' : c.dataset.kind; // „Für dich“ ist anfangs einfach die Liste der Teile
     paintFeedKind();
     loadFeed(true);
   };
 });
 document.addEventListener('picks-changed', () => { feed.loadedAt = 0; });
 $('picksBtn').onclick = () => {
-  feed.kind = feed.kind === 'picks' ? (document.querySelector('#feedSwitch [data-kind=foryou]').hidden ? 'items' : 'foryou') : 'picks';
+  feed.kind = feed.kind === 'picks' ? (feed.ranked ? 'foryou' : 'items') : 'picks';
   paintFeedKind();
   loadFeed(true);
 };
