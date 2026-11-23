@@ -1364,3 +1364,13 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 @media (min-width: 701px) { .feed-top .feed-switch { flex: 0 1 420px; } .feed-top .picks-btn { margin-left: auto; } }
 .rv-stars .rv-zero { font-size: 20px; font-weight: 700; width: 36px; opacity: .45; }
 .rv-stars .rv-zero[aria-pressed="true"] { opacity: 1; text-decoration: underline; }
+
+/* Gleiche Höhe: Knöpfe, Felder und Schalter, die nebeneinander stehen, sind alle so hoch wie --h-ctrl (48 px) */
+.feed-top .feed-switch .chip { min-height: var(--h-ctrl); height: var(--h-ctrl); padding-top: 0; padding-bottom: 0; display: inline-flex; align-items: center; justify-content: center; }
+.picks-btn, .feed-top .picks-btn { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
+.guest-actions .btn { min-height: var(--h-ctrl); height: var(--h-ctrl); }
+.so-filters select, .so-filters input { height: var(--h-ctrl); }
+.thread-form input[type=text], .thread-form .btn { height: var(--h-ctrl); }
+.thread-photo { width: var(--h-ctrl); height: var(--h-ctrl); }
+.set-panel[data-panel="main"] .set-row { min-height: var(--h-ctrl); }
+.msg-tabs .msg-orders { width: var(--h-ctrl); height: var(--h-ctrl); }
