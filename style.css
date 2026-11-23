@@ -1362,3 +1362,5 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .pick-badge { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 4px 10px; border-radius: 8px; background: var(--text); color: var(--on-text); font-size: 12px; font-weight: 700; }
 .pick-badge[hidden], .pick-box[hidden] { display: none; }
 @media (min-width: 701px) { .feed-top .feed-switch { flex: 0 1 420px; } .feed-top .picks-btn { margin-left: auto; } }
+.rv-stars .rv-zero { font-size: 20px; font-weight: 700; width: 36px; opacity: .45; }
+.rv-stars .rv-zero[aria-pressed="true"] { opacity: 1; text-decoration: underline; }

@@ -655,11 +655,16 @@ const Profile = (() => {
   // Bewertung abgeben: Sterne wählen, optional ein kurzer Text; löst auf, wenn der Dialog zu ist
   function askReview(offerId, other) {
     const d = $('reviewDialog');
-    let rating = 0;
+    let rating = null;
     $('rvTitle').textContent = 'Bewertung für ' + other;
     $('rvText').value = ''; $('rvError').textContent = '';
-    const btns = [...document.querySelectorAll('#rvStars button')];
-    const paint = () => btns.forEach((b, i) => { b.textContent = i < rating ? '★' : '☆'; b.setAttribute('aria-pressed', i < rating); });
+    const zero = document.querySelector('#rvStars .rv-zero');
+    const btns = [...document.querySelectorAll('#rvStars button:not(.rv-zero)')];
+    const paint = () => {
+      btns.forEach((b, i) => { b.textContent = i < rating ? '★' : '☆'; b.setAttribute('aria-pressed', i < rating); });
+      zero.setAttribute('aria-pressed', rating === 0);
+    };
+    zero.onclick = () => { rating = 0; paint(); };
     btns.forEach((b, i) => { b.onclick = () => { rating = i + 1; paint(); }; });
     paint();
     return new Promise((resolve) => {
@@ -667,7 +672,7 @@ const Profile = (() => {
       $('rvCancel').onclick = done;
       d.onclose = done;
       $('rvSend').onclick = async () => {
-        if (!rating) { $('rvError').textContent = 'Bitte wähle 1 bis 5 Sterne.'; return; }
+        if (rating === null) { $('rvError').textContent = 'Bitte wähle 0 bis 5 Sterne.'; return; }
         $('rvSend').disabled = true;
         try {
           const { error } = await Cloud.client().rpc('leave_review', { p_offer: offerId, p_rating: rating, p_comment: $('rvText').value });

@@ -539,7 +539,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <h2 id="rvTitle">Bewertung</h2>
     <p class="muted small">Wie war der Kauf? Deine Bewertung sieht jeder auf dem Profil.</p>
     <div class="rv-stars" id="rvStars" role="group" aria-label="Sterne">
-      <button type="button" aria-label="1 Stern">☆</button><button type="button" aria-label="2 Sterne">☆</button><button type="button" aria-label="3 Sterne">☆</button><button type="button" aria-label="4 Sterne">☆</button><button type="button" aria-label="5 Sterne">☆</button>
+      <button type="button" class="rv-zero" data-zero="1" aria-label="0 Sterne">0</button><button type="button" aria-label="1 Stern">☆</button><button type="button" aria-label="2 Sterne">☆</button><button type="button" aria-label="3 Sterne">☆</button><button type="button" aria-label="4 Sterne">☆</button><button type="button" aria-label="5 Sterne">☆</button>
     </div>
     <label class="field">Kommentar (optional)
       <textarea id="rvText" rows="3" maxlength="300" placeholder="z. B. schnelle Antwort, Teil wie beschrieben"></textarea>
