@@ -1387,6 +1387,7 @@ const Profile = (() => {
     body.classList.toggle('viewing-profile', viewing);
     $('publicView').hidden = !viewing;
     $('landing').hidden = viewing || !body.classList.contains('guest');
+    if (viewing) growIn($('publicView'), true);
     if (name) await render(name);
     else if (itm) await renderItem(itm.name, itm.id);
     else if (otf) await renderOutfit(otf.name, otf.id);

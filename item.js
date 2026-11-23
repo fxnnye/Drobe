@@ -94,6 +94,7 @@ function openItemDialog(it) {
   buildItemView(it);
   setViewing(true);
   dlg.showModal();
+  growIn(dlg);
 }
 $('itemForm').addEventListener('submit', async (e) => {
   if (e.submitter && e.submitter.value === 'save') {

@@ -23,6 +23,28 @@ function placeIndicator(bar) {
 }
 const placeSubInd = () => placeIndicator(document.querySelector('#meBar .subtabs'));
 window.addEventListener('resize', placeSubInd);
+// Seiten und Fenster wachsen aus der angetippten Karte heraus (Teil, Outfit, Profil, eigenes Teil)
+let growFrom = null;
+document.addEventListener('click', (e) => {
+  const c = e.target.closest && e.target.closest('.card, .grid > *');
+  growFrom = c ? { rect: (c.querySelector('.img, img') || c).getBoundingClientRect(), t: Date.now() } : null;
+}, true);
+function growIn(node, fromTop) {
+  const o = growFrom; growFrom = null;
+  if (!o || Date.now() - o.t > 1500 || !node.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const b = node.getBoundingClientRect();
+  if (!b.width || !o.rect.width) return;
+  const dx = o.rect.left + o.rect.width / 2 - (b.left + b.width / 2);
+  const dy = fromTop ? o.rect.top + o.rect.height / 2 - b.top : o.rect.top + o.rect.height / 2 - (b.top + b.height / 2);
+  const sc = Math.max(0.3, Math.min(0.6, o.rect.width / b.width * 1.2));
+  node.style.transformOrigin = fromTop ? '50% 0' : '';
+  const a = node.animate([
+    { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sc + ')', opacity: 0, borderRadius: '28px' },
+    { opacity: 1, offset: 0.35 },
+    { transform: 'none', opacity: 1, borderRadius: '0px' },
+  ], { duration: 400, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+  a.onfinish = a.oncancel = () => { node.style.transformOrigin = ''; };
+}
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';
