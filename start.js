@@ -286,7 +286,9 @@ document.querySelectorAll('dialog').forEach((d) => {
     };
     let p = null, busy = false;
     const can = () => !busy && window.scrollY <= 0 && actions[state.view] && $('publicView').hidden && !document.querySelector('dialog[open]') && !document.body.classList.contains('in-thread');
+    let tg = [];
     const paint = (y, armed) => {
+      tg.forEach((n) => { n.style.transform = y ? 'translateY(' + y + 'px)' : ''; }); // Beiträge wandern mit nach unten, der Kreis liegt nie darauf
       ind.style.transform = 'translate(-50%, ' + (y - 48) + 'px)';
       ind.style.opacity = Math.max(0, Math.min(1, (y - 18) / 32));
       ind.classList.toggle('armed', !!armed);
@@ -298,6 +300,9 @@ document.querySelectorAll('dialog').forEach((d) => {
       if (p) { // im Feed erscheint der Kreis unter „Für dich / Outfits“, sonst ganz oben
         const ft = state.view === 'feed' && document.querySelector('.feed-top');
         ind.style.top = ft ? Math.round(ft.getBoundingClientRect().bottom) + 'px' : '';
+        tg.forEach((n) => { n.classList.remove('ptr-t', 'ptr-drag'); n.style.transform = ''; });
+        tg = state.view === 'feed' ? ['picksNote', 'feedGrid', 'feedEmpty'].map((id) => $(id)).concat([...document.querySelectorAll('#view-feed .feed-more')]) : [document.querySelector('.view.active')].filter(Boolean);
+        tg.forEach((n) => n.classList.add('ptr-t'));
       }
     }, { passive: true });
     document.addEventListener('touchmove', (e) => {
@@ -316,6 +321,7 @@ document.querySelectorAll('dialog').forEach((d) => {
       if (armed && !p.armed) haptic('select');
       p.armed = armed;
       ind.style.transition = 'none';
+      tg.forEach((n) => n.classList.add('ptr-drag'));
       paint(y, armed);
     }, { passive: false });
     const end = async () => {
@@ -323,6 +329,7 @@ document.querySelectorAll('dialog').forEach((d) => {
       const { on, armed } = p; p = null;
       if (!on) return;
       ind.style.transition = '';
+      tg.forEach((n) => n.classList.remove('ptr-drag'));
       if (!armed) { paint(0); return; }
       busy = true;
       ind.classList.add('spin');
