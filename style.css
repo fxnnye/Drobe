@@ -851,7 +851,6 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .back-btn::before { content: ''; width: 10px; height: 14px; flex: none; background: currentColor;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M8 1.500L2.500 7 8 12.500' fill='none' stroke='black' stroke-width='2.200' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M8 1.500L2.500 7 8 12.500' fill='none' stroke='black' stroke-width='2.200' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
-.so-filters .so-kind { grid-column: 1 / -1; }
 
 /* Nachrichten: Kaufen / Verkaufen, Zeilen mit Teilfoto */
 .msg-tabs { display: flex; border-bottom: 1px solid var(--gray-hover); margin: 0 0 8px; }
@@ -1442,3 +1441,7 @@ body.offline .offline-bar { transform: translate(-50%, 0); opacity: .92; }
 
 .ptr-t { transition: transform .25s var(--ease-out); }
 .ptr-t.ptr-drag { transition: none; }
+
+/* Suchfilter: Angebot, Farbe, Größe, Marke als zwei Reihen mit je zwei Feldern, am Computer in einer Reihe */
+.so-filters { grid-template-columns: 1fr 1fr; }
+@media (min-width: 701px) { .so-filters { grid-template-columns: 1.2fr 1.2fr 1fr 1.2fr; } }

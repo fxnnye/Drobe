@@ -79,6 +79,16 @@ final class JawnzPush: NSObject, WKScriptMessageHandler, UNUserNotificationCente
         guard !attached, let wv = bridgeWebView() else { return }
         wv.configuration.userContentController.add(self, name: "jawnzPush")
         UNUserNotificationCenter.current().delegate = self
+        // Tastatur: der Browser in der App meldet die Höhe nicht, deshalb meldet sie iOS selbst an die Seite
+        NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] n in
+            guard let f = n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            let screenH = UIScreen.main.bounds.height
+            let h = f.minY >= screenH ? 0 : Int(screenH - f.minY)
+            self?.js("window.JawnzKB && window.JawnzKB(\(h))")
+        }
+        NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.js("window.JawnzKB && window.JawnzKB(0)")
+        }
         attached = true
     }
 

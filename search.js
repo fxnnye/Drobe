@@ -45,7 +45,7 @@ function renderHistory() {
 let searchKind = '';
 function setKind(k) {
   searchKind = k;
-  document.querySelectorAll('#fKind .chip').forEach((c) => c.classList.toggle('active', c.dataset.kind === k));
+  $('fKind').value = k;
 }
 const byKind = (list) => (searchKind ? list.filter((r) => r.vis === searchKind) : list);
 // Farbe, Größe und Marke gibt es erst, wenn ein Artikel gesucht wurde (Ergebnisse sind sichtbar); sonst werden sie geleert
@@ -170,7 +170,7 @@ $('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.pre
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 for (const c of COLORS) { $('fColor').append(new Option(c, c)); $('upColor').append(new Option(c, c)); }
-document.querySelectorAll('#fKind .chip').forEach((c) => { c.onclick = () => { setKind(c.dataset.kind); clearTimeout(searchTimer); runSearch(); }; });
+$('fKind').addEventListener('change', () => { setKind($('fKind').value); clearTimeout(searchTimer); runSearch(); });
 for (const id of ['fColor', 'fSize', 'fBrand']) {
   $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 }

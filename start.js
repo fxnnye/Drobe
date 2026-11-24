@@ -399,12 +399,14 @@ document.querySelectorAll('dialog').forEach((d) => {
   // 7) Tastatur: untere Leiste im Chat sitzt über der Tastatur, Eingabefelder scrollen sichtbar
   if (window.visualViewport) {
     const vv = window.visualViewport;
-    const sync = () => {
-      const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    let native = false; // in der iOS-App meldet iOS die Tastaturhöhe selbst (window.JawnzKB)
+    const setKb = (kb) => {
       document.documentElement.style.setProperty('--kb', kb + 'px');
       document.body.classList.toggle('kb-open', kb > 120);
       if (kb > 120) { const m = document.querySelector('.thread-msgs'); if (m && document.body.classList.contains('in-thread')) m.scrollTop = m.scrollHeight; }
     };
+    const sync = () => { if (!native) setKb(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))); };
+    window.JawnzKB = (h) => { native = true; setKb(Math.max(0, Number(h) || 0)); if (h > 120) window.scrollTo(0, 0); };
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
   }
