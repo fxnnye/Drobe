@@ -36,7 +36,7 @@ const I18N = {
     'Einstellungen': 'Settings', 'App': 'App', 'Admin': 'Admin', 'Konto': 'Account', 'Passwort ändern': 'Change password', 'Darstellung': 'Appearance', 'Sprache': 'Language', 'Backup': 'Backup',
     'Rechtliches': 'Legal', 'Moderation': 'Moderation', 'Fehlerprotokoll': 'Error log', 'Hell': 'Light', 'Dunkel': 'Dark', 'Automatisch': 'Automatic',
     'Angemeldet als': 'Signed in as', 'Jetzt synchronisieren': 'Sync now', 'Impressum': 'Imprint', 'Datenschutzerklärung': 'Privacy policy', 'Nutzungsbedingungen': 'Terms of use',
-    'Datenschutz': 'Privacy', 'Gesperrte Konten': 'Blocked accounts', 'Alle löschen': 'Delete all',
+    'Offline – nur dein Schrank und deine Outfits': 'Offline – only your closet and outfits', 'Datenschutz': 'Privacy', 'Gesperrte Konten': 'Blocked accounts', 'Alle löschen': 'Delete all',
     'Automatisch richtet sich nach der Einstellung deines Geräts.': 'Automatic follows your device setting.',
     'Die Rechtstexte gibt es nur auf Deutsch, verbindlich ist die deutsche Fassung.': 'The legal texts are only available in German; the German version is binding.',
     // Kategorien, Zustand, Farben

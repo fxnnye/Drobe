@@ -409,4 +409,17 @@ document.querySelectorAll('dialog').forEach((d) => {
   themeColor();
   new MutationObserver(themeColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(themeColor, 50));
+
+  // 9) Ohne Internet: nur eigener Schrank und eigene Outfits
+  const bar = document.createElement('div');
+  bar.className = 'offline-bar'; bar.setAttribute('role', 'status'); bar.textContent = 'Offline – nur dein Schrank und deine Outfits';
+  document.body.append(bar);
+  const netState = () => {
+    const off = !navigator.onLine;
+    document.body.classList.toggle('offline', off);
+    if (off && !['closet', 'outfits', 'builder', 'add'].includes(state.view) && !isGuest()) showView('closet');
+  };
+  window.addEventListener('offline', netState);
+  window.addEventListener('online', netState);
+  netState();
 })();

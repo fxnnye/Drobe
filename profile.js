@@ -138,7 +138,7 @@ const Profile = (() => {
   // Hinweis in der öffentlichen Ansicht: Ladeanzeige, Fehler mit „Nochmal versuchen“ oder schlichter Text
   function message(box, text, opts = {}) {
     box.querySelector('.pub-msg')?.remove();
-    if (opts.loading) { const l = el('div', 'loading pub-msg'); l.setAttribute('role', 'status'); l.append(el('span', 'spinner'), el('span', null, text)); return box.append(l); }
+    if (opts.loading) { const l = el('div', 'pub-skel'); l.setAttribute('role', 'status'); l.setAttribute('aria-label', text); l.innerHTML = '<div class="skeleton sk-head"></div><div class="skeleton line"></div><div class="skeleton line short"></div><div class="sk-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>'; return box.append(l); }
     if (opts.retry) { const n = el('div', 'notice error pub-msg'); n.setAttribute('role', 'alert'); n.append(el('p', null, text)); const b = el('button', 'btn', 'Nochmal versuchen'); b.type = 'button'; b.onclick = opts.retry; n.append(b); return box.append(n); }
     box.append(el('p', 'muted pub-msg', text));
   }
@@ -951,7 +951,7 @@ const Profile = (() => {
     if (!sb || !Cloud.user() || !navigator.onLine) return;
     let list;
     const lbox = $('inboxList');
-    if (markRead && !lbox.children.length) { lbox.replaceChildren(el('div', 'loading')); lbox.firstChild.append(el('span', 'spinner'), el('span', null, 'Lade Nachrichten …')); }
+    if (markRead && !lbox.children.length) { const sk = el('div', 'inbox-skel'); sk.setAttribute('role', 'status'); sk.setAttribute('aria-label', 'Lade Nachrichten'); sk.innerHTML = '<div class="skeleton"></div>'.repeat(4); lbox.replaceChildren(sk); }
     try {
       const { data, error } = await sb.rpc('my_threads');
       if (error) throw error;

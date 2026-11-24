@@ -1423,3 +1423,19 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 /* 8) Kleinigkeiten: Bilder nicht per Langdruck greifbar, Karten nicht markierbar */
 .card img, .img img, .img-wrap img, .item-photo img { -webkit-touch-callout: none; -webkit-user-drag: none; user-select: none; -webkit-user-select: none; }
 .card, .feed-card { -webkit-user-select: none; user-select: none; }
+
+/* Offline: nur eigener Schrank und eigene Outfits */
+body.offline:not(.guest) .tab[data-view="feed"], body.offline:not(.guest) .tab[data-view="search"], body.offline:not(.guest) .tab[data-view="messages"], body.offline:not(.guest) .subtab[data-sub="saved"] { display: none; }
+.offline-bar { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 6px); transform: translate(-50%, -140%); z-index: 65; padding: 6px 14px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 13px; pointer-events: none; opacity: 0; transition: transform .3s ease, opacity .3s ease; white-space: nowrap; }
+body.offline .offline-bar { transform: translate(-50%, 0); opacity: .92; }
+/* Ladeplatzhalter für Profile und Nachrichten, weich eingeblendete Leerzustände */
+.pub-skel, .inbox-skel { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; }
+.pub-skel .sk-head { height: 72px; width: 72px; border-radius: 50%; }
+.pub-skel .line, .inbox-skel .skeleton { height: 14px; width: 60%; }
+.pub-skel .line.short { width: 35%; }
+.inbox-skel .skeleton { height: 64px; width: 100%; }
+.pub-skel .sk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.pub-skel .sk-grid .skeleton { aspect-ratio: 3 / 4; }
+.empty.show, #feedEmpty:not([hidden]) { animation: empty-in .35s ease both; }
+@keyframes empty-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .empty.show, #feedEmpty:not([hidden]) { animation: none; } .offline-bar { transition: none; } }

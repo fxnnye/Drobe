@@ -139,6 +139,7 @@ function shrinkOut(node, key) {
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';
+  if (document.body.classList.contains('offline') && !['closet', 'outfits', 'builder', 'add'].includes(name)) name = 'closet'; // ohne Internet nur eigener Schrank und eigene Outfits
   const prev = state.view;
   if (prev === 'feed' && name !== 'feed') feed.scrollY = window.scrollY; // beim Zurückkommen wieder dort weitermachen
   state.view = name;
