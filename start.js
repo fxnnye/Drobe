@@ -288,13 +288,17 @@ document.querySelectorAll('dialog').forEach((d) => {
     const can = () => !busy && window.scrollY <= 0 && actions[state.view] && $('publicView').hidden && !document.querySelector('dialog[open]') && !document.body.classList.contains('in-thread');
     const paint = (y, armed) => {
       ind.style.transform = 'translate(-50%, ' + (y - 48) + 'px)';
-      ind.style.opacity = Math.min(1, y / 50);
+      ind.style.opacity = Math.max(0, Math.min(1, (y - 18) / 32));
       ind.classList.toggle('armed', !!armed);
     };
     document.addEventListener('touchstart', (e) => {
       p = null;
       const t = e.touches[0];
       if (e.touches.length === 1 && t.clientX > 28 && t.clientX < window.innerWidth - 28 && can()) p = { y0: t.clientY, x0: t.clientX, dy: 0, on: false, armed: false };
+      if (p) { // im Feed erscheint der Kreis unter „Für dich / Outfits“, sonst ganz oben
+        const ft = state.view === 'feed' && document.querySelector('.feed-top');
+        ind.style.top = ft ? Math.round(ft.getBoundingClientRect().bottom) + 'px' : '';
+      }
     }, { passive: true });
     document.addEventListener('touchmove', (e) => {
       if (!p) return;
