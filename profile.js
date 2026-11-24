@@ -138,7 +138,7 @@ const Profile = (() => {
   // Hinweis in der öffentlichen Ansicht: Ladeanzeige, Fehler mit „Nochmal versuchen“ oder schlichter Text
   function message(box, text, opts = {}) {
     box.querySelector('.pub-msg')?.remove();
-    if (opts.loading) { const l = el('div', 'pub-skel'); l.setAttribute('role', 'status'); l.setAttribute('aria-label', text); l.innerHTML = '<div class="skeleton sk-head"></div><div class="skeleton line"></div><div class="skeleton line short"></div><div class="sk-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>'; return box.append(l); }
+    if (opts.loading) { const l = el('div', 'pub-skel pub-msg'); l.setAttribute('role', 'status'); l.setAttribute('aria-label', text); l.innerHTML = '<div class="skeleton sk-head"></div><div class="skeleton line"></div><div class="skeleton line short"></div><div class="sk-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>'; return box.append(l); }
     if (opts.retry) { const n = el('div', 'notice error pub-msg'); n.setAttribute('role', 'alert'); n.append(el('p', null, text)); const b = el('button', 'btn', 'Nochmal versuchen'); b.type = 'button'; b.onclick = opts.retry; n.append(b); return box.append(n); }
     box.append(el('p', 'muted pub-msg', text));
   }
