@@ -596,6 +596,23 @@ const Profile = (() => {
     seller.onclick = () => { location.hash = '#/u/' + data.username; };
     info.append(seller);
 
+    // Verlauf der Besitzer: öffentlich, wenn das Teil schon einmal den Besitzer gewechselt hat
+    if (it.vis !== 'private') {
+      const hist = el('div', 'item-history');
+      hist.hidden = true;
+      info.append(hist);
+      Cloud.client()?.rpc('item_history', { p_username: data.username, p_id: id }).then((r) => {
+        if (r.error || !same() || !Array.isArray(r.data) || !r.data.length) return;
+        hist.append(el('h3', null, 'Verlauf'));
+        const ul = el('ul');
+        const day = (t) => (t ? new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+        for (const e of r.data) ul.append(el('li', null, '@' + (e.user || '?') + (e.at ? ' · bis ' + day(e.at) : '')));
+        ul.append(el('li', null, '@' + data.username + ' · aktuell'));
+        hist.append(ul);
+        hist.hidden = false;
+      }, () => {}); // Migration 0060 fehlt noch: dann ohne Verlauf
+    }
+
     let goBtn = null;
     if (it.vis !== 'private') info.append(legitBox(data.username, id, own, !!me, askLogin, same, (frozen) => { if (goBtn) goBtn.disabled = frozen; }));
 

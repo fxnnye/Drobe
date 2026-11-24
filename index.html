@@ -734,15 +734,20 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
           <li><b>Inhalte:</b> Fotos und Angaben zu deinen Teilen und Outfits sowie dein Profiltext (Über mich) und dein Profilbild. Alles ist standardmäßig privat. Öffentlich wird nur, was du auf „Öffentlich“ oder „Zum Verkauf“ stellst.</li>
           <li><b>Kommunikation:</b> Nachrichten und Fotos in Unterhaltungen sowie Meldungen. Sie sind nur für die Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
           <li><b>Fehlerprotokoll:</b> Tritt in der App ein unerwarteter Fehler auf, werden die Fehlermeldung, die Stelle im Programm, die Seite (ohne Benutzernamen) und die App-Version an den Betreiber gesendet. Es werden keine Inhalte deines Schranks oder deiner Nachrichten mitgeschickt. Die Meldungen werden nach 30 Tagen gelöscht.</li>
+          <li><b>Käufe und Bewertungen:</b> Kaufanfragen, Angebote mit Betrag und Status, die Bestätigung des Erhalts sowie Bewertungen (Sterne und Text). Bewertungen sind auf dem Profil des Bewerteten öffentlich, mit dem Benutzernamen des Bewertenden. Der Rest ist nur für die beiden Beteiligten und bei Meldungen für die Moderation sichtbar.</li>
+          <li><b>Besitzerverlauf:</b> Wechselt ein Teil über Jawnz den Besitzer, werden Benutzername und Datum des bisherigen Besitzers im Verlauf des Teils gespeichert und auf der Seite des Teils öffentlich angezeigt. Auf Wunsch wird dein Name aus dem Verlauf entfernt (E-Mail an die Adresse im Impressum).</li>
+          <li><b>Mitteilungen (Push):</b> Erlaubst du Mitteilungen in der App, wird die Kennung deines Geräts (Push-Token) zusammen mit deinem Konto gespeichert, ebenso welche Arten von Mitteilungen du möchtest. Der Text der Mitteilung (zum Beispiel der Anfang einer Nachricht) wird über den Push-Dienst von Apple an dein Gerät gesendet. Beim Abmelden wird das Gerät von deinem Konto gelöst. Du kannst Mitteilungen jederzeit in der App (Einstellungen → Mitteilungen) oder in den Geräteeinstellungen abschalten.</li>
+          <li><b>Moderation und Staff Picks:</b> Von Jawnz beauftragte Helfer können Meldungen und die gemeldeten öffentlichen Inhalte einsehen und öffentliche Teile als Staff Pick hervorheben. Ihre Aktionen werden protokolliert. E-Mail-Adressen der Nutzer sehen Helfer nicht.</li>
           <li><b>Aktivität:</b> Wem du folgst und was du dir merkst. Das sehen nur du und der Betreiber der Datenbank.</li>
           <li><b>Nutzungsdaten für den Feed:</b> Wenn du angemeldet bist, wird gespeichert, welche öffentlichen Teile und Outfits anderer du ansiehst, merkst oder anfragst, jeweils mit Datum und höchstens einmal pro Tag und Inhalt. Daraus wird die Reihenfolge im Feed berechnet, auch persönlich nach Marken, Kategorien und Farben, die dich interessieren. Das hat keine rechtlichen oder ähnlich erheblichen Folgen für dich. Andere Nutzer sehen diese Daten nicht.</li>
         </ul>
         <h3>Zwecke und Rechtsgrundlagen</h3>
-        <p>Bereitstellung der App und deines Kontos (Art. 6 Abs. 1 lit. b DSGVO), Sicherheit und Missbrauchsschutz sowie die Sortierung des Feeds (Art. 6 Abs. 1 lit. f DSGVO). Dem Mitschreiben der Nutzungsdaten kannst du jederzeit per E-Mail an die oben genannte Adresse widersprechen.</p>
+        <p>Bereitstellung der App und deines Kontos sowie die Abwicklung von Anfragen und Käufen (Art. 6 Abs. 1 lit. b DSGVO), Push-Mitteilungen auf Grundlage deiner Erlaubnis in den Geräteeinstellungen (Art. 6 Abs. 1 lit. a DSGVO, jederzeit widerrufbar), Sicherheit und Missbrauchsschutz sowie die Sortierung des Feeds (Art. 6 Abs. 1 lit. f DSGVO). Dem Mitschreiben der Nutzungsdaten kannst du jederzeit per E-Mail an die oben genannte Adresse widersprechen.</p>
         <h3>Empfänger und Dienstleister</h3>
         <ul>
           <li><b>Supabase</b> (Datenbank, Anmeldung, Dateispeicher): Die Daten liegen auf Servern in der EU (Region West EU, Irland). Mit dem Anbieter besteht ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO.</li>
           <li><b>GitHub Pages</b> (Auslieferung der App-Dateien): Beim Aufruf wird technisch bedingt deine IP-Adresse an GitHub übertragen.</li>
+          <li><b>Apple</b> (Push-Mitteilungen in der iOS-App, Apple Push Notification Service): Apple erhält dafür die Kennung deines Geräts und den Text der Mitteilung. Es gelten die Datenschutzbestimmungen von Apple.</li>
           <li><b>jsDelivr und IMG.LY</b> (Programmbibliotheken und Modelle für Freistellen und Ähnlichkeit): Sie werden beim ersten Gebrauch geladen, dabei sieht der Anbieter deine IP-Adresse. Deine Fotos werden dafür nicht hochgeladen, die Verarbeitung läuft auf deinem Gerät.</li>
         </ul>
         <h3>Speicherdauer</h3>
@@ -767,6 +772,9 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <li>Nutzer können Inhalte zu eigenen Teilen (eigene Fotos und Texte, auch aus eigenen Anzeigen auf anderen Plattformen) hochladen und in Jawnz übernehmen. Screenshots dürfen dabei nur selbst aufgenommene Fotos enthalten (§ 5 Nr. 2). Jawnz liest dafür keine Links fremder Plattformen aus.</li>
         <li><strong>Jawnz ist nicht Vertragspartei der Kaufverträge.</strong> Kaufverträge kommen ausschließlich zwischen Käufer und Verkäufer zustande. Jawnz verkauft, prüft, lagert oder versendet keine Ware, nimmt keine Zahlungen entgegen und leitet keine Zahlungen weiter.</li>
         <li>Jawnz überprüft weder Angebote noch Echtheit, Zustand oder Rechtmäßigkeit der angebotenen Teile.</li>
+        <li><strong>Staff Picks:</strong> Jawnz und von Jawnz beauftragte Helfer können öffentliche Teile als „Staff Pick“ hervorheben. Darauf besteht kein Anspruch. Ein Staff Pick ist keine Prüfung, Echtheitsbestätigung oder Kaufempfehlung. Jawnz kann einen Staff Pick jederzeit wieder entfernen.</li>
+        <li><strong>Mitteilungen:</strong> In der App kann Jawnz Push-Mitteilungen senden, zum Beispiel bei neuen Nachrichten, Kaufanfragen, Angeboten, Bestellungen, Bewertungen, neuen Followern und Hinweisen des Jawnz-Teams. Sie sind freiwillig und lassen sich in den Einstellungen der App unter „Mitteilungen“ je Art sowie in den Einstellungen des Geräts abschalten.</li>
+        <li><strong>Besitzerverlauf:</strong> Wechselt ein Teil über Jawnz den Besitzer (§ 6 Nr. 7), wird der Verlauf der bisherigen Besitzer (Benutzername und Datum) auf der Seite des Teils öffentlich angezeigt.</li>
         </ol>
 
         <h3>§ 3 Registrierung und Konto</h3>
@@ -796,6 +804,8 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <li>Versand und Übergabe, Versandkosten, Gefahrübergang und Rückabwicklung vereinbaren Käufer und Verkäufer untereinander. Verkäufer versenden die Ware zügig nach Zahlungseingang, Käufer zahlen zügig nach Vertragsschluss.</li>
         <li>Für Mängel und Pflichtverletzungen haftet der Verkäufer nach den gesetzlichen Vorschriften. Jawnz ist dafür nicht verantwortlich und übernimmt keine Garantie, keinen Käuferschutz und keine Vermittlung bei Streitigkeiten. Streitigkeiten klären die Nutzer unter sich, bei Zahlungsproblemen auch über PayPal.</li>
         <li>Ein gesetzliches Widerrufsrecht besteht nur, wenn der Verkäufer Unternehmer ist.</li>
+        <li><strong>Ablauf in der App:</strong> Der Verkäufer nimmt das Angebot des Käufers an, das Teil wird dann für diesen Käufer reserviert. Hat der Verkäufer das Teil als „verkauft“ markiert und ist es beim Käufer angekommen, bestätigt der Käufer in der App den Erhalt. Erst mit dieser Bestätigung wechselt das Teil in den Kleiderschrank des Käufers, und der bisherige Besitzer erscheint im Verlauf des Teils. Erst danach können sich Käufer und Verkäufer gegenseitig bewerten (§ 9). Der Verkäufer kann eine Reservierung wieder aufheben. Die Bestätigung des Erhalts ersetzt weder die Prüfung der Ware durch den Käufer noch begründet sie Ansprüche gegen Jawnz.</li>
+        <li>In begründeten Ausnahmefällen, zum Beispiel bei Betrugsverdacht, Verstößen gegen diese Bedingungen oder technischen Fehlern, kann Jawnz die Übergabe eines Teils bestätigen oder einen Verkauf rückgängig machen, soweit das den Beteiligten zumutbar ist.</li>
         </ol>
 
         <h3>§ 7 Private und gewerbliche Verkäufer</h3>
@@ -811,7 +821,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <h3>§ 9 Verhaltensregeln, Nachrichten, Bewertungen und Betrug</h3>
         <p>Nicht erlaubt sind insbesondere: Beleidigungen, Hass, Belästigung, Bedrohung, diskriminierende, pornografische oder gewaltverherrlichende Inhalte, Betrugsversuche, Spam und Werbung für fremde Angebote, das Umgehen technischer Schutzmaßnahmen, automatisiertes Auslesen von Jawnz sowie falsche Angaben zur Person oder zur Ware.</p>
         <p><strong>Nachrichten und Angebote:</strong> Chat und Angebotsfunktion dienen dem Austausch über Teile und der Abwicklung von Käufen. Nicht erlaubt sind Spam, unerwünschte Werbung, Beleidigungen, Drohungen und das Weitergeben privater Daten anderer Nutzer.</p>
-        <p><strong>Bewertungen:</strong> Bewertungen müssen ehrlich sein und sich auf einen tatsächlichen Kauf beziehen. Gefälschte, beleidigende oder erpresserische Bewertungen kann Jawnz entfernen.</p>
+        <p><strong>Bewertungen:</strong> Nach einem abgeschlossenen Kauf (Erhalt bestätigt, § 6 Nr. 7) kann jede Seite die andere einmal mit 0 bis 5 Sternen und einem kurzen Text bewerten. Bewertungen sind auf dem Profil des Bewerteten öffentlich sichtbar, mit dem Benutzernamen des Bewertenden. Sie müssen ehrlich sein und sich auf den tatsächlichen Kauf beziehen. Gefälschte, beleidigende oder erpresserische Bewertungen kann Jawnz entfernen.</p>
         <p><strong>Betrug und Umgehung:</strong> Verboten ist es insbesondere, Ware nach Zahlung nicht zu liefern, Zahlungen ohne berechtigten Grund zurückzubuchen, Käufer oder Verkäufer zu einer Zahlung außerhalb des in § 6 Nr. 2 vorgesehenen Wegs oder ohne Käuferschutz zu drängen (zum Beispiel PayPal „Freunde und Familie“) und Nutzer auf Seiten außerhalb von Jawnz zu locken, um dort Zahlungsdaten abzufragen. Wer dagegen verstößt, kann sofort gesperrt werden.</p>
 
         <h3>§ 10 Melden von Inhalten, Moderation und Sperrung</h3>
@@ -864,7 +874,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <li>Nutzer dürfen Rechte und Pflichten aus diesem Vertrag nicht ohne Zustimmung des Anbieters auf Dritte übertragen. Der Anbieter darf den Vertrag auf einen Rechtsnachfolger übertragen und informiert die Nutzer vorher; diese können dann kündigen.</li>
         </ol>
 
-        <p class="muted small">Stand: 13. November 2026</p>
+        <p class="muted small">Stand: 24. November 2026</p>
       </div>
     </div>
     <div class="row">
