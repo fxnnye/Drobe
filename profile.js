@@ -138,6 +138,7 @@ const Profile = (() => {
   // Hinweis in der öffentlichen Ansicht: Ladeanzeige, Fehler mit „Nochmal versuchen“ oder schlichter Text
   function message(box, text, opts = {}) {
     box.querySelector('.pub-msg')?.remove();
+    if (opts.loading && !opts.skel) { const l = el('div', 'loading pub-msg'); l.setAttribute('role', 'status'); l.append(el('span', 'spinner'), el('span', null, text)); return box.append(l); }
     if (opts.loading) { const l = el('div', 'pub-skel pub-msg'); l.setAttribute('role', 'status'); l.setAttribute('aria-label', text); l.innerHTML = '<div class="skeleton sk-head"></div><div class="skeleton line"></div><div class="skeleton line short"></div><div class="sk-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>'; return box.append(l); }
     if (opts.retry) { const n = el('div', 'notice error pub-msg'); n.setAttribute('role', 'alert'); n.append(el('p', null, text)); const b = el('button', 'btn', 'Nochmal versuchen'); b.type = 'button'; b.onclick = opts.retry; n.append(b); return box.append(n); }
     box.append(el('p', 'muted pub-msg', text));
@@ -151,7 +152,7 @@ const Profile = (() => {
     back.type = 'button';
     back.onclick = leave;
     box.append(back);
-    message(box, 'Lade …', { loading: true });
+    message(box, 'Lade …', { loading: true, skel: true });
     const sb = Cloud.client();
     if (!sb || !navigator.onLine) return message(box, 'Zum Ansehen von Profilen brauchst du eine Internetverbindung.', { retry: () => render(name) });
     let data, urls = {};
