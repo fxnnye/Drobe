@@ -291,19 +291,21 @@ document.querySelectorAll('dialog').forEach((d) => {
       tg.forEach((n) => { n.style.transform = y ? 'translateY(' + y + 'px)' : ''; }); // Beiträge wandern mit nach unten, der Kreis liegt nie darauf
       ind.style.transform = 'translate(-50%, ' + (y - 48) + 'px)';
       ind.style.opacity = Math.min(1, y / 14);
-      ind.style.clipPath = ind.dataset.feed ? (y >= 48 ? 'none' : 'inset(' + (48 - y) + 'px -24px -24px -24px)') : ''; // im Feed schiebt sich der Kreis unter den Reitern heraus, statt darüber zu gleiten
+      ind.style.clipPath = ind.dataset.under ? (y >= 48 ? 'none' : 'inset(' + (48 - y) + 'px -24px -24px -24px)') : ''; // unter einer Leiste schiebt sich der Kreis darunter heraus, statt darüber zu gleiten
       ind.classList.toggle('armed', !!armed);
     };
     document.addEventListener('touchstart', (e) => {
       p = null;
       const t = e.touches[0];
       if (e.touches.length === 1 && t.clientX > 28 && t.clientX < window.innerWidth - 28 && can()) p = { y0: t.clientY, x0: t.clientX, dy: 0, on: false, armed: false };
-      if (p) { // im Feed erscheint der Kreis unter „Für dich / Outfits“, sonst ganz oben
-        const ft = state.view === 'feed' && document.querySelector('.feed-top');
-        ind.style.top = ft ? Math.round(ft.getBoundingClientRect().bottom) + 'px' : '';
-        ind.dataset.feed = ft ? '1' : '';
+      if (p) { // im Feed erscheint der Kreis unter „Für dich / Outfits“, im Profil unter „Schrank / Outfits / Gemerkt“, sonst ganz oben
+        const view = document.querySelector('.view.active');
+        const anchor = state.view === 'feed' ? document.querySelector('.feed-top') : ME_VIEWS.includes(state.view) ? $('meBar') : null;
+        ind.style.top = anchor ? Math.round(anchor.getBoundingClientRect().bottom) + 'px' : '';
+        ind.dataset.under = anchor ? '1' : '';
         tg.forEach((n) => { n.classList.remove('ptr-t', 'ptr-drag'); n.style.transform = ''; });
-        tg = state.view === 'feed' ? ['picksNote', 'feedGrid', 'feedEmpty'].map((id) => $(id)).concat([...document.querySelectorAll('#view-feed .feed-more')]) : [document.querySelector('.view.active')].filter(Boolean);
+        // unter einer Leiste wandert alles darunter mit nach unten (die Leiste selbst bleibt stehen)
+        tg = !view ? [] : anchor ? [...view.children].filter((n) => n !== anchor && !n.classList.contains('bulk-bar')) : [view];
         tg.forEach((n) => n.classList.add('ptr-t'));
       }
     }, { passive: true });
