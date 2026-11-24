@@ -256,3 +256,157 @@ document.querySelectorAll('dialog').forEach((d) => {
     if (img && img.src) open(img.currentSrc || img.src, img.alt);
   });
 })();
+
+/* ---------- App-Gefühl: Haptik, Runterziehen zum Aktualisieren, Fenster von unten, Bilder, Tastatur ---------- */
+(() => {
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const phone = () => matchMedia('(max-width: 700px)').matches;
+  const touch = 'ontouchstart' in window || matchMedia('(pointer: coarse)').matches;
+
+  // 1) Haptik: Reiter, Chips, Herz, Senden
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest && e.target.closest('.tab, .subtab, .chip, .heart-btn, .picks-btn');
+    if (t) haptic(t.classList.contains('heart-btn') || t.classList.contains('picks-btn') ? 'light' : 'select');
+  }, true);
+  document.addEventListener('submit', (e) => { if (e.target && e.target.id === 'threadForm') haptic('light'); }, true);
+
+  // 2) Runterziehen zum Aktualisieren (Feed, Nachrichten, Schrank, Outfits, Gemerkt)
+  if (touch) {
+    const ind = document.createElement('div');
+    ind.className = 'ptr';
+    ind.setAttribute('aria-hidden', 'true');
+    ind.innerHTML = '<span class="spinner"></span>';
+    document.body.append(ind);
+    const actions = {
+      feed: () => loadFeed(true),
+      messages: () => Profile.loadInbox(true),
+      closet: () => $('syncNowBtn').click(),
+      outfits: () => $('syncNowBtn').click(),
+      saved: () => renderSaved(),
+    };
+    let p = null, busy = false;
+    const can = () => !busy && window.scrollY <= 0 && actions[state.view] && $('publicView').hidden && !document.querySelector('dialog[open]') && !document.body.classList.contains('in-thread');
+    const paint = (y, armed) => {
+      ind.style.transform = 'translate(-50%, ' + (y - 48) + 'px)';
+      ind.style.opacity = Math.min(1, y / 50);
+      ind.classList.toggle('armed', !!armed);
+    };
+    document.addEventListener('touchstart', (e) => {
+      p = null;
+      const t = e.touches[0];
+      if (e.touches.length === 1 && t.clientX > 28 && t.clientX < window.innerWidth - 28 && can()) p = { y0: t.clientY, x0: t.clientX, dy: 0, on: false, armed: false };
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (!p) return;
+      const t = e.touches[0], dy = t.clientY - p.y0, dx = t.clientX - p.x0;
+      if (!p.on) {
+        if (dy < -4 || Math.abs(dx) > Math.abs(dy)) { p = null; return; }
+        if (dy < 10) return;
+        p.on = true;
+      }
+      if (window.scrollY > 0) { p = null; paint(0); return; }
+      e.preventDefault();
+      p.dy = dy;
+      const y = Math.min(96, dy * 0.45);
+      const armed = y >= 62;
+      if (armed && !p.armed) haptic('select');
+      p.armed = armed;
+      ind.style.transition = 'none';
+      paint(y, armed);
+    }, { passive: false });
+    const end = async () => {
+      if (!p) return;
+      const { on, armed } = p; p = null;
+      if (!on) return;
+      ind.style.transition = '';
+      if (!armed) { paint(0); return; }
+      busy = true;
+      ind.classList.add('spin');
+      paint(62, true);
+      const started = Date.now();
+      try { await actions[state.view](); } catch (e) { /* die Ansicht zeigt ihren eigenen Fehler */ }
+      await new Promise((r) => setTimeout(r, Math.max(0, 600 - (Date.now() - started))));
+      ind.classList.remove('spin');
+      paint(0);
+      busy = false;
+    };
+    document.addEventListener('touchend', end, { passive: true });
+    document.addEventListener('touchcancel', () => { if (p && p.on) paint(0); p = null; }, { passive: true });
+  }
+
+  // 4) Fenster von unten (nur Handy): Griff oben, nach unten wegziehbar
+  ['oldItemDialog', 'ordersDialog', 'peopleDialog', 'reviewsDialog', 'reviewDialog', 'reportDialog', 'interestDialog', 'backupDialog'].forEach((id) => {
+    const d = $(id);
+    if (!d) return;
+    d.classList.add('bsheet');
+    const nativeClose = d.close.bind(d);
+    let closing = false;
+    d.close = (v) => {
+      if (!d.open || closing || !phone() || reduce()) return nativeClose(v);
+      closing = true;
+      const from = d._dragY || 0;
+      const a = d.animate([{ transform: 'translateY(' + from + 'px)' }, { transform: 'translateY(100%)' }], { duration: 220, easing: 'cubic-bezier(.23, 1, .32, 1)', fill: 'forwards' });
+      a.onfinish = () => { closing = false; d._dragY = 0; a.cancel(); nativeClose(v); };
+    };
+    d.addEventListener('cancel', (e) => { e.preventDefault(); d.close(); });
+    let g = null;
+    d.addEventListener('touchstart', (e) => {
+      g = null;
+      if (!phone() || e.touches.length !== 1) return;
+      const t = e.touches[0], r = d.getBoundingClientRect();
+      if (t.clientY - r.top <= 44) g = { y0: t.clientY, t0: Date.now(), dy: 0 };
+    }, { passive: true });
+    d.addEventListener('touchmove', (e) => {
+      if (!g) return;
+      g.dy = Math.max(0, e.touches[0].clientY - g.y0);
+      d._dragY = g.dy;
+      e.preventDefault();
+      d.style.transition = 'none';
+      d.style.transform = 'translateY(' + g.dy + 'px)';
+    }, { passive: false });
+    const done = () => {
+      if (!g) return;
+      const { dy, t0 } = g; g = null;
+      const fast = dy / Math.max(1, Date.now() - t0) > 0.5;
+      d.style.transition = '';
+      if (dy > 110 || (dy > 40 && fast)) { d.close(); d.style.transform = ''; return; }
+      const a = reduce() ? null : d.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+      d.style.transform = ''; d._dragY = 0;
+      if (a) a.onfinish = () => { d.style.transform = ''; };
+    };
+    d.addEventListener('touchend', done, { passive: true });
+    d.addEventListener('touchcancel', done, { passive: true });
+  });
+
+  // 6) Bilder weich einblenden, sobald sie geladen sind
+  const mark = (e) => { const i = e.target; if (i && i.tagName === 'IMG') i.classList.add('loaded'); };
+  document.addEventListener('load', mark, true);
+  document.addEventListener('error', mark, true);
+
+  // 7) Tastatur: untere Leiste im Chat sitzt über der Tastatur, Eingabefelder scrollen sichtbar
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const sync = () => {
+      const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      document.documentElement.style.setProperty('--kb', kb + 'px');
+      document.body.classList.toggle('kb-open', kb > 120);
+      if (kb > 120) { const m = document.querySelector('.thread-msgs'); if (m && document.body.classList.contains('in-thread')) m.scrollTop = m.scrollHeight; }
+    };
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+  }
+  document.addEventListener('focusin', (e) => {
+    const f = e.target;
+    if (!f || !/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName) || f.closest('.thread-form') || !phone()) return;
+    setTimeout(() => { try { f.scrollIntoView({ block: 'center', behavior: reduce() ? 'auto' : 'smooth' }); } catch (err) { /* egal */ } }, 320);
+  });
+
+  // 8) Statusleiste/Browserleiste in der Farbe der Seite
+  const themeColor = () => {
+    const m = document.querySelector('meta[name=theme-color]');
+    if (m) m.content = getComputedStyle(document.body).backgroundColor;
+  };
+  themeColor();
+  new MutationObserver(themeColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(themeColor, 50));
+})();

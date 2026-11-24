@@ -119,6 +119,17 @@ final class JawnzPush: NSObject, WKScriptMessageHandler, UNUserNotificationCente
             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in self.reportStatus() }
         case "ready":
             if let l = pendingLink { pendingLink = nil; send("onOpen", l) }
+        case "haptic":
+            let kind = (body["kind"] as? String) ?? "light"
+            DispatchQueue.main.async {
+                switch kind {
+                case "select": UISelectionFeedbackGenerator().selectionChanged()
+                case "success": UINotificationFeedbackGenerator().notificationOccurred(.success)
+                case "error": UINotificationFeedbackGenerator().notificationOccurred(.error)
+                case "medium": UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                default: UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+            }
         case "badge":
             let n = (body["count"] as? Int) ?? 0
             DispatchQueue.main.async { UIApplication.shared.applicationIconBadgeNumber = n }

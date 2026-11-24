@@ -119,6 +119,11 @@ function showView(name) {
   placeSubInd();
   document.body.classList.toggle('not-feed', name !== 'feed'); // Logo nur im Feed
   if (name === 'add') { state.addFrom = prev === 'add' ? state.addFrom : prev; }
+  { // Richtung des Reiterwechsels: neue Ansicht kommt von der Seite, auf die der Reiter liegt
+    const order = [...document.querySelectorAll('.tab')].map((t) => t.dataset.view);
+    const dir = order.indexOf(topTab(name)) - order.indexOf(topTab(prev));
+    document.documentElement.style.setProperty('--dx', matchMedia('(max-width: 700px)').matches && dir ? (dir > 0 ? '32px' : '-32px') : '0px');
+  }
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'builder') { renderPicker(); renderStage(); }
   // Zurück zum Feed (z. B. vom Profil): Der geladene Feed bleibt stehen und wird nicht neu geholt. Ein Tipp auf „Feed“ im Feed oder ein alter Stand (über 10 Minuten) lädt neu.

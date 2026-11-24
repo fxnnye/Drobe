@@ -108,11 +108,17 @@ function askConfirm(text, yesLabel = 'Löschen', info = false) { // info: nur ei
   });
 }
 
+// Kurzes Vibrieren in der iOS-App (über die Brücke in AppDelegate.swift); im Browser passiert nichts
+function haptic(kind = 'light') {
+  const b = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.jawnzPush;
+  if (b) { try { b.postMessage({ cmd: 'haptic', kind }); } catch (e) { /* egal */ } }
+}
 function toast(msg) {
   const t = $('toast');
   const bad = /nicht|Fehler|konnte|fehlt|falsch|Limit|zu viele/i.test(msg); // Fehlermeldungen sehen anders aus und bleiben länger
   t.textContent = msg;
   t.classList.toggle('error', bad);
+  if (bad) haptic('error');
   t.setAttribute('role', bad ? 'alert' : 'status');
   t.classList.add('show');
   clearTimeout(toast.t);
