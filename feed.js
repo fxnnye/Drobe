@@ -27,10 +27,13 @@ window.addEventListener('resize', placeSubInd);
 let growFrom = null;
 document.addEventListener('click', (e) => {
   const c = e.target.closest && e.target.closest('.card, .grid > *');
-  growFrom = c ? { rect: (c.querySelector('.img, img') || c).getBoundingClientRect(), t: Date.now() } : null;
+  growFrom = c ? { rect: (c.querySelector('.img, img') || c).getBoundingClientRect(), t: Date.now(), el: c, scrollY: window.scrollY } : null;
 }, true);
-function growIn(node, fromTop) {
+const growOrigins = {}; // Adresse der Seite -> Karte, aus der sie kam (für die Rückbewegung)
+let noShrink = false;
+function growIn(node, fromTop, key) {
   const o = growFrom; growFrom = null;
+  if (o && key) growOrigins[key] = { el: o.el, scrollY: o.scrollY };
   if (!o || Date.now() - o.t > 1500 || !node.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const b = node.getBoundingClientRect();
   if (!b.width || !o.rect.width) return;
@@ -86,7 +89,7 @@ function growIn(node, fromTop) {
       if (dx > 90 || (dx > 40 && fast)) {
         const from = location.hash, x = Math.max(0, dx), w = window.innerWidth;
         const a = reduce() ? null : view.animate([{ transform: 'translateX(' + x + 'px)' }, { transform: 'translateX(' + w + 'px)' }], { duration: 180, easing: 'cubic-bezier(.23, 1, .32, 1)', fill: 'forwards' });
-        const go = () => { reset(); if (a) a.cancel(); fwd.push(from); ours = true; view.querySelector('.pub-back').click(); setTimeout(() => { ours = false; }, 800); };
+        const go = () => { reset(); if (a) a.cancel(); fwd.push(from); ours = true; noShrink = true; view.querySelector('.pub-back').click(); setTimeout(() => { ours = false; }, 800); };
         if (a) a.onfinish = go; else go();
       } else {
         const x = Math.max(0, dx);
@@ -106,6 +109,33 @@ function growIn(node, fromTop) {
   document.addEventListener('touchend', finish, { passive: true });
   document.addEventListener('touchcancel', () => { if (g && g.mode === 'back') reset(); g = null; }, { passive: true });
 })();
+// Zurück: Die Seite schrumpft in die Karte, aus der sie kam. Gibt eine Funktion zurück, die nach dem Umschalten der Ansicht startet.
+function shrinkOut(node, key) {
+  const o = growOrigins[key];
+  if (noShrink) { noShrink = false; return null; }
+  if (!o || node.hidden || !node.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  const r0 = node.getBoundingClientRect();
+  const wrap = document.createElement('div');
+  wrap.setAttribute('aria-hidden', 'true');
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:70;overflow:hidden;pointer-events:none;background:var(--bg);';
+  const copy = node.cloneNode(true);
+  copy.removeAttribute('id'); copy.removeAttribute('hidden');
+  copy.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+  copy.style.cssText = 'position:absolute;margin:0;top:' + r0.top + 'px;left:' + r0.left + 'px;width:' + r0.width + 'px;';
+  wrap.append(copy);
+  document.body.append(wrap);
+  return () => {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (state.view === 'feed' || ME_VIEWS.includes(state.view)) window.scrollTo(0, o.scrollY || 0);
+    const r = o.el && o.el.isConnected ? (o.el.querySelector('.img, img') || o.el).getBoundingClientRect() : null;
+    const seen = r && r.width && r.bottom > 0 && r.top < vh;
+    const end = seen
+      ? { transform: 'translate(' + (r.left + r.width / 2 - vw / 2) + 'px,' + (r.top + r.height / 2 - vh / 2) + 'px) scale(' + Math.max(0.2, r.width / vw * 1.05) + ')', opacity: 0, borderRadius: '28px' }
+      : { transform: 'translateY(40px) scale(.92)', opacity: 0, borderRadius: '28px' };
+    const a = wrap.animate([{ transform: 'none', opacity: 1, borderRadius: '0px' }, { opacity: 0.7, offset: 0.55 }, end], { duration: 340, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+    a.onfinish = a.oncancel = () => wrap.remove();
+  };
+}
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';

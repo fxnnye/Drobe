@@ -1382,13 +1382,18 @@ const Profile = (() => {
     } catch (e) { /* Migration 0019 fehlt noch oder kein Netz */ }
   }
   /* ---------- Navigation ---------- */
+  let routeKey = '';
   async function route() {
     const name = parseHash(), itm = parseItemHash(), otf = parseOutfitHash();
+    const was = viewing, prevKey = routeKey;
     viewing = !!name || !!itm || !!otf;
+    routeKey = location.hash;
+    const shrink = was && !viewing ? shrinkOut($('publicView'), prevKey) : null; // Rückbewegung vorbereiten, solange die Seite noch da ist
     body.classList.toggle('viewing-profile', viewing);
     $('publicView').hidden = !viewing;
     $('landing').hidden = viewing || !body.classList.contains('guest');
-    if (viewing) growIn($('publicView'), true);
+    if (shrink) shrink();
+    if (viewing) growIn($('publicView'), true, location.hash);
     if (name) await render(name);
     else if (itm) await renderItem(itm.name, itm.id);
     else if (otf) await renderOutfit(otf.name, otf.id);
