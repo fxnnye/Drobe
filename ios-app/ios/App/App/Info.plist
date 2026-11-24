@@ -28,6 +28,10 @@
 	<string>JAWNZ braucht Zugriff auf deine Fotos, damit du Bilder deiner Kleidungsstücke hinzufügen kannst.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>JAWNZ speichert Bilder (zum Beispiel deine Outfits) auf Wunsch in deinen Fotos.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

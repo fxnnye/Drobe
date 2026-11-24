@@ -460,6 +460,7 @@ const Cloud = (() => {
       } finally { $('pwSave').disabled = false; }
     };
     $('logoutBtn').onclick = async () => {
+      if (typeof Push !== 'undefined') await Push.unregister();
       if (sb) { try { await sb.auth.signOut(); } catch (e) { /* offline: lokal abmelden reicht */ } }
       try { localStorage.removeItem('jawnz-last-user'); } catch (e) { /* egal */ }
       location.reload();

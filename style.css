@@ -1374,3 +1374,13 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .thread-photo { width: var(--h-ctrl); height: var(--h-ctrl); }
 .set-panel[data-panel="main"] .set-row { min-height: var(--h-ctrl); }
 .msg-tabs .msg-orders { width: var(--h-ctrl); height: var(--h-ctrl); }
+
+/* Einstellungen → Mitteilungen */
+.push-state { background: var(--gray); border-radius: var(--r-card); padding: 16px; margin-bottom: 16px; }
+.push-state p { margin: 0 0 12px; }
+.push-state .btn { margin-bottom: 0; }
+.push-state p:last-child { margin-bottom: 0; }
+.set-toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--h-ctrl); padding: 10px 0; border-bottom: 1px solid var(--gray); cursor: pointer; }
+.set-toggle span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.set-toggle small { color: var(--muted, #6b6b6b); font-size: 13px; }
+.set-toggle input { flex: none; width: 22px; height: 22px; accent-color: var(--red); }

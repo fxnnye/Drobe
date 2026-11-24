@@ -946,6 +946,7 @@ const Profile = (() => {
     }
     const unread = list.filter((x) => x.unread).length;
     $('inboxBadge').textContent = unread ? String(unread) : '';
+    if (typeof Push !== 'undefined') Push.setBadge(unread);
     $('menuBtn').classList.toggle('has-unread', unread > 0 && !markRead);
     if (!markRead) return;
     inboxData = list;
@@ -1447,7 +1448,7 @@ const Profile = (() => {
   // Wird vom Konto-Code nach dem Start (Gast oder angemeldet) aufgerufen
   async function start() {
     if (!started) { started = true; wire(); wireThread(); }
-    if (Cloud.user()) { loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); loadOwnRating(); checkReportUpdates(); }
+    if (Cloud.user()) { if (typeof Push !== 'undefined') Push.start(); loadOwn(); loadInbox(false); loadSocial(); loadOwnText(); loadOwnRating(); checkReportUpdates(); }
     await route();
   }
 

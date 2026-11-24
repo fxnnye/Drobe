@@ -68,6 +68,7 @@ function showSetPanel(name) {
 }
 document.querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => showSetPanel(b.dataset.open); });
 $('setBack').onclick = () => showSetPanel('main');
+document.querySelector('[data-open=push]').addEventListener('click', () => Push.openPanel());
 // Computer: Knopf oben rechts in der Kopfzeile; Handy: neben „Bearbeiten“
 {
   const mq = matchMedia('(min-width: 701px)');
@@ -246,3 +247,81 @@ const drop = $('backupDrop');
 ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', (e) => { if (e.dataTransfer.files[0]) importBackup(e.dataTransfer.files[0]); });
+
+/* ---------- Mitteilungen (Push) ----------
+   Die iOS-Hülle (ios-app/…/AppDelegate.swift) liefert die Geräte-Kennung und den Stand der Erlaubnis über window.JawnzPush;
+   die Kennung geht an die Datenbank (push_register), von dort schickt die Edge Function push-send die Mitteilungen über Apple. */
+const Push = (() => {
+  const bridge = () => window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.jawnzPush;
+  const post = (cmd, extra) => { const b = bridge(); if (b) { try { b.postMessage(Object.assign({ cmd }, extra || {})); } catch (e) { /* egal */ } } };
+  const KEY = 'jawnz-push-token', ASKED = 'jawnz-push-asked';
+  let status = 'unknown', token = null, env = 'production';
+  const store = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* egal */ } };
+  const load = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  async function register() {
+    const sb = Cloud.client();
+    if (!token || !sb || !Cloud.user()) return;
+    try { await sb.rpc('push_register', { p_token: token, p_env: env }); } catch (e) { /* beim nächsten Start wieder */ }
+  }
+  function paintState() {
+    const box = $('pushState'), text = $('pushStateText'), btn = $('pushEnable');
+    if (!bridge()) { box.hidden = true; $('pushWebHint').hidden = false; return; }
+    $('pushWebHint').hidden = true;
+    box.hidden = false;
+    btn.hidden = status !== 'notDetermined' && status !== 'denied';
+    if (status === 'authorized') text.textContent = 'Mitteilungen sind auf diesem iPhone an.';
+    else if (status === 'denied') { text.textContent = 'Mitteilungen sind für JAWNZ ausgeschaltet. Du kannst sie in den iPhone-Einstellungen unter Mitteilungen → JAWNZ wieder erlauben.'; btn.hidden = true; }
+    else if (status === 'notDetermined') text.textContent = 'Erlaube Mitteilungen, damit du nichts verpasst.';
+    else text.textContent = '';
+  }
+  async function loadPrefs() {
+    const sb = Cloud.client();
+    document.querySelectorAll('[data-push]').forEach((c) => { c.disabled = true; });
+    if (!sb || !Cloud.user()) return;
+    try {
+      const { data, error } = await sb.rpc('push_prefs_get');
+      if (error) throw error;
+      document.querySelectorAll('[data-push]').forEach((c) => { c.checked = data[c.dataset.push] !== false; c.disabled = false; });
+      $('pushMsg').textContent = '';
+    } catch (e) { $('pushMsg').textContent = 'Die Einstellungen konnten nicht geladen werden.'; }
+  }
+  document.querySelectorAll('[data-push]').forEach((c) => {
+    c.onchange = async () => {
+      const sb = Cloud.client();
+      try {
+        const { error } = await sb.rpc('push_prefs_set', { p_kind: c.dataset.push, p_on: c.checked });
+        if (error) throw error;
+        $('pushMsg').textContent = '';
+      } catch (e) { c.checked = !c.checked; $('pushMsg').textContent = 'Das hat nicht geklappt.'; }
+    };
+  });
+  $('pushEnable').onclick = () => { store(ASKED, '1'); post('enable'); };
+  // Antworten der App-Hülle
+  window.JawnzPush = {
+    onToken(t, e) { token = t; env = e || 'production'; store(KEY, t); register(); },
+    onStatus(s) { status = s; paintState(); },
+    onError() { /* z. B. im Simulator ohne Zertifikat: still ignorieren */ },
+    onOpen(link) {
+      link = String(link || 'messages');
+      if (link.startsWith('#/')) location.hash = link;
+      else if (typeof showView === 'function') showView('messages');
+    },
+  };
+  return {
+    // Nach der Anmeldung: Stand abfragen, Kennung melden; beim allerersten Mal einmal um Erlaubnis bitten
+    start() {
+      if (!bridge()) return;
+      post('ready');
+      post('register');
+      if (!load(ASKED)) setTimeout(() => { if (status === 'notDetermined') { store(ASKED, '1'); post('enable'); } }, 4000);
+    },
+    openPanel() { paintState(); post('status'); loadPrefs(); },
+    // Beim Abmelden: dieses Gerät von diesem Konto lösen, damit keine fremden Mitteilungen ankommen
+    async unregister() {
+      const sb = Cloud.client(), t = token || load(KEY);
+      if (!sb || !t) return;
+      try { await Promise.race([sb.rpc('push_unregister', { p_token: t }), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* egal */ }
+    },
+    setBadge(n) { post('badge', { count: n }); },
+  };
+})();

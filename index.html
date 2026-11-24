@@ -624,6 +624,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
       <button class="set-row" type="button" data-open="password">Passwort ändern</button>
       <p class="set-head">App</p>
       <button class="set-row" type="button" data-open="theme">Darstellung</button>
+      <button class="set-row" type="button" data-open="push">Mitteilungen</button>
       <button class="set-row" type="button" data-open="lang">Sprache</button>
       <button class="set-row" type="button" id="backupOpen">Backup</button>
       <p class="set-head">Rechtliches</p>
@@ -672,6 +673,23 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <button class="chip" type="button" data-theme="system">Automatisch</button>
       </div>
       <p class="muted small">Automatisch richtet sich nach der Einstellung deines Geräts.</p>
+    </div>
+
+    <div class="set-panel" data-panel="push" data-title="Mitteilungen" hidden>
+      <div class="push-state" id="pushState" hidden>
+        <p id="pushStateText"></p>
+        <button class="btn primary full" type="button" id="pushEnable" hidden>Mitteilungen erlauben</button>
+      </div>
+      <p class="muted small" id="pushWebHint" hidden>Mitteilungen bekommst du in der JAWNZ-App auf dem iPhone. Hier kannst du schon einstellen, welche du haben möchtest.</p>
+      <p class="set-head">Das möchte ich bekommen</p>
+      <label class="set-toggle"><span><b>Nachrichten</b><small>Wenn dir jemand schreibt</small></span><input type="checkbox" data-push="messages"></label>
+      <label class="set-toggle"><span><b>Kaufanfragen</b><small>Wenn sich jemand für dein Teil interessiert</small></span><input type="checkbox" data-push="requests"></label>
+      <label class="set-toggle"><span><b>Angebote</b><small>Angenommen, abgelehnt oder zurückgezogen</small></span><input type="checkbox" data-push="offers"></label>
+      <label class="set-toggle"><span><b>Bestellungen</b><small>Verkauft, Erhalt bestätigt, Reservierung aufgehoben</small></span><input type="checkbox" data-push="orders"></label>
+      <label class="set-toggle"><span><b>Bewertungen</b><small>Wenn dich jemand bewertet</small></span><input type="checkbox" data-push="reviews"></label>
+      <label class="set-toggle"><span><b>Neue Follower</b><small>Wenn dir jemand folgt</small></span><input type="checkbox" data-push="follows"></label>
+      <label class="set-toggle"><span><b>Nachrichten vom JAWNZ-Team</b><small>Wichtige Hinweise zu deinem Konto</small></span><input type="checkbox" data-push="team"></label>
+      <p class="pw-msg" id="pushMsg" role="status"></p>
     </div>
 
     <div class="set-panel" data-panel="lang" data-title="Sprache" hidden>
