@@ -24,3 +24,10 @@ Was nur im Apple-Konto geht:
 3. **Supabase → Edge Functions → Secrets:** `APNS_KEY` (kompletter Inhalt der .p8-Datei inklusive BEGIN/END-Zeilen), `APNS_KEY_ID`, `APNS_TEAM_ID`.
 4. **Xcode:** Target „App“ → Signing & Capabilities → Team wählen; „Push Notifications“ erscheint dort durch die Datei `App.entitlements` schon. Beim Archivieren stellt Xcode `aps-environment` automatisch auf production.
 5. TestFlight- und App-Store-Builds nutzen den Produktions-Server von Apple, Debug-Läufe aus Xcode den Sandbox-Server; die App meldet das beim Registrieren mit (`env`).
+
+## Auf dem eigenen iPhone mit kostenloser Apple-ID
+
+Die Debug-Konfiguration nutzt `App/AppDebug.entitlements` (ohne Push), weil ein kostenloses Konto die Push-Berechtigung nicht erlaubt.
+Die Release-Konfiguration (Archivieren für TestFlight/App Store) nutzt `App/App.entitlements` mit Push. Mit dem bezahlten Konto
+kann man in Xcode für Debug ebenfalls `App/App.entitlements` eintragen (Build Settings → Code Signing Entitlements).
+Ohne Push-Berechtigung meldet die App in Einstellungen → Mitteilungen einen Hinweis, alles andere funktioniert.
