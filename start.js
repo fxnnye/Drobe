@@ -291,7 +291,7 @@ document.querySelectorAll('dialog').forEach((d) => {
       tg.forEach((n) => { n.style.transform = y ? 'translateY(' + y + 'px)' : ''; }); // Beiträge wandern mit nach unten, der Kreis liegt nie darauf
       ind.style.transform = 'translate(-50%, ' + (y - 48) + 'px)';
       ind.style.opacity = Math.min(1, y / 14);
-      ind.style.clipPath = ind.dataset.feed ? 'inset(' + Math.max(0, 48 - y) + 'px 0 0 0)' : ''; // im Feed schiebt sich der Kreis unter den Reitern heraus, statt darüber zu gleiten
+      ind.style.clipPath = ind.dataset.feed ? (y >= 48 ? 'none' : 'inset(' + (48 - y) + 'px -24px -24px -24px)') : ''; // im Feed schiebt sich der Kreis unter den Reitern heraus, statt darüber zu gleiten
       ind.classList.toggle('armed', !!armed);
     };
     document.addEventListener('touchstart', (e) => {
