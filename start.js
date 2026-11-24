@@ -290,7 +290,8 @@ document.querySelectorAll('dialog').forEach((d) => {
     const paint = (y, armed) => {
       tg.forEach((n) => { n.style.transform = y ? 'translateY(' + y + 'px)' : ''; }); // Beiträge wandern mit nach unten, der Kreis liegt nie darauf
       ind.style.transform = 'translate(-50%, ' + (y - 48) + 'px)';
-      ind.style.opacity = Math.max(0, Math.min(1, (y - 18) / 32));
+      ind.style.opacity = Math.min(1, y / 14);
+      ind.style.clipPath = ind.dataset.feed ? 'inset(' + Math.max(0, 48 - y) + 'px 0 0 0)' : ''; // im Feed schiebt sich der Kreis unter den Reitern heraus, statt darüber zu gleiten
       ind.classList.toggle('armed', !!armed);
     };
     document.addEventListener('touchstart', (e) => {
@@ -300,6 +301,7 @@ document.querySelectorAll('dialog').forEach((d) => {
       if (p) { // im Feed erscheint der Kreis unter „Für dich / Outfits“, sonst ganz oben
         const ft = state.view === 'feed' && document.querySelector('.feed-top');
         ind.style.top = ft ? Math.round(ft.getBoundingClientRect().bottom) + 'px' : '';
+        ind.dataset.feed = ft ? '1' : '';
         tg.forEach((n) => { n.classList.remove('ptr-t', 'ptr-drag'); n.style.transform = ''; });
         tg = state.view === 'feed' ? ['picksNote', 'feedGrid', 'feedEmpty'].map((id) => $(id)).concat([...document.querySelectorAll('#view-feed .feed-more')]) : [document.querySelector('.view.active')].filter(Boolean);
         tg.forEach((n) => n.classList.add('ptr-t'));
