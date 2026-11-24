@@ -371,7 +371,8 @@
     const wrap = el('div', 'actions');
     const g1 = el('div', 'group'); g1.append(el('h4', null, 'Mitglied'));
     const r1 = el('div', 'row');
-    const prof = el('a', 'btn', 'Profil ansehen'); prof.href = './#/u/' + encodeURIComponent(username); prof.target = '_blank'; prof.rel = 'noopener';
+    const prof = el('a', 'btn', 'Profil ansehen'); prof.href = './?verwaltung=' + encodeURIComponent(username) + '#/u/' + encodeURIComponent(username);
+    prof.onclick = () => rememberPlace(username); // gleiches Fenster; „Zurück zur Verwaltung“ landet wieder an dieser Stelle
     r1.append(prof, btn('Nachricht schreiben', null, () => messageFlow(username)));
     if (opt.onContent) r1.append(btn('Inhalte ansehen', null, opt.onContent));
     g1.append(r1); wrap.append(g1);
@@ -389,6 +390,23 @@
       g2.append(r2); wrap.append(g2);
     }
     return wrap;
+  }
+
+  /* ---------- Merken, wo man war, bevor es in die App geht ---------- */
+  const PLACE = 'jawnz-admin-place';
+  function rememberPlace(user) {
+    const tab = document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
+    try { sessionStorage.setItem(PLACE, JSON.stringify({ tab, user, query: memberQuery })); } catch (e) { /* dann startet die Verwaltung vorn */ }
+  }
+  // Gibt true zurück, wenn der gemerkte Reiter wieder geöffnet wurde (nur Reiter, die diese Rolle sehen darf)
+  function restorePlace() {
+    let p = null;
+    try { p = JSON.parse(sessionStorage.getItem(PLACE)); sessionStorage.removeItem(PLACE); } catch (e) { /* egal */ }
+    const b = p && document.querySelector('.tabs button[data-tab="' + p.tab + '"]');
+    if (!b || b.hidden) return false;
+    if (p.tab === 'members') { openUser = p.user; memberQuery = p.query || ''; $('members').replaceChildren(); }
+    goTab(p.tab);
+    return true;
   }
 
   /* ---------- Anmeldung und Tabs ---------- */
@@ -413,8 +431,9 @@
     document.querySelectorAll('.tabgroup').forEach((g) => { g.hidden = ![...g.querySelectorAll('button')].some((b) => !b.hidden); });
     $('who').textContent = user.email + (helper ? ' · Helfer' : ' · Admin');
     show('admin');
-    if (helper) { goTab('reports'); return; }
-    goTab('overview');
+    const restored = restorePlace();
+    if (helper) { if (!restored) goTab('reports'); return; }
+    if (!restored) goTab('overview');
     loadReports();
   }
   const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), picks: () => loadPicks(), errors: () => loadErrors(), log: () => loadLog() };

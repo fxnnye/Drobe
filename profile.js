@@ -148,9 +148,10 @@ const Profile = (() => {
     const box = $('publicView');
     box.replaceChildren();
     box.classList.remove('has-inline-banner');
-    const back = el('button', 'btn pub-back back-btn', Cloud.user() ? 'Zurück' : 'Zur Startseite');
+    const fromAdmin = new URLSearchParams(location.search).get('verwaltung') === name; // aus admin.html geöffnet: Zurück führt dorthin
+    const back = el('button', 'btn pub-back back-btn', fromAdmin ? 'Zurück zur Verwaltung' : Cloud.user() ? 'Zurück' : 'Zur Startseite');
     back.type = 'button';
-    back.onclick = leave;
+    back.onclick = fromAdmin ? () => { location.href = 'admin.html'; } : leave;
     box.append(back);
     message(box, 'Lade …', { loading: true, skel: true });
     const sb = Cloud.client();
@@ -1417,7 +1418,9 @@ const Profile = (() => {
     else if (otf) await renderOutfit(otf.name, otf.id);
   }
   function leave() {
-    history.pushState(null, '', location.pathname + location.search);
+    const q = new URLSearchParams(location.search);
+    q.delete('verwaltung'); // wer in der App weitergeht, ist nicht mehr „aus der Verwaltung“ da
+    history.pushState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
     route();
   }
 
