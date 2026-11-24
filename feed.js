@@ -45,6 +45,67 @@ function growIn(node, fromTop) {
   ], { duration: 400, easing: 'cubic-bezier(.23, 1, .32, 1)' });
   a.onfinish = a.oncancel = () => { node.style.transformOrigin = ''; };
 }
+// Wischen vom Bildschirmrand: von links = zurück (die Seite folgt dem Finger), von rechts = wieder vor
+(() => {
+  if (!('ontouchstart' in window) && !matchMedia('(pointer: coarse)').matches) return;
+  const EDGE = 28, view = $('publicView');
+  let g = null, ours = false, fwd = [];
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canBack = () => !view.hidden && !!view.querySelector('.pub-back') && !document.querySelector('dialog[open]');
+  window.addEventListener('hashchange', () => { if (ours) ours = false; else fwd = []; });
+  document.addEventListener('touchstart', (e) => {
+    g = null;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0], w = window.innerWidth;
+    if (t.clientX <= EDGE && canBack()) g = { mode: 'back', x0: t.clientX, y0: t.clientY, dx: 0, locked: false, t0: Date.now() };
+    else if (t.clientX >= w - EDGE && fwd.length && !document.querySelector('dialog[open]')) g = { mode: 'fwd', x0: t.clientX, y0: t.clientY, dx: 0, locked: false, t0: Date.now() };
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!g) return;
+    const t = e.touches[0], dx = t.clientX - g.x0, dy = t.clientY - g.y0;
+    if (!g.locked) {
+      if (Math.abs(dy) > Math.abs(dx) + 6) { g = null; return; } // senkrechtes Scrollen
+      if (Math.abs(dx) < 8) return;
+      g.locked = true;
+    }
+    g.dx = dx;
+    e.preventDefault();
+    if (g.mode === 'back') {
+      const x = Math.max(0, dx);
+      view.style.transition = 'none';
+      view.style.transform = 'translateX(' + x + 'px)';
+      view.style.boxShadow = '-8px 0 24px rgba(0,0,0,.15)';
+    }
+  }, { passive: false });
+  const reset = () => { view.style.transform = ''; view.style.transition = ''; view.style.boxShadow = ''; };
+  const finish = () => {
+    if (!g || !g.locked) { g = null; return; }
+    const { mode, dx, t0 } = g; g = null;
+    const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > 0.5; // schnelles Wischen zählt auch bei kurzer Strecke
+    if (mode === 'back') {
+      if (dx > 90 || (dx > 40 && fast)) {
+        const from = location.hash, x = Math.max(0, dx), w = window.innerWidth;
+        const a = reduce() ? null : view.animate([{ transform: 'translateX(' + x + 'px)' }, { transform: 'translateX(' + w + 'px)' }], { duration: 180, easing: 'cubic-bezier(.23, 1, .32, 1)', fill: 'forwards' });
+        const go = () => { reset(); if (a) a.cancel(); fwd.push(from); ours = true; view.querySelector('.pub-back').click(); setTimeout(() => { ours = false; }, 800); };
+        if (a) a.onfinish = go; else go();
+      } else {
+        const x = Math.max(0, dx);
+        const a = reduce() ? null : view.animate([{ transform: 'translateX(' + x + 'px)' }, { transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+        reset();
+        if (a) a.onfinish = reset;
+      }
+    } else if (dx < -90 || (dx < -40 && fast)) {
+      const to = fwd.pop();
+      if (!to) return;
+      ours = true;
+      history.forward();
+      setTimeout(() => { ours = false; }, 800);
+      if (!reduce()) view.animate([{ transform: 'translateX(40%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+    }
+  };
+  document.addEventListener('touchend', finish, { passive: true });
+  document.addEventListener('touchcancel', () => { if (g && g.mode === 'back') reset(); g = null; }, { passive: true });
+})();
 function showView(name) {
   if (isGuest() && !['feed', 'search'].includes(name)) { loginGate(GATE_TEXT[name] || 'diese Funktion'); return; }
   if (name === 'me') name = state.lastMe || 'closet';
