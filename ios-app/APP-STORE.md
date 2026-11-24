@@ -14,7 +14,8 @@ Alles zum Reinkopieren. Längen sind die Grenzen von Apple.
 | Sprache | Deutsch (Hauptsprache), Englisch optional |
 | Support-URL | https://jawnz.de |
 | Marketing-URL (optional) | https://jawnz.de |
-| Datenschutz-URL | https://jawnz.de (Datenschutz steht in der App unter Einstellungen → Rechtliches; für Apple wird eine eigene Adresse verlangt, siehe „Offen“) |
+| Datenschutz-URL | https://jawnz.de/datenschutz.html |
+| AGB / Impressum | https://jawnz.de/agb.html, https://jawnz.de/impressum.html |
 | Urheberrecht | © 2026 Finn Freund |
 | Preis | Kostenlos |
 
@@ -97,7 +98,7 @@ Apple verlangt mindestens 3 (bis 10) für 6,9 Zoll (1320 × 2868 px). Die andere
 
 ## Offen (Aufgaben für dich)
 
-1. **Datenschutz-URL:** Apple braucht einen direkt aufrufbaren Link. Ich kann eigene Seiten `datenschutz.html` und `agb.html` auf jawnz.de anlegen, wenn du das möchtest.
+1. ~~Datenschutz-URL~~ erledigt: Seiten entstehen mit `python3 ios-app/make-legal.py` aus den Texten in index.html (nach jeder Textänderung neu ausführen und pushen).
 2. **Testkonto** für die App-Prüfung anlegen.
 3. **Entwickler-Account** (erst wenn alles passt), dann App in App Store Connect anlegen und diese Felder einfügen.
 4. **Push** einrichten (README im selben Ordner).
