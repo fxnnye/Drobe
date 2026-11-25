@@ -121,6 +121,46 @@ test('Zuschnitt ignoriert verirrte Pünktchen, behält das Teil', () => {
   eq([c.canvas.width, c.canvas.height], [280, 6]);
 });
 
+// Beiges Foto mit blauem Teil; rechts fehlt ein Streifen (fälschlich entfernt), zurückgeholt wird grob mit Hintergrund
+const fixCase = () => {
+  const w = 120, h = 120, src = new Uint8ClampedArray(w * h * 4), cur = new Uint8ClampedArray(w * h * 4), mask = new Uint8Array(w * h);
+  const part = (x, y) => x >= 25 && x < 90 && y >= 25 && y < 95;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const p = y * w + x, noise = (x * 7 + y * 13) % 9, c = part(x, y) ? [30 + noise, 50 + noise, 90 + noise] : [212 - noise, 204 - noise, 188 - noise];
+    src.set([...c, 255], p * 4);
+    mask[p] = x >= 66 && x < 104 && y >= 40 && y < 80 ? 1 : 0;
+    cur.set([...c, mask[p] || (part(x, y) && x < 70) ? 255 : 0], p * 4);
+  }
+  return { w, h, src, cur, mask, part };
+};
+test('Ausbessern: Hintergrund in zurückgeholten Stellen verschwindet, das Teil bleibt', () => {
+  const { w, h, src, cur, mask, part } = fixCase();
+  const removed = W('refineRestored')(cur, src, mask, w, h);
+  let lost = 0, left = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const p = y * w + x;
+    if (!mask[p]) continue;
+    if (part(x, y) && !cur[p * 4 + 3]) lost++;
+    if (!part(x, y) && cur[p * 4 + 3]) left++;
+  }
+  ok(removed > 400, 'entfernt: ' + removed); eq([lost, left], [0, 0], 'verloren / übrig');
+});
+test('Ausbessern: ein heller Fleck mitten im zurückgeholten Teil bleibt', () => {
+  const { w, h, src, cur, mask } = fixCase();
+  for (let y = 55; y < 61; y++) for (let x = 76; x < 82; x++) { const p = (y * w + x) * 4; src.set([210, 202, 186, 255], p); cur.set([210, 202, 186, 255], p); }
+  W('refineRestored')(cur, src, mask, w, h);
+  ok(cur[(58 * w + 79) * 4 + 3] > 0, 'Loch im Teil');
+});
+test('Ausbessern: ändert nichts außerhalb der zurückgeholten Stellen', () => {
+  const { w, h, src, cur, mask } = fixCase(), before = cur.slice();
+  W('refineRestored')(cur, src, mask, w, h);
+  ok(mask.every((m, p) => m || cur[p * 4 + 3] === before[p * 4 + 3]));
+});
+test('Ausbessern: ohne Vergleichsfarben passiert nichts', () => {
+  const w = 40, h = 40, src = new Uint8ClampedArray(w * h * 4).fill(255), cur = src.slice(), mask = new Uint8Array(w * h).fill(1);
+  eq(W('refineRestored')(cur, src, mask, w, h), -1);
+});
+
 test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose darunter, Schuhe links unten', async () => {
   const doc = frame.contentDocument;
   const mk = async (name, cat, asp) => { const c = doc.createElement('canvas'); c.width = 300; c.height = Math.round(300 * asp); c.getContext('2d').fillRect(0, 0, c.width, c.height); return { id: 't_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };

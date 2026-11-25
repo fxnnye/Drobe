@@ -14,6 +14,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
+    // Mit Szenen ruft iOS applicationDidBecomeActive nicht auf: die Brücke zur Web-App muss hier verbunden werden
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        JawnzPush.shared.attach()
+    }
+
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)
     }

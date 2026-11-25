@@ -340,3 +340,124 @@ async function shrink(file, removeBg) {
     URL.revokeObjectURL(src);
   }
 }
+
+/* ---------- Ausbessern: Hintergrund in zurückgeholten Stellen wieder entfernen ---------- */
+// Farben so umrechnen, dass Schatten (Helligkeit) weniger zählen als der Farbton
+const fixColor = (d, i) => {
+  const r = d[i], g = d[i + 1], b = d[i + 2], y = 0.299 * r + 0.587 * g + 0.114 * b;
+  return [y * 0.7, (b - y) * 0.9, (r - y) * 1.1];
+};
+// Die häufigsten Farben einer Pixelmenge (k-means); Gruppen unter 2 % zählen nicht
+function fixPalette(data, list, k = 10) {
+  if (!list.length) return [];
+  const step = Math.max(1, Math.floor(list.length / 4000));
+  const pts = [];
+  for (let i = 0; i < list.length; i += step) pts.push(fixColor(data, list[i] * 4));
+  const dist = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+  const centers = [pts[0]];
+  while (centers.length < k) { // Startfarben: jeweils die, die am weitesten von allen bisherigen weg ist
+    let far = null, max = 40;
+    for (const p of pts) { const d = Math.min(...centers.map((c) => dist(p, c))); if (d > max) { max = d; far = p; } }
+    if (!far) break;
+    centers.push(far);
+  }
+  let counts = [];
+  for (let round = 0; round < 6; round++) {
+    const sum = centers.map(() => [0, 0, 0]);
+    counts = centers.map(() => 0);
+    for (const p of pts) {
+      let best = 0, bd = Infinity;
+      centers.forEach((c, j) => { const d = dist(p, c); if (d < bd) { bd = d; best = j; } });
+      counts[best]++;
+      for (let a = 0; a < 3; a++) sum[best][a] += p[a];
+    }
+    centers.forEach((c, j) => { if (counts[j]) centers[j] = sum[j].map((v) => v / counts[j]); });
+  }
+  const min = pts.length * 0.02;
+  return centers.filter((c, j) => counts[j] >= min);
+}
+// cur: aktuelles Bild (RGBA), src: Ausgangsfoto in gleicher Größe, mask: 1 = hier wurde zurückgeholt.
+// Macht darin alles durchsichtig, was wie der Hintergrund aussieht. Verändert cur und liefert die Zahl der entfernten Pixel,
+// oder -1, wenn es zu wenig zum Vergleichen gibt.
+function refineRestored(cur, src, mask, w, h) {
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let p = 0; p < mask.length; p++) {
+    if (!mask[p]) continue;
+    const x = p % w, y = (p - x) / w;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  if (x1 < 0) return 0;
+  const pad = Math.round(Math.max(40, Math.max(x1 - x0, y1 - y0) * 0.6)), frame = Math.max(2, Math.round(Math.min(w, h) * 0.03));
+  // Vergleichsfarben: behaltenes Teil (überall) gegen Entferntes in der Nähe und am Fotorand
+  const fg = [], bg = [];
+  for (let p = 0; p < mask.length; p++) {
+    if (mask[p]) continue;
+    const a = cur[p * 4 + 3];
+    if (a >= 250) fg.push(p);
+    else if (a <= 5 && src[p * 4 + 3] > 200) {
+      const x = p % w, y = (p - x) / w;
+      if ((x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad) || x < frame || y < frame || x >= w - frame || y >= h - frame) bg.push(p);
+    }
+  }
+  if (fg.length < 50 || bg.length < 50) return -1;
+  const front = fixPalette(cur, fg), back = fixPalette(src, bg);
+  const near = (c, list) => { let m = Infinity; for (const q of list) { const d = (c[0] - q[0]) ** 2 + (c[1] - q[1]) ** 2 + (c[2] - q[2]) ** 2; if (d < m) m = d; } return Math.sqrt(m); };
+  // 1 = Hintergrund. Im Zweifel bleibt der Pixel: man hat ihn ja absichtlich zurückgeholt
+  let isBg = new Uint8Array(w * h);
+  const open = [];
+  for (let p = 0; p < mask.length; p++) {
+    if (!mask[p] || !cur[p * 4 + 3]) continue;
+    open.push(p);
+    const c = fixColor(src, p * 4), db = near(c, back), df = near(c, front);
+    if (db < 34 && df > 14 && db < df * 0.8) isBg[p] = 1; // nah an einer Farbe des Teils: immer behalten
+  }
+  const nb = (p) => { const x = p % w, y = (p - x) / w, out = []; if (x > 0) out.push(p - 1); if (x < w - 1) out.push(p + 1); if (y > 0) out.push(p - w); if (y < h - 1) out.push(p + w); return out; };
+  const gone = (p) => (mask[p] ? isBg[p] || !cur[p * 4 + 3] : cur[p * 4 + 3] < 128);
+  for (let round = 0; round < 2; round++) { // glätten: einzelne Ausreißer richten sich nach ihren Nachbarn
+    const next = isBg.slice();
+    for (const p of open) {
+      const x = p % w, y = (p - x) / w;
+      let n = 0, total = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (x + dx < 0 || x + dx >= w || y + dy < 0 || y + dy >= h) continue;
+        total++; if (gone(p + dy * w + dx)) n++;
+      }
+      if (n >= total - 2) next[p] = 1; else if (n <= 2) next[p] = 0;
+    }
+    isBg = next;
+  }
+  // Kleine Inseln ohne Verbindung zum Teil sind Reste vom Hintergrund
+  const seen = new Uint8Array(w * h), minSize = Math.max(60, Math.round(open.length * 0.03));
+  for (const start of open) {
+    if (seen[start] || isBg[start]) continue;
+    const group = [start];
+    let attached = false;
+    seen[start] = 1;
+    for (let i = 0; i < group.length; i++) {
+      for (const q of nb(group[i])) {
+        if (!mask[q]) { if (cur[q * 4 + 3] >= 128) attached = true; continue; }
+        if (!seen[q] && !isBg[q] && cur[q * 4 + 3]) { seen[q] = 1; group.push(q); }
+      }
+    }
+    if (!attached && group.length < minSize) for (const p of group) isBg[p] = 1;
+  }
+  // Kleine Löcher mitten im Teil (z. B. helle Waschung) sind kein Hintergrund: sie haben keine Verbindung nach draußen
+  const done = new Uint8Array(w * h), maxHole = Math.max(60, Math.round(open.length * 0.02));
+  for (const start of open) {
+    if (done[start] || !isBg[start]) continue;
+    const group = [start];
+    let outside = false;
+    done[start] = 1;
+    for (let i = 0; i < group.length; i++) {
+      for (const q of nb(group[i])) {
+        if (!cur[q * 4 + 3] || (!mask[q] && cur[q * 4 + 3] < 128)) outside = true;
+        else if (mask[q] && isBg[q] && !done[q]) { done[q] = 1; group.push(q); }
+      }
+    }
+    if (!outside && group.length < maxHole) for (const p of group) isBg[p] = 0;
+  }
+  let removed = 0;
+  for (const p of open) if (isBg[p]) { cur[p * 4 + 3] = 0; removed++; }
+  for (const p of open) if (!isBg[p] && nb(p).some((q) => mask[q] && isBg[q])) cur[p * 4 + 3] = Math.min(cur[p * 4 + 3], 170); // weiche Kante
+  return removed;
+}

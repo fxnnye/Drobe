@@ -1,6 +1,8 @@
 import UIKit
 import WebKit
 import UserNotifications
+import Vision
+import CoreImage
 import Capacitor
 
 @UIApplicationMain
@@ -78,6 +80,8 @@ final class JawnzPush: NSObject, WKScriptMessageHandler, UNUserNotificationCente
     func attach() {
         guard !attached, let wv = bridgeWebView() else { return }
         wv.configuration.userContentController.add(self, name: "jawnzPush")
+        wv.configuration.userContentController.addScriptMessageHandler(JawnzCut.shared, contentWorld: .page, name: "jawnzCut")
+        NSLog("JAWNZ Bruecke verbunden")
         UNUserNotificationCenter.current().delegate = self
         // Tastatur: der Browser in der App meldet die Höhe nicht, deshalb meldet sie iOS selbst an die Seite
         NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] n in
@@ -158,5 +162,44 @@ final class JawnzPush: NSObject, WKScriptMessageHandler, UNUserNotificationCente
         pendingLink = link
         send("onOpen", link)
         completionHandler()
+    }
+}
+
+/// Freistellen mit Apples eigener Bilderkennung (ab iOS 17): läuft auf dem Gerät, ohne Download und in etwa einer Sekunde.
+/// Die Web-App schickt das Foto als Base64 an window.webkit.messageHandlers.jawnzCut und bekommt das freigestellte PNG zurück.
+final class JawnzCut: NSObject, WKScriptMessageHandlerWithReply {
+    static let shared = JawnzCut()
+
+    private struct CutError: LocalizedError {
+        let errorDescription: String?
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        guard let text = message.body as? String, let data = Data(base64Encoded: text), let image = UIImage(data: data)?.cgImage else {
+            return replyHandler(nil, "Foto nicht lesbar")
+        }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Result { try JawnzCut.cut(image) }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let png): replyHandler(png, nil)
+                case .failure(let error): replyHandler(nil, error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private static func cut(_ image: CGImage) throws -> String {
+        guard #available(iOS 17.0, *) else { throw CutError(errorDescription: "iOS zu alt") }
+        let request = VNGenerateForegroundInstanceMaskRequest()
+        let handler = VNImageRequestHandler(cgImage: image)
+        try handler.perform([request])
+        guard let found = request.results?.first, !found.allInstances.isEmpty else { throw CutError(errorDescription: "nichts erkannt") }
+        let buffer = try found.generateMaskedImage(ofInstances: found.allInstances, from: handler, croppedToInstancesExtent: false)
+        let output = CIImage(cvPixelBuffer: buffer)
+        guard let cg = CIContext().createCGImage(output, from: output.extent), let png = UIImage(cgImage: cg).pngData() else {
+            throw CutError(errorDescription: "Ergebnis nicht lesbar")
+        }
+        return png.base64EncodedString()
     }
 }

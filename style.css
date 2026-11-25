@@ -1445,3 +1445,6 @@ body.offline .offline-bar { transform: translate(-50%, 0); opacity: .92; }
 /* Suchfilter: Angebot, Farbe, Größe, Marke als zwei Reihen mit je zwei Feldern, am Computer in einer Reihe */
 .so-filters { grid-template-columns: 1fr 1fr; }
 @media (min-width: 701px) { .so-filters { grid-template-columns: 1.2fr 1.2fr 1fr 1.2fr; } }
+
+/* Radierer: Ausbessern entfernt den Hintergrund in zurückgeholten Stellen */
+.up-fix { margin-bottom: 12px; }

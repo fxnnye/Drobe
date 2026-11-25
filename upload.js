@@ -33,6 +33,28 @@ function trimAlphaBox(canvas) {
   out.getContext('2d').drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
   return { canvas: out, x: minX, y: minY };
 }
+// iOS-App: Apple schneidet selbst frei (ab iOS 17, auf dem Gerät, ohne Download). null = nicht möglich, dann übernimmt die KI im Browser.
+async function nativeMask(img) {
+  const bridge = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.jawnzCut;
+  if (!bridge) return null;
+  try {
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    x.drawImage(img, 0, 0, c.width, c.height);
+    const png = await bridge.postMessage(c.toDataURL('image/jpeg', 0.92).split(',')[1]);
+    c.width = c.height = 0;
+    return png ? await (await fetch('data:image/png;base64,' + png)).blob() : null;
+  } catch (e) {
+    console.warn('Apple-Freistellen nicht möglich', e);
+    return null;
+  }
+}
+// Die Bibliothek merkt sich die erste Fortschritts-Funktion, deshalb bekommt sie immer dieselbe und die reicht weiter
+let bgProgress = () => {};
+const bgReport = (key, cur, total) => bgProgress(key.startsWith('fetch') ? 'download' : 'compute', total ? cur / total : 0);
 // KI-Freistellen im Browser (lädt beim ersten Mal das Modell, danach schnell). Ohne Netz: einfache Methode.
 // Am Handy (PWA/WebView) beendet der Browser die Seite, sobald der Arbeitsspeicher knapp wird. Darum dort:
 // 1. die Bildmodelle für Kategorie, Marke und „Ähnliche Teile“ (CLIP) vorher aus dem Speicher nehmen und währenddessen nicht laden,
@@ -46,9 +68,10 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
     const W = img.naturalWidth, H = img.naturalHeight;
     const c = document.createElement('canvas'); // bekommt seine Größe erst, wenn die KI fertig ist (spart Speicher währenddessen)
     try {
+      let out = await nativeMask(img);
+      if (!out) {
       if (phone) await releaseEmbedder();
       heavyBusy++;
-      let out;
       try {
         const lib = await import(BG_LIB);
         let input = blob;
@@ -60,12 +83,15 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
           input = (await canvasBlob(sc, 'image/png')) || blob;
           sc.width = sc.height = 0; // Speicher sofort freigeben
         }
-        out = await lib.removeBackground(input, {
+        bgProgress = onProgress;
+        const run = () => lib.removeBackground(input, {
           ...(phone ? { model: 'isnet_quint8' } : {}),
           output: { format: 'image/png' },
-          progress: (key, cur, total) => onProgress(key.startsWith('fetch') ? 'download' : 'compute', total ? cur / total : 0),
+          progress: bgReport,
         });
+        out = await run().catch((e) => { console.warn('KI-Freistellen: zweiter Versuch', e); return run(); }); // meist nur ein Netzfehler
       } finally { heavyBusy--; }
+      }
       const maskUrl = URL.createObjectURL(out);
       let mask;
       try { mask = await loadImage(maskUrl); } finally { URL.revokeObjectURL(maskUrl); }
@@ -83,7 +109,9 @@ async function removeBackground(blob, onProgress = () => {}, trim = true) {
       c.getContext('2d').drawImage(img, 0, 0);
       const simple = cutOut(c);
       if (simple === c) throw new Error('Hintergrund nicht erkannt');
-      return canvasBlob(trim ? simple : c, 'image/webp', 0.8); // cutOut verändert c selbst und liefert nur eine zugeschnittene Kopie
+      const weak = await canvasBlob(trim ? simple : c, 'image/webp', 0.8); // cutOut verändert c selbst und liefert nur eine zugeschnittene Kopie
+      weak.simple = true; // Notlösung: das sagt man dazu und versucht es beim nächsten Mal wieder richtig
+      return weak;
     }
   } finally {
     URL.revokeObjectURL(src);
@@ -175,12 +203,12 @@ const wrapAngle = (a) => ((a + 180) % 360 + 360) % 360 - 180;
 // Es ist immer nur ein Dialog offen; `activeCtx` sagt, welcher: seine Elemente und sein Bildzustand werden benutzt.
 const ctxUp = {
   cur: () => upCur, refresh: () => refreshUpload(),
-  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle') },
+  el: { preview: $('upPreview'), draw: $('upDraw'), erase: $('upErase'), undo: $('upUndo'), brush: $('upBrush'), brushRow: $('upBrushRow'), fix: $('upFix'), hint: $('upDrawHint'), remove: $('upRemove'), angle: $('upAngle') },
 };
 let itCur = null;
 const ctxIt = {
   cur: () => itCur, refresh: () => { renderTools(itCur); $('itemSave').disabled = !!itCur && (itCur.busy || itCur.queue > 0); },
-  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle') },
+  el: { preview: $('itemPreview'), draw: $('itDraw'), erase: $('itErase'), undo: $('itUndo'), brush: $('itBrush'), brushRow: $('itBrushRow'), fix: $('itFix'), hint: $('itDrawHint'), remove: $('itRemove'), angle: $('itAngle') },
 };
 let activeCtx = ctxUp;
 const cur = () => activeCtx.cur();
@@ -215,7 +243,7 @@ function setAngle(a) {
 // Ist Einzeichnen oder Radierer an, malt ein Finger bzw. die linke Maustaste; dann schiebt man mit zwei Fingern, mittlerer/rechter Maustaste oder Leertaste + Ziehen.
 let zoomNow = 1;
 function setZoom(z, cx, cy) {
-  z = Math.max(1, Math.min(5, z));
+  z = Math.max(1, Math.min(8, z));
   const wrap = el().preview.parentElement; // .up-zoom
   const box = wrap.parentElement;          // .up-preview (scrollt)
   const br = box.getBoundingClientRect();
@@ -500,6 +528,55 @@ async function eraseStroke(blob, pts, area, width, restoreFrom) {
     URL.revokeObjectURL(src);
   }
 }
+// Ausbessern ist möglich, solange seit dem Zurückholen nichts anderes mit dem Bild passiert ist (Drehen, Einzeichnen, Freistellen)
+const canFix = (u) => !!(u && u.fix && u.fix.for === u.orig && !u.useCut && !u.angle);
+// Die zurückgeholten Striche als Maske (1 = zurückgeholt) in Bildgröße
+function strokeMask(strokes, w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.lineCap = 'round'; x.lineJoin = 'round'; x.fillStyle = x.strokeStyle = '#000';
+  strokes.forEach(({ at, width }) => {
+    x.lineWidth = width;
+    x.beginPath();
+    at.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
+    if (at.length === 1) { x.arc(at[0].x, at[0].y, width / 2, 0, Math.PI * 2); x.fill(); } else x.stroke();
+  });
+  const d = x.getImageData(0, 0, w, h).data, mask = new Uint8Array(w * h);
+  for (let i = 0; i < mask.length; i++) mask[i] = d[i * 4 + 3] ? 1 : 0;
+  return mask;
+}
+async function fixRestored(blob, srcBlob, strokes) {
+  const [a, b] = await Promise.all([blobToImage(blob), blobToImage(srcBlob)]);
+  const w = a.naturalWidth, h = a.naturalHeight;
+  const draw = (img) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h); return { c, x, data: x.getImageData(0, 0, w, h) }; };
+  const now = draw(a), src = draw(b);
+  const removed = refineRestored(now.data.data, src.data.data, strokeMask(strokes, w, h), w, h);
+  if (removed <= 0) return { removed };
+  now.x.putImageData(now.data, 0, 0);
+  return { removed, blob: await canvasBlob(now.c, 'image/png') };
+}
+bindTool('fix', async () => {
+  const u = cur();
+  if (!canFix(u) || u.busy || u.queue > 0) return;
+  u.queue = 1; activeCtx.refresh();
+  el().fix.textContent = 'Wird ausgebessert …';
+  try {
+    await new Promise((r) => setTimeout(r, 30)); // erst die Anzeige zeichnen, dann rechnen
+    const res = await fixRestored(u.orig, u.src, u.fix.strokes);
+    if (res.blob) {
+      (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, src: u.src, fix: u.fix });
+      u.orig = u.shown = res.blob; u.fix = null;
+      toast('Ausgebessert. „Zurück“ macht es rückgängig');
+    } else toast(res.removed < 0 ? 'Hier gibt es zu wenig zum Vergleichen. Nimm den Radierer' : 'Hier ist kein Hintergrund zu erkennen');
+  } catch (ex) {
+    console.error(ex);
+    toast('Das Ausbessern hat nicht geklappt');
+  }
+  u.queue = 0;
+  el().fix.textContent = 'Ausbessern';
+  if (cur() === u) activeCtx.refresh();
+});
 // Radierer: „Löschen“ macht Stellen transparent, „Zurückholen“ malt Gelöschtes aus dem Zustand vor dem Radieren wieder ein
 let eraseMode = 'erase';
 document.querySelectorAll('.up-mode .chip').forEach((chip) => {
@@ -525,7 +602,7 @@ bindTool('erase', async () => {
   el().erase.classList.add('on');
   el().erase.textContent = 'Fertig';
   el().brushRow.hidden = false;
-  el().hint.textContent = 'Male über Stellen, die weg sollen. Mit „Zurückholen“ malst du Gelöschtes wieder ein, „Zurück“ nimmt den letzten Strich zurück. Zoomen: zwei Finger oder Mausrad.';
+  el().hint.textContent = 'Male über Stellen, die weg sollen. Mit „Zurückholen“ malst du Gelöschtes wieder ein, „Ausbessern“ nimmt dort den Hintergrund wieder weg. „Zurück“ macht den letzten Schritt rückgängig. Zoomen: zwei Finger oder Mausrad.';
   el().hint.hidden = false;
   el().preview.closest('dialog').classList.add('tooling'); // Foto bleibt oben stehen, während man die Werkzeuge darunter benutzt
   const ctx = cv.getContext('2d');
@@ -552,7 +629,11 @@ bindTool('erase', async () => {
       const srcNow = u.angle ? await rotateBlob(u.src, u.angle) : u.src;
       {
         const out = await eraseStroke(now, st.pts, st.area, st.brush / st.area.s, st.mode === 'restore' ? srcNow : null);
-        (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, src: u.src });
+        (u.history = u.history || []).push({ orig: u.orig, cut: u.cut, useCut: u.useCut, angle: u.angle, erased: u.erased, src: u.src, fix: u.fix });
+        // Zurückgeholte Striche merken, damit „Ausbessern“ weiß, wo es arbeiten soll
+        const kept = u.fix && u.fix.for === now ? u.fix.strokes : [];
+        const added = st.mode === 'restore' ? [{ at: st.pts.map((p) => ({ x: (p.x - st.area.x) / st.area.s, y: (p.y - st.area.y) / st.area.s })), width: st.brush / st.area.s }] : [];
+        u.fix = kept.length || added.length ? { for: out, strokes: [...kept, ...added] } : null;
         u.src = srcNow;
         u.orig = out; u.cut = null; u.useCut = false; u.angle = 0; u.erased = true;
         u.shown = out; // angle ist 0: die Vorschau zeigt genau dieses Bild, der nächste Strich kann sofort darauf aufbauen
@@ -607,6 +688,7 @@ function renderTools(u) {
   e.remove.disabled = locked;
   e.draw.disabled = locked;
   e.erase.disabled = locked;
+  e.fix.disabled = locked || !canFix(u);
   e.undo.hidden = !(u.history && u.history.length);
   e.undo.disabled = locked;
   e.remove.textContent = u.busy ? (u.status || 'Hintergrund wird entfernt …') : u.useCut ? 'Original anzeigen' : 'Hintergrund entfernen';
@@ -628,10 +710,11 @@ async function doRemoveBg() {
   if (u.busy) return;
   stopDraw();
   await ensureFull(u);
-  if (u.cut) { u.useCut = !u.useCut; return activeCtx.refresh(); }
+  // Ein Ergebnis der Notlösung wird nicht behalten: nach „Original anzeigen“ versucht der nächste Tipp wieder die KI
+  if (u.cut && !(u.cut.simple && !u.useCut)) { u.useCut = !u.useCut; return activeCtx.refresh(); }
   u.busy = true; activeCtx.refresh();
   try {
-    u.status = 'KI-Modell wird geladen … (einmalig, kann etwas dauern)';
+    u.status = window.webkit?.messageHandlers?.jawnzCut ? 'Hintergrund wird entfernt …' : 'KI-Modell wird geladen … (einmalig, kann etwas dauern)';
     u.cut = await removeBackground(u.orig, (phase, frac) => {
       u.status = phase === 'download'
         ? `KI-Modell wird geladen … ${Math.round(frac * 100)} % (einmalig)`
@@ -639,6 +722,7 @@ async function doRemoveBg() {
       if (cur() === u) el().remove.textContent = u.status;
     }, false); // ohne Zuschnitt: bleibt deckungsgleich mit dem Ausgangsfoto
     u.useCut = true;
+    if (u.cut.simple) toast('KI nicht erreichbar, einfache Methode benutzt. Zum Wiederholen: „Original anzeigen“, dann nochmal');
   } catch (e) {
     console.error(e);
     toast('Hintergrund konnte nicht entfernt werden');

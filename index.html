@@ -274,8 +274,9 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
         <button class="chip" type="button" data-mode="restore">Zurückholen</button>
       </div>
       <label class="field">Pinselgröße
-        <input type="range" id="upBrush" min="6" max="60" step="1" value="24">
+        <input type="range" id="upBrush" min="3" max="60" step="1" value="24">
       </label>
+      <button class="btn full up-fix" type="button" id="upFix" disabled>Ausbessern</button>
     </div>
     <p class="muted small" id="upDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.</p>
     <button class="btn full" type="button" id="upRemove">Hintergrund entfernen</button>
@@ -425,8 +426,9 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
           <button class="chip" type="button" data-mode="restore">Zurückholen</button>
         </div>
         <label class="field">Pinselgröße
-          <input type="range" id="itBrush" min="6" max="60" step="1" value="24">
+          <input type="range" id="itBrush" min="3" max="60" step="1" value="24">
         </label>
+        <button class="btn full up-fix" type="button" id="itFix" disabled>Ausbessern</button>
       </div>
       <p class="muted small" id="itDrawHint" hidden>Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.</p>
       <button class="btn full" type="button" id="itRemove">Hintergrund entfernen</button>
