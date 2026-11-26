@@ -1,5 +1,5 @@
 // Offline-Cache. Datei bleibt 1500 Byte.
-const CACHE = 'drobe-v347', KI = 'jawnz-ki';
+const CACHE = 'drobe-v348', KI = 'jawnz-ki';
 const JS = ['colors','begriffe','profile','cloud','core','details','imaging','feed','closet','search','upload','item','outfits','saved','settings','start','errors','i18n'].map((n) => n + '.js');
 const FILES = ['./', 'index.html', 'style.css', ...JS, 'vendor/supabase.js', 'manifest.webmanifest',
   ...['icon-192','icon-512','icon-maskable-512','apple-touch-icon','favicon-32'].map((n) => `icons/${n}.png`)];

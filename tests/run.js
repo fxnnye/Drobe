@@ -121,6 +121,24 @@ test('Zuschnitt ignoriert verirrte Pünktchen, behält das Teil', () => {
   eq([c.canvas.width, c.canvas.height], [280, 6]);
 });
 
+// Einheitliche Größen im Outfit-Bauer
+const tall = (category, aspect, name = '') => W('fitWidth')({ category, name }, aspect) * aspect / W('STAGE_RATIO'); // Länge im Outfit
+const near = (list, msg) => ok(Math.max(...list) - Math.min(...list) < 0.001, msg + ': ' + list.map((v) => v.toFixed(3)).join(', '));
+test('Outfit: lange Hosen sind gleich lang, egal wie breit sie fotografiert sind', () => near([1.6, 2, 2.4, 3].map((a) => tall('Hosen', a)), 'Hosen'));
+test('Outfit: Shirts, Pullover und Jacken sind je Kategorie gleich lang', () => {
+  for (const c of ['Shirts', 'Pullover', 'Jacken']) near([0.85, 1, 1.2, 1.45].map((a) => tall(c, a)), c);
+});
+test('Outfit: Hose ist länger als das Shirt, aber höchstens anderthalbmal so lang und nicht breiter', () => {
+  const ratio = tall('Hosen', 2) / tall('Shirts', 1);
+  ok(ratio > 1.2 && ratio <= 1.5, 'Verhältnis ' + ratio.toFixed(2));
+  for (const a of [1.6, 2, 2.4]) ok(W('fitWidth')({ category: 'Hosen' }, a) < W('fitWidth')({ category: 'Shirts' }, 1), 'Hose breiter als Shirt bei ' + a);
+});
+test('Outfit: Mäntel sind länger, kurze Hosen kürzer', () => {
+  ok(tall('Jacken', 1.3, 'Wollmantel') > tall('Jacken', 1.3, 'Bomber') * 1.25, 'Mantel');
+  ok(tall('Jacken', 1.8) > tall('Jacken', 1.2) * 1.25, 'sehr lange Jacke');
+  ok(tall('Hosen', 1, '') < tall('Hosen', 2) * 0.6 && tall('Hosen', 1.4, 'Cargo Shorts') < tall('Hosen', 2) * 0.6, 'Shorts');
+});
+
 // Bild-Links aus dem Netz und gespeicherte Bilder
 const signed = (exp) => 'https://x.supabase.co/storage/v1/object/sign/images/u1/items-a%20b?token=a.' + btoa(JSON.stringify({ exp })).replace(/=+$/, '') + '.c&r=2';
 test('Abgelaufener Bild-Link wird erkannt, ein gültiger nicht', () => {

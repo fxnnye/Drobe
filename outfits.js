@@ -52,7 +52,7 @@ async function aspectOf(it) {
 }
 // Standardbreite eines Teils: so groß, wie es in die Fläche seiner Kategorie passt
 const fitWidth = (it, aspect) => {
-  const box = PLACEMENT[it.category];
+  const box = placementFor(it, aspect);
   return Math.min(box.w, box.h * STAGE_RATIO / aspect);
 };
 

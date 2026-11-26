@@ -14,11 +14,12 @@ const LEGACY = {
 };
 // Maximalgröße je Kategorie (w: Anteil der Bühnenbreite, h: Anteil der Bühnenhöhe). Ein Teil wird mit seinem
 // Seitenverhältnis so eingepasst, dass es hineinpasst: so wirken Hose, Jacke und Schuhe im gleichen Maßstab.
+// Bei Oberteilen und Hosen bestimmt die Länge (h) die Größe, damit alle gleich lang sind; w fängt nur sehr breite Fotos ab.
 const PLACEMENT = {
-  Jacken: { w: 0.55, h: 0.32 },
-  Shirts: { w: 0.52, h: 0.30 },
-  Pullover: { w: 0.58, h: 0.32 },
-  Hosen: { w: 0.50, h: 0.50 },
+  Jacken: { w: 0.70, h: 0.31 },
+  Shirts: { w: 0.66, h: 0.29 },
+  Pullover: { w: 0.70, h: 0.30 },
+  Hosen: { w: 0.48, h: 0.41 },
   Gürtel: { w: 0.24, h: 0.05 },
   Taschen: { w: 0.24, h: 0.17 },
   Schmuck: { w: 0.20, h: 0.07 },
@@ -26,6 +27,17 @@ const PLACEMENT = {
   Schuhe: { w: 0.44, h: 0.15 },
 };
 const STAGE_RATIO = 16 / 9; // Höhe : Breite der Bühne
+// Ausnahmen von der einheitlichen Länge: Mäntel und Kleider sind länger, kurze Hosen kürzer
+const LONG_BOX = { w: 0.70, h: 0.42 };
+const SHORTS_BOX = { w: 0.48, h: 0.22 };
+// aspect: Höhe geteilt durch Breite des freigestellten Fotos
+function placementFor(it, aspect) {
+  const name = String(it.name || '').toLowerCase();
+  if (it.category === 'Hosen' && (/short|jorts|bermuda|kurze/.test(name) || aspect < 1.25)) return SHORTS_BOX;
+  if (it.category === 'Jacken' && (/mantel|coat|trench|parka/.test(name) || aspect > 1.6)) return LONG_BOX;
+  if (it.category === 'Shirts' && /kleid\b/.test(name)) return LONG_BOX;
+  return PLACEMENT[it.category];
+}
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
 const MAX_OBERTEILE = 2; // Jacke, Pullover und Shirt lassen sich mischen, zusammen aber höchstens zwei
 // Standard-Stapelreihenfolge (hinten → vorne)
