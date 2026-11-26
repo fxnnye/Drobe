@@ -5,11 +5,17 @@ $('itScale').oninput = (e) => { $('itScaleVal').textContent = e.target.value + '
 
 function setItemEditOpen(open) {
   $('itEdit').hidden = !open;
-  dlg.classList.toggle('editing', open); // Vorschau bleibt beim Bearbeiten oben sichtbar
+  dlg.classList.toggle('editing', open); // am Computer bleibt die Vorschau beim Bearbeiten oben sichtbar
+  dlg.classList.remove('turning');
   $('itEditToggle').setAttribute('aria-expanded', open);
   $('itEditToggle').textContent = open ? 'Bearbeiten schließen' : 'Bearbeiten';
 }
 $('itEditToggle').onclick = () => setItemEditOpen($('itEdit').hidden);
+// Handy: Solange man an den Dreh-Reglern ist, bleibt das Foto oben stehen (außer es würde die Regler verdecken); die nächste Berührung woanders löst es wieder
+dlg.addEventListener('pointerdown', (e) => {
+  const row = e.target.closest('.rotate'), box = dlg.querySelector('.up-preview');
+  dlg.classList.toggle('turning', !!row && row.getBoundingClientRect().top - dlg.getBoundingClientRect().top > box.offsetHeight);
+});
 
 // Foto ersetzen: neues Bild an die Stelle des alten setzen; Name, Kategorie und Angaben bleiben, Werkzeuge starten von vorn
 $('itReplace').onclick = () => $('itReplaceFile').click();

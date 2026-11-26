@@ -639,6 +639,17 @@ test('Sprachwahl oben: nur für Besucher, angemeldet steht sie in den Einstellun
   } finally { b.className = classes; bar.hidden = barHidden; lang.hidden = langHidden; }
 });
 
+test('Teil bearbeiten am Handy: Foto scrollt mit, steht nur beim Radieren und Drehen', () => {
+  const w = frame.contentWindow, d = w.document, dlg = d.getElementById('itemDialog'), box = dlg.querySelector('.up-preview'), classes = dlg.className;
+  const pos = (cls) => { dlg.className = cls; return w.getComputedStyle(box).position; };
+  try {
+    eq([pos('editing'), pos('editing tooling'), pos('editing turning')], ['relative', 'sticky', 'sticky']);
+    dlg.className = 'editing turning';
+    d.getElementById('itemName').dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
+    ok(!dlg.classList.contains('turning'), 'Foto bleibt nach dem Drehen stehen');
+  } finally { dlg.className = classes; }
+});
+
 /* ---------- Lauf ---------- */
 (async () => {
   await ready;

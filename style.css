@@ -1548,3 +1548,8 @@ body:not(.guest) .web-lang { display: none; }
   .guest .guest-actions .btn { padding: 0 7px; font-size: 12px; }
   .guest .web-lang { width: 32px; font-size: 12px; }
 }
+
+/* Handy, Teil bearbeiten: Das Foto bleibt oben an seinem Platz und scrollt mit. Nur beim Radieren, Einzeichnen und Drehen bleibt es stehen, damit man sieht, was man tut. */
+@media (max-width: 700px) {
+  #itemDialog.editing:not(.tooling):not(.turning) .up-preview { position: relative; box-shadow: none; }
+}
