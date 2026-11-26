@@ -15,7 +15,7 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 900px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+  main { max-width: 1040px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
   header { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; flex-wrap: wrap; }
   header h1 { font-size: 20px; margin: 0; flex: 1; min-width: 0; }
   .badge { font-size: 12px; background: var(--red); color: #fff; border-radius: 99px; padding: 2px 8px; vertical-align: middle; }
@@ -34,14 +34,52 @@
   textarea { resize: vertical; min-height: 96px; }
   .sect { margin-bottom: 28px; } .sect h3 { margin: 0 0 4px; font-size: 16px; }
   select { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line, #ccc); background: var(--card, transparent); color: inherit; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-  .tabgroup { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .tablabel { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-right: 2px; }
-  .tabs button { white-space: nowrap; min-height: 36px; padding: 6px 12px; font-size: 14px; }
-  .tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
-  .stat b { display: block; font-size: 26px; }
-  button.stat { display: block; text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 0; }
+  .shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .content { min-width: 0; }
+  .tabs { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; display: grid; gap: 18px; }
+  .tabgroup { display: grid; gap: 2px; }
+  .tablabel { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 0 12px 4px; }
+  .tabs button { justify-content: flex-start; width: 100%; min-height: 38px; padding: 7px 12px; font-size: 14px; background: transparent; border-radius: 10px; }
+  .tabs button .badge { margin-left: auto; }
+  .tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); font-weight: 600; }
+  @media (hover: hover) { .tabs button:hover:not([aria-selected="true"]) { background: var(--gray); filter: none; } }
+  #menuBtn { display: none; }
+  .pagehead { margin-bottom: 18px; }
+  .pagehead h2 { margin: 0; font-size: 24px; }
+  .pagehead p { margin: 2px 0 0; font-size: 14px; }
+  @media (max-width: 760px) {
+    .shell { display: block; }
+    #menuBtn { display: flex; width: 100%; justify-content: flex-start; gap: 10px; position: sticky; top: 8px; z-index: 5; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.08); margin-bottom: 16px; }
+    #menuBtn .small { margin-left: auto; }
+    #menuBtn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+    .tabs { display: none; position: static; max-height: none; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin: -8px 0 16px; gap: 12px; }
+    .tabs.open { display: grid; }
+    .tabs button { min-height: 44px; font-size: 15px; }
+    .pagehead h2 { display: none; }
+    header { gap: 8px; margin-bottom: 12px; }
+    header h1 { flex: 1 0 100%; }
+    #who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    header button, header .btn { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+    .seg button { flex: 1 1 40%; }
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--gray); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .seg button { flex: 1 0 auto; min-height: 36px; padding: 6px 12px; font-size: 14px; background: transparent; border-radius: 9px; white-space: nowrap; }
+  .seg button[aria-selected="true"] { background: var(--surface); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .seg .n { font-size: 12px; color: var(--muted); }
+  .seg-body > .sect { margin-bottom: 0; } .seg-body > .sect > h3 { display: none; } .seg-body > .sect > p.muted:first-of-type { margin: 0 0 12px; }
+  .todo { display: grid; gap: 8px; margin-bottom: 8px; }
+  .todo button { justify-content: flex-start; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--red); padding: 14px 16px; text-align: left; }
+  .todo button b { font-size: 22px; color: var(--red); min-width: 28px; }
+  .todo button span:last-child { margin-left: auto; color: var(--muted); font-size: 13px; }
+  .allgood { border-left: 4px solid var(--ok); }
+  details.more { margin-top: 12px; border-top: 1px solid var(--line); }
+  details.more > summary { margin: 0; padding: 12px 0 0; font-size: 14px; font-weight: 600; }
+  details.more > .actions { border-top: 0; }
+  .decide { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .stat b { display: block; font-size: 24px; }
+  button.stat { display: block; text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 0; }
   button.stat.hot b { color: var(--red); }
   button.stat span { display: block; }
   button.stat .go { font-size: 12px; margin-top: 4px; color: var(--muted); }
@@ -89,7 +127,9 @@
   .group .row { display: flex; gap: 8px; flex-wrap: wrap; }
   .group.sep { border-top: 1px dashed var(--line); padding-top: 12px; }
   .content-list { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
-  .content-row { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
+  .content-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .content-row:last-child { border-bottom: 0; }
+  .content-row button { min-height: 36px; padding: 6px 12px; font-size: 13px; }
   .content-row span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 
   /* Dialog */
@@ -130,15 +170,17 @@
   <!-- Verwaltung -->
   <section id="adminView" hidden>
     <header>
-      <h1>JAWNZ Verwaltung <span class="badge" id="repBadge" hidden></span></h1>
+      <h1>JAWNZ Verwaltung</h1>
       <span class="muted small" id="who"></span>
       <a class="btn" href="./">Zur App</a>
       <button id="logout" type="button">Abmelden</button>
     </header>
-    <div class="tabs" role="tablist">
+    <div class="shell">
+    <button type="button" id="menuBtn" aria-expanded="false" aria-controls="nav"><span aria-hidden="true">☰</span><b id="menuLabel">Übersicht</b><span class="dot" id="menuDot" hidden></span><span class="muted small">Menü</span></button>
+    <nav class="tabs" id="nav" role="tablist">
       <div class="tabgroup" data-admin><button role="tab" data-tab="overview" aria-selected="true">Übersicht</button></div>
       <div class="tabgroup" data-admin><span class="tablabel">Prüfen</span>
-        <button role="tab" data-tab="reports" aria-selected="false">Meldungen</button>
+        <button role="tab" data-tab="reports" aria-selected="false">Meldungen <span class="badge" id="repBadge" hidden></span></button>
         <button role="tab" data-tab="legit" aria-selected="false">Legit-Check <span class="badge" id="legitBadge" hidden></span></button>
         <button role="tab" data-tab="moderation" aria-selected="false">Moderation</button></div>
       <div class="tabgroup" data-admin><span class="tablabel">Handel</span>
@@ -153,7 +195,9 @@
       <div class="tabgroup" data-admin><span class="tablabel">System</span>
         <button role="tab" data-tab="errors" aria-selected="false">Fehlerprotokoll</button>
         <button role="tab" data-tab="log" aria-selected="false">Protokoll</button></div>
-    </div>
+    </nav>
+    <div class="content">
+    <div class="pagehead"><h2 id="pageTitle">Übersicht</h2><p class="muted" id="pageHint"></p></div>
     <div id="overview"></div>
     <div id="reports" hidden></div>
     <div id="legit" hidden></div>
@@ -166,6 +210,8 @@
     <div id="errors" hidden></div>
     <div id="log" hidden></div>
     <div id="picks" hidden></div>
+    </div>
+    </div>
   </section>
 </main>
 
@@ -449,8 +495,38 @@
     loadReports();
   }
   const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), picks: () => loadPicks(), errors: () => loadErrors(), log: () => loadLog() };
+  const PAGES = {
+    overview: ['Übersicht', 'Was gerade zu tun ist und die wichtigsten Zahlen.'],
+    reports: ['Meldungen', 'Offene Meldungen von Mitgliedern.'],
+    legit: ['Legit-Check', 'Eingefrorene Teile und auffällige Abstimmungen.'],
+    moderation: ['Moderation', 'Gesperrte Konten und versteckte Inhalte.'],
+    sales: ['Verkäufe', 'Angebote, Bestellungen und Anzeigen.'],
+    reviews: ['Bewertungen', 'Bewertungen ansehen und missbräuchliche entfernen.'],
+    members: ['Mitglieder', 'Suchen, aufklappen und handeln.'],
+    flex: ['Flex of the Week', 'Wer diese Woche oben im Feed steht.'],
+    roles: ['Rollen', 'Wer Admin oder Helfer ist.'],
+    picks: ['Staff Picks', 'Teile, die im Feed unter der Flamme stehen.'],
+    errors: ['Fehlerprotokoll', 'Fehler, die die App gemeldet hat.'],
+    log: ['Protokoll', 'Alle Eingriffe der Verwaltung.'],
+  };
+  const menu = (open) => { $('nav').classList.toggle('open', open); $('menuBtn').setAttribute('aria-expanded', String(open)); };
+  $('menuBtn').onclick = () => menu(!$('nav').classList.contains('open'));
+  const menuDot = () => { $('menuDot').hidden = ![...$('nav').querySelectorAll('.badge')].some((b) => !b.hidden); };
+  // Mehrere Abschnitte eines Reiters als Umschalter: immer nur einer sichtbar, die Wahl bleibt beim Neuladen erhalten
+  const segChoice = {};
+  function segmented(box, key, parts) {
+    const bar = el('div', 'seg'); bar.setAttribute('role', 'tablist');
+    const body = el('div', 'seg-body');
+    const pick = (i) => { segChoice[key] = i; [...bar.children].forEach((b, n) => b.setAttribute('aria-selected', String(n === i))); body.replaceChildren(parts[i][1]); };
+    parts.forEach(([label, , count], i) => { const b = btn(label, null, () => pick(i)); b.setAttribute('role', 'tab'); if (count != null) b.append(el('span', 'n', String(count))); bar.append(b); });
+    box.append(bar, body);
+    pick(segChoice[key] < parts.length ? segChoice[key] : 0);
+  }
   function goTab(id) {
     document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.tab === id)));
+    $('pageTitle').textContent = $('menuLabel').textContent = PAGES[id][0];
+    $('pageHint').textContent = PAGES[id][1];
+    menu(false);
     for (const k of Object.keys(loaders)) $(k).hidden = k !== id;
     loaders[id]();
     window.scrollTo({ top: 0 });
@@ -463,7 +539,7 @@
   const factUser = (label, name) => { const d = el('div'); d.append(el('span', null, label), userBtn(name)); return d; };
   const loading = (box, text) => box.replaceChildren(el('p', 'muted', text || 'Lade …'));
   const failed = (box, text, retry) => { box.replaceChildren(el('p', 'err', text)); box.append(btn('Nochmal versuchen', null, retry)); checkSession(); };
-  function setBadge(n) { $('repBadge').hidden = !n; $('repBadge').textContent = n; }
+  function setBadge(n) { $('repBadge').hidden = !n; $('repBadge').textContent = n; menuDot(); }
 
   /* ---------- Übersicht ---------- */
   async function loadOverview() {
@@ -479,12 +555,20 @@
         ['System', [['errors_24h', 'Fehler (24 h)', 'errors', true]]],
       ];
       const wrap = el('div', 'ov');
+      wrap.append(el('h3', null, 'Zu erledigen'));
+      const todo = el('div', 'todo');
+      for (const [k, label, tab] of groups.flatMap((g) => g[1]).filter((t) => t[3] && data[t[0]] > 0)) {
+        const t = btn('', null, () => goTab(tab)); t.append(el('b', null, String(data[k])), el('span', null, label), el('span', null, 'Ansehen →')); todo.append(t);
+      }
+      if (!todo.children.length) todo.append(el('div', 'card allgood', 'Nichts offen.'));
+      wrap.append(todo);
       for (const [title, tiles] of groups) {
+        if (title === 'Prüfen') continue; // steht schon oben unter „Zu erledigen“
         wrap.append(el('h3', null, title));
         const grid = el('div', 'stats');
         for (const [k, label, tab, warn] of tiles) {
           const c = btn('', 'stat' + (warn && data[k] > 0 ? ' hot' : ''), () => goTab(tab));
-          c.append(el('b', null, String(data[k] ?? 0)), el('span', 'muted small', label), el('span', 'go', 'Öffnen →'));
+          c.append(el('b', null, String(data[k] ?? 0)), el('span', 'muted small', label));
           grid.append(c);
         }
         wrap.append(grid);
@@ -492,6 +576,7 @@
       box.replaceChildren(wrap);
       setBadge(data.open_reports);
       for (const [id, n] of [['legitBadge', data.frozen], ['salesBadge', data.stuck_orders]]) { const b = $(id); if (b) { b.hidden = !n; b.textContent = n || ''; } }
+      menuDot();
     } catch (e) { console.error(e); failed(box, 'Die Übersicht fehlt noch. Ist Migration 0018 ausgeführt?', loadOverview); }
   }
 
@@ -558,12 +643,11 @@
       fact('AGB zugestimmt', termsText(r.target_terms_at, r.target_terms_version)),
       fact('Meldungen gesamt', String(r.target_reports), r.target_reports > 1, role === 'admin' && r.target ? () => reportsFlow(r.target) : null),
     );
-    card.append(facts);
+    const more = el('details', 'more'); more.append(el('summary', null, role === 'admin' ? 'Mehr zum Konto und Maßnahmen' : 'Mehr zum Konto'), facts);
     const refresh = () => { loadReports(); if (role === 'admin') loadOverview(); };
-    if (role !== 'admin') { card.append(el('p', 'muted small', 'Als Helfer kannst du Meldungen ansehen. Maßnahmen ergreifen die Admins.')); return card; }
-    if (r.target) card.append(accountActions(r.target, { banned: r.target_banned, isAdmin: r.target_is_admin }, { reportId: r.id, refresh }));
-    const g = el('div', 'group sep'); g.style.marginTop = '12px'; g.append(el('h4', null, 'Meldung'));
-    const row = el('div', 'row');
+    if (role !== 'admin') { card.append(more, el('p', 'muted small', 'Als Helfer kannst du Meldungen ansehen. Maßnahmen ergreifen die Admins.')); return card; }
+    if (r.target) more.append(accountActions(r.target, { banned: r.target_banned, isAdmin: r.target_is_admin }, { reportId: r.id, refresh }));
+    const row = el('div', 'decide');
     if (r.record_id && (r.note || '').startsWith('Community-Prüfung')) row.append(btn('Ist echt, Einfrieren aufheben', 'primary', async () => {
       const ok = await confirmAction({ title: 'Teil als echt bestätigen?', intro: 'Das Teil ist wieder normal sichtbar, Anfragen sind möglich, und die Community kann es nicht mehr automatisch einfrieren lassen.', confirmLabel: 'Ist echt' });
       if (!ok) return;
@@ -574,7 +658,7 @@
       if (!a) return;
       if (!(await call('admin_resolve_report', { p_id: r.id }, 'Meldung erledigt.')).failed) refresh();
     }));
-    g.append(row); card.append(g);
+    card.append(row, more);
     return card;
   }
 
@@ -877,7 +961,7 @@
         c.append(h, el('div', 'muted small', 'Eingestellt ' + day(l.since) + ' · zuletzt geändert ' + fmt(l.updated)));
         s4.append(c);
       }
-      box.append(s1, s2, s3, s4);
+      segmented(box, 'sales', [['Hängend', s1, stuck.length], ['Übergaben', s2, transfers.data.length], ['Bestellungen', s3, rest.length], ['Anzeigen', s4, listings.data.length]]);
     } catch (e) { console.error(e); failed(box, 'Die Verkäufe konnten nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', loadSales); }
   }
 
@@ -898,7 +982,7 @@
         }));
         s2.append(c);
       }
-      box.append(s1, s2);
+      segmented(box, 'reviews', [['Letzte Bewertungen', s2, data.reviews.length], ['Durchschnitt', s1, data.stats.length]]);
     }, loadReviews);
   }
 
@@ -931,7 +1015,7 @@
         }));
         s2.append(d);
       }
-      box.append(s1, s2);
+      segmented(box, 'moderation', [['Gesperrte Konten', s1, banned.data.length], ['Versteckte Inhalte', s2, hidden.data.length]]);
     } catch (e) { console.error(e); failed(box, 'Das konnte nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', loadModeration); }
   }
 
@@ -978,7 +1062,7 @@
           list.append(d);
         }
       };
-      box.append(s1, s2);
+      segmented(box, 'flex', [['Diese Woche', s1, data.entries.length], ['Eintragen', s2]]);
     }, loadFlex);
   }
 
@@ -1010,7 +1094,7 @@
         });
         if (a && !(await call('admin_set_role', { p_username: name, p_role: sel.value, p_grant: true, p_reason: a.reason }, 'Rolle vergeben.')).failed) { input.value = ''; loadRoles(); }
       };
-      box.append(s1, s2);
+      segmented(box, 'roles', [['Aktuelle Rollen', s1, data.length], ['Rolle vergeben', s2]]);
     }, loadRoles);
   }
 
@@ -1059,7 +1143,7 @@
         }
       };
       form.onsubmit = (ev) => { ev.preventDefault(); run(); };
-      box.append(s1, s2);
+      segmented(box, 'picks', [['Aktuelle Picks', s1, data.length], ['Teile auswählen', s2]]);
       run();
     }, loadPicks);
   }
