@@ -125,8 +125,9 @@ test('Zuschnitt ignoriert verirrte Pünktchen, behält das Teil', () => {
 const signed = (exp) => 'https://x.supabase.co/storage/v1/object/sign/images/u1/items-a%20b?token=a.' + btoa(JSON.stringify({ exp })).replace(/=+$/, '') + '.c&r=2';
 test('Abgelaufener Bild-Link wird erkannt, ein gültiger nicht', () => {
   const now = 1000000000000;
-  eq(W('expiredLink')(signed(now / 1000 - 60), now), { bucket: 'images', path: 'u1/items-a b' });
-  eq([W('expiredLink')(signed(now / 1000 + 600), now), W('expiredLink')('https://x.de/bild.png', now)], [null, null]);
+  eq(W('signedLink')(signed(now / 1000 - 60), now), { bucket: 'images', path: 'u1/items-a b', stale: true });
+  eq([W('signedLink')(signed(now / 1000 + 600), now).stale, W('signedLink')('https://x.de/bild.png', now)], [false, null]);
+  eq(W('signedLink')(W('emptyLink')('chat', 'u1/foto 1.jpg'), now), { bucket: 'chat', path: 'u1/foto 1.jpg', stale: true });
 });
 test('Neue Bild-Adresse: schon angezeigte Bilder bekommen sie, keins zeigt ins Leere', async () => {
   const w = frame.contentWindow, d = w.document;
@@ -143,6 +144,38 @@ test('Neue Bild-Adresse: schon angezeigte Bilder bekommen sie, keins zeigt ins L
   } finally {
     img.remove(); W('urls').delete(rec.id); W('items').splice(W('items').indexOf(rec), 1);
   }
+});
+
+const until = async (fn, ms = 6000) => { const end = Date.now() + ms; while (!fn()) { if (Date.now() > end) return false; await new Promise((r) => setTimeout(r, 50)); } return true; };
+test('Kaputtes Bild wird nie angezeigt und nach der Reparatur wieder sichtbar', async () => {
+  const w = frame.contentWindow, d = w.document;
+  const good = await png(4, 4, (c) => c.fillRect(0, 0, 4, 4));
+  const id = 'test-repair', before = W('db'); // ohne Anmeldung ist keine Datenbank offen
+  w.eval("openDb('jawnz-test-bilder').then((d) => { db = d; window.__testDb = true; })");
+  ok(await until(() => w.__testDb), 'Test-Datenbank ging nicht auf');
+  await W('tx')('items', 'readwrite', (o) => o.put({ id, blob: good, created: 1 }));
+  const rec = { id, blob: new w.Blob(['kaputt'], { type: 'image/png' }), created: 1 };
+  W('items').push(rec);
+  const img = d.createElement('img'); d.body.append(img);
+  try {
+    img.src = W('urlFor')(rec);
+    ok(await until(() => img.classList.contains('img-wait')), 'Fehler nicht abgefangen');
+    eq(w.getComputedStyle(img).opacity, '0', 'Kaputt-Zeichen sichtbar');
+    ok(await until(() => !img.classList.contains('img-wait') && img.naturalWidth === 4), 'nicht repariert');
+  } finally {
+    img.remove(); W('urls').delete(id); W('items').splice(W('items').indexOf(rec), 1);
+    await W('rawDel')('items', id);
+    W('db').close(); delete w.__testDb; w.__before = before; w.eval('db = window.__before; delete window.__before');
+    w.indexedDB.deleteDatabase('jawnz-test-bilder');
+  }
+});
+test('Bild aus dem Netz, das nicht lädt: wird versteckt und erneut angefragt', async () => {
+  const d = frame.contentWindow.document;
+  const img = d.createElement('img'); d.body.append(img);
+  try {
+    img.src = new URL('../gibt-es-nicht.png', location.href).href;
+    ok(await until(() => img.classList.contains('img-wait') && /[?&]r=2-/.test(img.src)), 'kein zweiter Versuch: ' + img.src);
+  } finally { img.remove(); }
 });
 
 // Beiges Foto mit blauem Teil; rechts fehlt ein Streifen (fälschlich entfernt), zurückgeholt wird grob mit Hintergrund

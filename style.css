@@ -1448,3 +1448,8 @@ body.offline .offline-bar { transform: translate(-50%, 0); opacity: .92; }
 
 /* Radierer: Ausbessern entfernt den Hintergrund in zurückgeholten Stellen */
 .up-fix { margin-bottom: 12px; }
+
+/* Bilder, die gerade nachgeladen werden: nie das Kaputt-Zeichen, stattdessen eine ruhige Fläche (core.js) */
+img.img-wait { opacity: 0 !important; animation: none !important; }
+:has(> img.img-wait) { background-color: var(--gray); }
+.bubble-img img.img-wait { width: 200px; height: 160px; }

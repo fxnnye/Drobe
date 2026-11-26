@@ -96,46 +96,100 @@ const state = {
 };
 const itemById = (id) => items.find((i) => i.id === id);
 
-/* ---------- Bilder aus dem Netz: schlägt ein Abruf fehl (Funkloch, Server ausgelastet, Link abgelaufen), wird er wiederholt ---------- */
-const IMG_RETRY_MS = [800, 2000, 4000, 10000, 30000];
-// Zeitlich begrenzter Speicher-Link, der abgelaufen ist (nach 1 Stunde)? Dann Ablage und Pfad, um einen neuen zu holen.
-function expiredLink(src, now = Date.now()) {
+/* ---------- Bild-Absicherung für die ganze App ----------
+   Jedes <img> läuft hier durch: Ein Bild, das nicht lädt, wird nie als kaputt angezeigt (Klasse "img-wait" zeigt eine Fläche)
+   und so lange erneut geholt, bis es da ist. Aus dem Netz: neu anfragen, Link neu holen, ersatzweise das große statt des kleinen Bildes.
+   Vom Gerät: neu aus dem Speicher lesen, notfalls aus dem Konto wiederherstellen. */
+const IMG_RETRY_MS = [800, 2000, 4000, 10000, 30000]; // danach jede Minute
+const imgTimers = new WeakMap();
+// Zeitlich begrenzter Speicher-Link: Ablage, Pfad und ob er abgelaufen oder nur ein Platzhalter ist
+function signedLink(src, now = Date.now()) {
   const m = /\/storage\/v1\/object\/sign\/([^/]+)\/([^?]+)\?(?:[^#]*&)?token=([^&#]+)/.exec(src);
   if (!m) return null;
-  try {
-    const data = JSON.parse(atob(m[3].split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    if (!(data.exp * 1000 < now + 5000)) return null;
-    return { bucket: m[1], path: decodeURIComponent(m[2]) };
-  } catch (e) { return null; }
+  let stale = true;
+  try { stale = !(JSON.parse(atob(m[3].split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp * 1000 > now + 5000); } catch (e) { /* Platzhalter */ }
+  return { bucket: m[1], path: decodeURIComponent(m[2]), stale };
 }
+// Konnte für ein Bild kein Link geholt werden, steht dieser Platzhalter da; die Absicherung holt den Link später nach
+const emptyLink = (bucket, path) => `${Cloud.url}/storage/v1/object/sign/${bucket}/${path.split('/').map(encodeURIComponent).join('/')}?token=neu`;
 async function reloadImg(img, src, n) {
-  const old = expiredLink(src);
-  const sb = old && Cloud.client();
+  const link = signedLink(src);
+  const sb = link && Cloud.client();
   if (sb) {
-    try {
-      const { data } = await sb.storage.from(old.bucket).createSignedUrl(old.path, 3600);
-      if (data && data.signedUrl) { img.src = data.signedUrl; return; }
-    } catch (e) { /* dann wie ein normaler neuer Versuch */ }
+    // ab dem dritten Versuch ersetzt das große Bild eine Vorschau (…-t), die sich nicht laden lässt
+    const path = n >= 3 && link.path.endsWith('-t') ? link.path.slice(0, -2) : link.path;
+    if (link.stale || n >= 2 || path !== link.path) {
+      try {
+        const { data } = await sb.storage.from(link.bucket).createSignedUrl(path, 3600);
+        if (data && data.signedUrl) { img.src = data.signedUrl; return; }
+      } catch (e) { /* dann wie ein normaler neuer Versuch */ }
+    }
   }
-  try { const u = new URL(src); u.searchParams.set('r', String(n)); img.src = u.toString(); } catch (e) { img.src = src; }
+  try { const u = new URL(src); u.searchParams.set('r', `${n}-${Date.now()}`); img.src = u.toString(); } catch (e) { img.src = src; }
+}
+const imgDecodes = (blob) => new Promise((resolve) => {
+  if (!blob || !blob.size) return resolve(false);
+  const url = URL.createObjectURL(blob), probe = new Image();
+  const done = (ok) => { URL.revokeObjectURL(url); resolve(ok); };
+  probe.onload = () => done(true); probe.onerror = () => done(false); probe.src = url;
+});
+// Ein gespeichertes Bild lässt sich nicht anzeigen: frisch lesen, sonst die Kopie aus dem Konto holen
+async function repairLocalImg(img, src) {
+  const small = [...tbUrls].find(([, c]) => c.url === src);
+  if (small) { // nur die kleine Vorschau ist kaputt: weg damit, sie wird neu erzeugt
+    const it = itemById(small[0]);
+    tbUrls.delete(small[0]); URL.revokeObjectURL(src);
+    if (it) { delete it.tb; delete it._tbfp; img.src = gridUrl(it); }
+    return;
+  }
+  const hit = [...urls].find(([, u]) => u === src);
+  if (!hit) return;
+  const key = hit[0], thumb = key.startsWith('thumb-');
+  const store = thumb ? 'outfits' : 'items', field = thumb ? 'thumb' : 'blob', id = thumb ? key.slice(6) : key;
+  const rec = thumb ? outfits.find((o) => o.id === id) : itemById(id);
+  if (!rec) return;
+  const cur = await tx(store, 'readonly', (o) => o.get(id));
+  let blob = cur && cur[field];
+  if (!(await imgDecodes(blob))) {
+    blob = await Cloud.fetchImage(store, id);
+    if (!(await imgDecodes(blob))) return; // z. B. offline: der nächste Versuch probiert es wieder
+    if (cur) { cur[field] = blob; cur._fp = String(blob.size); await rawPut(store, cur); }
+  }
+  rec[field] = blob;
+  renewUrl(key);
+}
+function retryImg(img) {
+  clearTimeout(imgTimers.get(img));
+  const src = img.getAttribute('src') ? img.src : '';
+  if (!/^(https?|blob):/.test(src)) return;
+  const n = Number(img.dataset.retry || 0);
+  img.dataset.retry = String(n + 1);
+  const wait = n === 0 && signedLink(src)?.stale ? 0 : IMG_RETRY_MS[n] ?? 60000;
+  imgTimers.set(img, setTimeout(() => {
+    // unsichtbar, weg oder offline: beim Zurückkommen geht es weiter (siehe retryBrokenImages)
+    if (!img.isConnected || img.src !== src || document.visibilityState === 'hidden') return;
+    if (src.startsWith('blob:')) repairLocalImg(img, src).catch((e) => console.error(e));
+    else if (navigator.onLine) reloadImg(img, src, n + 1);
+  }, wait));
 }
 document.addEventListener('error', (e) => {
   const img = e.target;
   if (!(img instanceof HTMLImageElement)) return;
-  const src = img.currentSrc || img.src;
-  if (!/^https?:/.test(src)) return; // Bilder vom Gerät (blob:) sind nicht betroffen
-  const n = Number(img.dataset.retry || 0);
-  if (n >= IMG_RETRY_MS.length) return;
-  img.dataset.retry = String(n + 1);
-  setTimeout(() => { if (img.isConnected) reloadImg(img, src, n + 1); }, expiredLink(src) ? 0 : IMG_RETRY_MS[n]);
+  img.classList.add('img-wait');
+  retryImg(img);
 }, true);
-// Kommt die Verbindung oder die App zurück, werden kaputte Bilder sofort neu geladen
+document.addEventListener('load', (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  clearTimeout(imgTimers.get(img));
+  img.classList.remove('img-wait');
+  delete img.dataset.retry;
+  const a = img.closest('a.bubble-img');
+  if (a) a.href = img.src; // Foto im Chat: Antippen öffnet den Link, der gerade funktioniert
+}, true);
+// Kommt die Verbindung oder die App zurück, werden alle wartenden Bilder sofort neu geladen
 function retryBrokenImages() {
-  document.querySelectorAll('img').forEach((img) => {
-    if (!img.complete || img.naturalWidth !== 0 || !/^https?:/.test(img.src)) return;
-    img.dataset.retry = '0';
-    reloadImg(img, img.src, Date.now());
-  });
+  document.querySelectorAll('img.img-wait').forEach((img) => { img.dataset.retry = '0'; retryImg(img); });
 }
 window.addEventListener('online', retryBrokenImages);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') retryBrokenImages(); });

@@ -71,6 +71,7 @@ const Profile = (() => {
         } catch (e) { /* nächster Versuch */ }
       }
     }
+    for (const p of paths) if (p && !out[p]) out[p] = emptyLink('images', p); // die Bild-Absicherung holt ihn später
     return out;
   }
   // Raster und Feed laden die kleine Vorschau (…-t); gibt es sie noch nicht, kommt das große Bild
@@ -1129,8 +1130,10 @@ const Profile = (() => {
     const paths = msgs.filter((m) => m.image).map((m) => m.image);
     let urls = {};
     if (paths.length) {
-      const { data } = await sb.storage.from('chat').createSignedUrls(paths, 3600);
-      for (const r of data || []) if (r.signedUrl) urls[r.path] = r.signedUrl;
+      try {
+        const { data } = await sb.storage.from('chat').createSignedUrls(paths, 3600);
+        for (const r of data || []) if (r.signedUrl) urls[r.path] = r.signedUrl;
+      } catch (e) { /* die Bild-Absicherung holt die Links einzeln nach */ }
       if (!thread || thread.id !== id) return;
     }
     box.replaceChildren();
@@ -1139,8 +1142,8 @@ const Profile = (() => {
       if (m.system) b.append(el('b', 'bot-tag', 'JAWNZ Bot'));
       if (m.image) {
         const a = el('a', 'bubble-img');
-        a.href = urls[m.image] || '#'; a.target = '_blank'; a.rel = 'noopener';
-        const im = el('img'); im.alt = 'Foto'; im.loading = 'lazy'; im.src = urls[m.image] || '';
+        a.href = urls[m.image] || emptyLink('chat', m.image); a.target = '_blank'; a.rel = 'noopener';
+        const im = el('img'); im.alt = 'Foto'; im.loading = 'lazy'; im.src = urls[m.image] || emptyLink('chat', m.image);
         im.onload = () => { if (atEnd) box.scrollTop = box.scrollHeight; };
         a.append(im); b.append(a);
       }
@@ -1263,8 +1266,10 @@ const Profile = (() => {
     if (!avatarCache.has(name)) {
       const sb = Cloud.client();
       avatarCache.set(name, sb && navigator.onLine
-        ? sb.rpc('profile_avatar', { p_username: name }).then((r) => (r.error ? null : r.data || null), () => null)
+        // ein fehlgeschlagener Abruf wird nicht gemerkt, damit das Bild beim nächsten Anzeigen noch einmal geholt wird
+        ? sb.rpc('profile_avatar', { p_username: name }).then((r) => { if (r.error) { avatarCache.delete(name); return null; } return r.data || null; }, () => { avatarCache.delete(name); return null; })
         : Promise.resolve(null));
+      if (!sb || !navigator.onLine) { const p = avatarCache.get(name); avatarCache.delete(name); return p; }
     }
     return avatarCache.get(name);
   }

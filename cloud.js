@@ -147,7 +147,7 @@ const Cloud = (() => {
         for (let t = 0; t < 3 && !blob; t++) { // kurzer Netzfehler: noch zweimal versuchen
           if (t) await new Promise((r) => setTimeout(r, 700 * t));
           const res = await sb.storage.from('images').download(`${user.id}/${row.kind}-${row.id}`);
-          blob = res.error ? null : res.data;
+          blob = res.error || !res.data || !res.data.size ? null : res.data; // leere Antwort zählt als Fehler
         }
         if (!blob) { failedDl++; continue; }
         const rec = { ...d, [imgKey(row.kind)]: blob, _fp: d.fp };
@@ -564,5 +564,10 @@ const Cloud = (() => {
   // Handy-Browser melden das Zurückkehren nicht immer: solange die App offen ist, regelmäßig nachsehen
   setInterval(() => { if (document.visibilityState === 'visible') syncSoon(); }, 60000);
 
-  return { boot, queue, SCHEMA, client: () => sb, user: () => user, sync, showAuth, deleteAccount };
+  // Kopie eines Bildes aus dem Konto (zum Reparieren, wenn das auf dem Gerät kaputt ist; nicht bei noch offenen Änderungen)
+  async function fetchImage(kind, id) {
+    if (!sb || !user || readPending()[kind + '/' + id]) return null;
+    try { const res = await sb.storage.from('images').download(`${user.id}/${kind}-${id}`); return res.error ? null : res.data; } catch (e) { return null; }
+  }
+  return { boot, queue, SCHEMA, url: SUPABASE_URL, fetchImage, client: () => sb, user: () => user, sync, showAuth, deleteAccount };
 })();
