@@ -52,6 +52,14 @@ async function tbWork() {
   }
   tbBusy = false;
 }
+function closetAddCard() {
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'card add-card closet-add';
+  add.innerHTML = '<div class="img"><svg class="plus" viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></div><div class="meta"><b>Neues Teil</b></div>';
+  add.onclick = () => showView('add');
+  return add;
+}
 function renderCloset() {
   renderChips($('closetFilter'), 'closetFilter', renderCloset);
   // Beim Hochladen gleich die Kategorie vorauswählen, die gerade angezeigt wird
@@ -67,6 +75,8 @@ function renderCloset() {
   closetShown = list;
   if (closetSel) for (const id of [...closetSel]) if (!list.some((i) => i.id === id)) closetSel.delete(id); // Filter gewechselt: Verstecktes nicht mitändern
   grid.classList.toggle('selecting', !!closetSel);
+  // Computer: erste Kachel zum Hinzufügen, wie bei den Outfits (am Handy gibt es dafür den Reiter unten)
+  if (!closetSel && items.length && (list.length || !q)) grid.appendChild(closetAddCard());
   list.forEach((it) => {
     const card = document.createElement('button');
     card.className = 'card' + (closetSel && closetSel.has(it.id) ? ' selected' : '');
