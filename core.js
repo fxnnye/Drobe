@@ -96,26 +96,63 @@ const state = {
 };
 const itemById = (id) => items.find((i) => i.id === id);
 
-/* ---------- Bilder aus dem Netz: schlägt ein Abruf kurz fehl (Funkloch, Server ausgelastet), wird er bis zu 3-mal wiederholt ---------- */
+/* ---------- Bilder aus dem Netz: schlägt ein Abruf fehl (Funkloch, Server ausgelastet, Link abgelaufen), wird er wiederholt ---------- */
+const IMG_RETRY_MS = [800, 2000, 4000, 10000, 30000];
+// Zeitlich begrenzter Speicher-Link, der abgelaufen ist (nach 1 Stunde)? Dann Ablage und Pfad, um einen neuen zu holen.
+function expiredLink(src, now = Date.now()) {
+  const m = /\/storage\/v1\/object\/sign\/([^/]+)\/([^?]+)\?(?:[^#]*&)?token=([^&#]+)/.exec(src);
+  if (!m) return null;
+  try {
+    const data = JSON.parse(atob(m[3].split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (!(data.exp * 1000 < now + 5000)) return null;
+    return { bucket: m[1], path: decodeURIComponent(m[2]) };
+  } catch (e) { return null; }
+}
+async function reloadImg(img, src, n) {
+  const old = expiredLink(src);
+  const sb = old && Cloud.client();
+  if (sb) {
+    try {
+      const { data } = await sb.storage.from(old.bucket).createSignedUrl(old.path, 3600);
+      if (data && data.signedUrl) { img.src = data.signedUrl; return; }
+    } catch (e) { /* dann wie ein normaler neuer Versuch */ }
+  }
+  try { const u = new URL(src); u.searchParams.set('r', String(n)); img.src = u.toString(); } catch (e) { img.src = src; }
+}
 document.addEventListener('error', (e) => {
   const img = e.target;
   if (!(img instanceof HTMLImageElement)) return;
   const src = img.currentSrc || img.src;
   if (!/^https?:/.test(src)) return; // Bilder vom Gerät (blob:) sind nicht betroffen
   const n = Number(img.dataset.retry || 0);
-  if (n >= 3) return;
+  if (n >= IMG_RETRY_MS.length) return;
   img.dataset.retry = String(n + 1);
-  setTimeout(() => {
-    if (!img.isConnected) return;
-    try { const u = new URL(src); u.searchParams.set('r', String(n + 1)); img.src = u.toString(); } catch (err) { img.src = src; }
-  }, [800, 2000, 4000][n]);
+  setTimeout(() => { if (img.isConnected) reloadImg(img, src, n + 1); }, expiredLink(src) ? 0 : IMG_RETRY_MS[n]);
 }, true);
-// Kommt die Verbindung zurück, werden kaputte Bilder sofort neu geladen
-window.addEventListener('online', () => {
+// Kommt die Verbindung oder die App zurück, werden kaputte Bilder sofort neu geladen
+function retryBrokenImages() {
   document.querySelectorAll('img').forEach((img) => {
-    if (img.complete && img.naturalWidth === 0 && /^https?:/.test(img.src)) { img.dataset.retry = '0'; const u = new URL(img.src); u.searchParams.set('r', String(Date.now())); img.src = u.toString(); }
+    if (!img.complete || img.naturalWidth !== 0 || !/^https?:/.test(img.src)) return;
+    img.dataset.retry = '0';
+    reloadImg(img, img.src, Date.now());
   });
-});
+}
+window.addEventListener('online', retryBrokenImages);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') retryBrokenImages(); });
+// Neue Adresse für ein gespeichertes Bild: überall, wo die alte noch steht, wird sie ersetzt, erst dann freigegeben
+function renewUrl(key) {
+  const old = urls.get(key);
+  if (!old) return;
+  urls.delete(key);
+  const rec = key.startsWith('thumb-') ? outfits.find((o) => o.id === key.slice(6)) : itemById(key);
+  const blob = rec && (key.startsWith('thumb-') ? rec.thumb : rec.blob);
+  if (blob) urls.set(key, URL.createObjectURL(blob));
+  document.querySelectorAll('img').forEach((img) => {
+    if (img.getAttribute('src') !== old) return;
+    if (blob) img.src = urls.get(key); else img.removeAttribute('src');
+  });
+  URL.revokeObjectURL(old);
+}
 function urlFor(rec) {
   if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.blob));
   return urls.get(rec.id);

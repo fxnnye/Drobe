@@ -121,6 +121,30 @@ test('Zuschnitt ignoriert verirrte Pünktchen, behält das Teil', () => {
   eq([c.canvas.width, c.canvas.height], [280, 6]);
 });
 
+// Bild-Links aus dem Netz und gespeicherte Bilder
+const signed = (exp) => 'https://x.supabase.co/storage/v1/object/sign/images/u1/items-a%20b?token=a.' + btoa(JSON.stringify({ exp })).replace(/=+$/, '') + '.c&r=2';
+test('Abgelaufener Bild-Link wird erkannt, ein gültiger nicht', () => {
+  const now = 1000000000000;
+  eq(W('expiredLink')(signed(now / 1000 - 60), now), { bucket: 'images', path: 'u1/items-a b' });
+  eq([W('expiredLink')(signed(now / 1000 + 600), now), W('expiredLink')('https://x.de/bild.png', now)], [null, null]);
+});
+test('Neue Bild-Adresse: schon angezeigte Bilder bekommen sie, keins zeigt ins Leere', async () => {
+  const w = frame.contentWindow, d = w.document;
+  const blob = await png(4, 4, (c) => c.fillRect(0, 0, 4, 4));
+  const rec = { id: 'test-renew', blob, created: 1 };
+  W('items').push(rec);
+  const img = d.createElement('img'); d.body.append(img);
+  try {
+    const old = W('urlFor')(rec); img.src = old;
+    W('renewUrl')(rec.id);
+    const next = img.getAttribute('src');
+    ok(next !== old && next === W('urlFor')(rec), 'Adresse nicht ersetzt');
+    await new Promise((res, rej) => { const i = d.createElement('img'); i.onload = res; i.onerror = () => rej(new Error('neue Adresse lädt nicht')); i.src = next; });
+  } finally {
+    img.remove(); W('urls').delete(rec.id); W('items').splice(W('items').indexOf(rec), 1);
+  }
+});
+
 // Beiges Foto mit blauem Teil; rechts fehlt ein Streifen (fälschlich entfernt), zurückgeholt wird grob mit Hintergrund
 const fixCase = () => {
   const w = 120, h = 120, src = new Uint8ClampedArray(w * h * 4), cur = new Uint8ClampedArray(w * h * 4), mask = new Uint8Array(w * h);

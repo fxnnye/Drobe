@@ -47,7 +47,7 @@ async function backfillTrim() {
             it.blob = t.blob;
             if (it.srcBox) it.srcBox = { x: it.srcBox.x + t.x, y: it.srcBox.y + t.y };
             delete it.emb; // Bild geändert: Vektor neu berechnen
-            if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
+            renewUrl(it.id);
             aspects.delete(it.id);
             changed = true;
           }
@@ -64,8 +64,7 @@ async function backfillTrim() {
 async function reloadAll() {
   [items, outfits] = await Promise.all([dbAll('items'), dbAll('outfits')]);
   await migrateCategories();
-  for (const u of urls.values()) URL.revokeObjectURL(u);
-  urls.clear();
+  for (const key of [...urls.keys()]) renewUrl(key);
   items.sort((a, b) => a.created - b.created);
   outfits.sort((a, b) => a.created - b.created);
   renderCloset(); renderOutfits(); renderPicker();

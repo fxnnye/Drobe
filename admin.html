@@ -239,7 +239,7 @@
 
   async function call(fn, args, okText) {
     const { data, error } = await sb.rpc(fn, args);
-    if (error) { console.error(error); toast('Das hat nicht geklappt: ' + error.message, true); return { failed: true }; }
+    if (error) { console.error(error); toast('Das hat nicht geklappt: ' + error.message, true); checkSession(); return { failed: true }; }
     if (okText) toast(okText);
     return { data };
   }
@@ -410,6 +410,18 @@
   }
 
   /* ---------- Anmeldung und Tabs ---------- */
+  // Abgelaufene Anmeldung (z. B. nach „Abmelden“ in der App): Abfragen liefen sonst ohne Konto und endeten in „permission denied“
+  let leaving = false; // true, während man sich selbst abmeldet
+  function expired() {
+    if (leaving || $('adminView').hidden) return;
+    closeModal();
+    show('login');
+    $('loginErr').textContent = 'Deine Anmeldung ist abgelaufen. Bitte melde dich neu an.';
+  }
+  async function checkSession() {
+    try { const { data, error } = await sb.auth.getSession(); if (!error && !data.session) expired(); } catch (e) { /* offline */ }
+  }
+  sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') setTimeout(expired, 0); });
   let role = null; // 'admin' sieht alles, 'moderator' (Helfer) nur Meldungen und Legit-Check (lesen) sowie Staff Picks
   const HELPER_TABS = ['reports', 'legit', 'picks'];
   async function enter(user) {
@@ -450,7 +462,7 @@
   const userBtn = (name) => { if (!name) return el('span', 'who', '?'); if (role !== 'admin') return el('b', null, name); const b = btn(name, 'user', () => openMember(name)); b.title = 'Mitglied öffnen'; return b; };
   const factUser = (label, name) => { const d = el('div'); d.append(el('span', null, label), userBtn(name)); return d; };
   const loading = (box, text) => box.replaceChildren(el('p', 'muted', text || 'Lade …'));
-  const failed = (box, text, retry) => { box.replaceChildren(el('p', 'err', text)); box.append(btn('Nochmal versuchen', null, retry)); };
+  const failed = (box, text, retry) => { box.replaceChildren(el('p', 'err', text)); box.append(btn('Nochmal versuchen', null, retry)); checkSession(); };
   function setBadge(n) { $('repBadge').hidden = !n; $('repBadge').textContent = n; }
 
   /* ---------- Übersicht ---------- */
@@ -738,7 +750,7 @@
       if (error) throw error;
       box.replaceChildren();
       render(box, data);
-    } catch (e) { console.error(e); failed(box, 'Das konnte nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', retry); }
+    } catch (e) { console.error(e); failed(box, 'Das konnte nicht geladen werden. (' + ((e && e.message) || '?') + ')', retry); }
   }
 
   /* ---------- Legit-Check ---------- */
@@ -1065,7 +1077,10 @@
     } catch (e) { $('loginErr').textContent = 'Anmeldung fehlgeschlagen. E-Mail oder Passwort stimmt nicht.'; }
     $('loginBtn').disabled = false;
   };
-  $('logout').onclick = async () => { await sb.auth.signOut(); show('login'); };
+  $('logout').onclick = async () => {
+    leaving = true;
+    try { await sb.auth.signOut(); show('login'); $('loginErr').textContent = ''; } finally { setTimeout(() => { leaving = false; }, 50); }
+  };
 
   (async () => {
     let session = null;

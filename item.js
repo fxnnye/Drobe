@@ -115,7 +115,7 @@ $('itemForm').addEventListener('submit', async (e) => {
       delete it.emb; // Bild geändert: Vektor neu berechnen
       if (it.color === prevColor && (prevAuto || !prevColor)) { const c = await detectColor(res.blob); if (c) applyColor(it, c); else { delete it.color; delete it.hex; } } // Farbe nur neu, wenn sie nicht von Hand geändert wurde
       if (res.source) { it.source = res.source; it.srcBox = res.srcBox; } else { delete it.source; delete it.srcBox; }
-      if (urls.has(it.id)) { URL.revokeObjectURL(urls.get(it.id)); urls.delete(it.id); }
+      renewUrl(it.id);
       aspects.delete(it.id);
     }
     await dbPut('items', it);
