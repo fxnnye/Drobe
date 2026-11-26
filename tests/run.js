@@ -139,6 +139,24 @@ test('Outfit: Mäntel sind länger, kurze Hosen kürzer', () => {
   ok(tall('Hosen', 1, '') < tall('Hosen', 2) * 0.6 && tall('Hosen', 1.4, 'Cargo Shorts') < tall('Hosen', 2) * 0.6, 'Shorts');
 });
 
+test('Outfit: der Gürtel ist gut sichtbar, aber schmaler als das Shirt', () => {
+  const rolled = W('fitWidth')({ category: 'Gürtel' }, 0.55), shirt = W('fitWidth')({ category: 'Shirts' }, 1);
+  ok(rolled >= 0.2 && rolled < shirt / 2, 'Breite ' + rolled.toFixed(3));
+});
+test('Neue Version wird erkannt, die gleiche oder eine alte nicht', () => {
+  const f = W('newerBuild');
+  eq([f('  const BUILD = 351; // x', 350), f('const BUILD = 350;', 350), f('const BUILD = 349;', 350), f('<html>', 350)], [351, 0, 0, 0]);
+});
+
+test('Einstellungen: die Hilfetexte kommen aus hilfe.html, Verweise bleiben in der App', async () => {
+  const html = await text('hilfe.html');
+  for (const b of frame.contentDocument.querySelectorAll('[data-help]')) ok(W('helpSection')(html, b.dataset.help), 'Abschnitt fehlt: ' + b.dataset.help);
+  const box = frame.contentDocument.createElement('div');
+  box.append(...W('helpSection')(html, 'handel').nodes);
+  eq([...box.querySelectorAll('a[href$=".html"]')].length, 0, 'Verweis führt aus der App');
+  ok(box.querySelector('a[data-legal=nutzung]'), 'AGB-Verweis fehlt');
+});
+
 // Bild-Links aus dem Netz und gespeicherte Bilder
 const signed = (exp) => 'https://x.supabase.co/storage/v1/object/sign/images/u1/items-a%20b?token=a.' + btoa(JSON.stringify({ exp })).replace(/=+$/, '') + '.c&r=2';
 test('Abgelaufener Bild-Link wird erkannt, ein gültiger nicht', () => {

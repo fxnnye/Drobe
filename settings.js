@@ -68,6 +68,32 @@ function showSetPanel(name) {
 }
 document.querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => showSetPanel(b.dataset.open); });
 $('setBack').onclick = () => showSetPanel('main');
+// Hilfetexte stehen nur einmal in hilfe.html; hier wird der passende Abschnitt ins Fenster geholt
+function helpSection(html, id) {
+  const sec = new DOMParser().parseFromString(html, 'text/html').getElementById(id);
+  if (!sec) return null;
+  const title = sec.querySelector('h2').textContent;
+  sec.querySelector('h2').remove();
+  // Verweise auf Rechtstexte öffnen das Fenster in der App statt einer anderen Seite
+  const LEGAL = { 'agb.html': 'nutzung', 'impressum.html': 'impressum', 'datenschutz.html': 'datenschutz' };
+  sec.querySelectorAll('a').forEach((a) => { const page = LEGAL[a.getAttribute('href')]; if (page) { a.dataset.legal = page; a.setAttribute('href', '#'); } });
+  return { title, nodes: [...sec.childNodes] };
+}
+async function openHelp(id, label) {
+  const box = $('helpBody');
+  document.querySelector('.set-panel[data-panel=help]').dataset.title = label;
+  box.textContent = '…';
+  showSetPanel('help');
+  try {
+    const res = await fetch('hilfe.html');
+    const part = res.ok && helpSection(await res.text(), id);
+    if (!part) throw new Error('Hilfe');
+    box.replaceChildren(...part.nodes);
+  } catch (e) {
+    box.textContent = 'Die Hilfe konnte nicht geladen werden. Prüfe deine Verbindung und versuche es noch einmal.';
+  }
+}
+document.querySelectorAll('[data-help]').forEach((b) => { b.onclick = () => openHelp(b.dataset.help, b.textContent.trim()); });
 document.querySelector('[data-open=push]').addEventListener('click', () => Push.openPanel());
 // Computer: Knopf oben rechts in der Kopfzeile; Handy: neben „Bearbeiten“
 {

@@ -439,3 +439,33 @@ document.querySelectorAll('dialog').forEach((d) => {
   window.addEventListener('online', netState);
   netState();
 })();
+
+/* ---------- Neue Version ---------- */
+// Eine lange offene App (im Dock, auf dem Home-Bildschirm, in einem alten Tab) lädt sonst nie neu und behält alte Fehler.
+const newerBuild = (text, current) => { const m = /const BUILD = (\d+)/.exec(text || ''); return m && Number(m[1]) > current ? Number(m[1]) : 0; };
+// Beschäftigt: Dann nie von selbst neu laden, damit nichts verloren geht
+const appBusy = () => !!document.querySelector('dialog[open]') || $('view-builder').classList.contains('active')
+  || [...document.querySelectorAll('textarea, input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file])')].some((f) => f.offsetParent && f.value);
+(() => {
+  if (window.Capacitor) return; // die iPhone-App bringt ihre Dateien selbst mit
+  let last = 0;
+  async function check(returning) {
+    if (!navigator.onLine || Date.now() - last < 60000) return;
+    last = Date.now();
+    let build = 0;
+    try { const r = await fetch('errors.js', { cache: 'no-store' }); if (r.ok) build = newerBuild(await r.text(), Errors.BUILD); } catch (e) { return; }
+    if (!build) return;
+    // beim Zurückkommen von selbst neu laden, je Version höchstens einmal (sonst Endlosschleife bei hartnäckig altem Cache)
+    let tried = false;
+    try { tried = sessionStorage.getItem('jawnz-neu') === String(build); } catch (e) { tried = true; }
+    if (returning && !tried && !appBusy()) { try { sessionStorage.setItem('jawnz-neu', String(build)); } catch (e) { /* egal */ } location.reload(); return; }
+    if (document.querySelector('.update-hint')) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn primary update-hint'; b.textContent = 'Neue Version: neu laden';
+    b.onclick = () => location.reload();
+    document.body.append(b);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(true); });
+  window.addEventListener('focus', () => check(true));
+  setInterval(() => { if (document.visibilityState === 'visible') check(false); }, 10 * 60 * 1000);
+})();

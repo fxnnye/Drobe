@@ -386,6 +386,12 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
   </section>
 </main>
 <footer id="landing" class="landing" hidden>
+  <!-- Fußzeile für Besucher am Computer (am Handy bleiben nur die drei Links darunter) -->
+  <nav class="foot" aria-label="Mehr über JAWNZ">
+    <div><h2>JAWNZ</h2><a href="hilfe.html#ueber">Über uns</a><a href="mailto:info@jawnz.de">Kontakt</a></div>
+    <div><h2>Hilfe</h2><a href="hilfe.html#funktioniert">So funktioniert’s</a><a href="hilfe.html#handel">Kaufen &amp; Verkaufen</a><a href="hilfe.html#sicherheit">Legit-Check &amp; Sicherheit</a></div>
+    <div><h2>Rechtliches</h2><a href="#" data-legal="impressum">Impressum</a><a href="#" data-legal="datenschutz">Datenschutz</a><a href="#" data-legal="nutzung">AGB</a></div>
+  </nav>
   <p class="legal-links"><a href="#" data-legal="impressum">Impressum</a> · <a href="#" data-legal="datenschutz">Datenschutz</a> · <a href="#" data-legal="nutzung">AGB</a></p>
 </footer>
 
@@ -618,18 +624,38 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 
     <div class="set-panel" data-panel="main">
       <p class="set-head">Konto</p>
-      <button class="set-row" type="button" data-open="account">Konto</button>
-      <button class="set-row" type="button" data-open="password">Passwort ändern</button>
+      <div class="set-group">
+        <button class="set-row" type="button" data-open="account"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.500-6 8-6s7 2 8 6"/></svg><span>Konto</span></button>
+        <button class="set-row" type="button" data-open="password"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Passwort ändern</span></button>
+      </div>
       <p class="set-head">App</p>
-      <button class="set-row" type="button" data-open="theme">Darstellung</button>
-      <button class="set-row" type="button" data-open="push">Mitteilungen</button>
-      <button class="set-row" type="button" data-open="lang">Sprache</button>
-      <button class="set-row" type="button" id="backupOpen">Backup</button>
+      <div class="set-group">
+        <button class="set-row" type="button" data-open="theme"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg><span>Darstellung</span></button>
+        <button class="set-row" type="button" data-open="push"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><span>Mitteilungen</span></button>
+        <button class="set-row" type="button" data-open="lang"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span>Sprache</span></button>
+        <button class="set-row" type="button" id="backupOpen"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 11l4 4 4-4M5 20h14"/></svg><span>Backup</span></button>
+      </div>
+      <!-- nur am Handy: Hilfe und Infos, gruppiert -->
+      <div class="set-group phone-only">
+        <button class="set-row" type="button" data-help="funktioniert"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.7.3-1 .9-1 1.700M12 17h.01"/></svg><span>So funktioniert JAWNZ</span></button>
+        <button class="set-row" type="button" data-help="handel"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg><span>Kaufen &amp; Verkaufen</span></button>
+        <button class="set-row" type="button" data-help="sicherheit"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v5c0 5-3.500 8.500-8 10-4.500-1.500-8-5-8-10V6z"/><path d="M8.500 12l2.500 2.500 4.500-5"/></svg><span>Legit-Check &amp; Sicherheit</span></button>
+      </div>
+      <div class="set-group phone-only">
+        <button class="set-row" type="button" data-help="ueber"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.500h.01"/></svg><span>Über JAWNZ</span></button>
+        <a class="set-row" href="mailto:info@jawnz.de"><svg class="set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span>Kontakt</span></a>
+      </div>
       <p class="set-head">Rechtliches</p>
-      <button class="set-row" type="button" data-legal="impressum">Impressum</button>
-      <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
-      <button class="set-row" type="button" data-legal="nutzung">AGB</button>
+      <div class="set-group set-legal">
+        <button class="set-row" type="button" data-legal="impressum">Impressum</button>
+        <button class="set-row" type="button" data-legal="datenschutz">Datenschutzerklärung</button>
+        <button class="set-row" type="button" data-legal="nutzung">AGB</button>
+      </div>
       <button class="btn full set-logout" type="button" id="logoutBtn">Abmelden</button>
+    </div>
+
+    <div class="set-panel" data-panel="help" data-title="Hilfe" hidden>
+      <div class="help-body" id="helpBody" data-no-i18n></div>
     </div>
 
     <div class="set-panel" data-panel="account" data-title="Konto" hidden>

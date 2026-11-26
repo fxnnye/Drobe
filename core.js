@@ -20,7 +20,7 @@ const PLACEMENT = {
   Shirts: { w: 0.66, h: 0.29 },
   Pullover: { w: 0.70, h: 0.30 },
   Hosen: { w: 0.48, h: 0.41 },
-  Gürtel: { w: 0.24, h: 0.05 },
+  Gürtel: { w: 0.30, h: 0.07 },
   Taschen: { w: 0.24, h: 0.17 },
   Schmuck: { w: 0.20, h: 0.07 },
   'Caps': { w: 0.22, h: 0.10 },
@@ -155,7 +155,13 @@ async function repairLocalImg(img, src) {
     return;
   }
   const hit = [...urls].find(([, u]) => u === src);
-  if (!hit) return;
+  if (!hit) { // veraltete Adresse: das Bild bekommt die aktuelle seines Teils
+    const el = img.closest('[data-id], [data-uid]');
+    const layer = el && state.outfit.layers.find((l) => l.uid === el.dataset.uid);
+    const it = el && itemById(el.dataset.id || (layer && layer.itemId));
+    if (it && it.blob) { const now = urlFor(it); if (now !== src) img.src = now; }
+    return;
+  }
   const key = hit[0], thumb = key.startsWith('thumb-');
   const store = thumb ? 'outfits' : 'items', field = thumb ? 'thumb' : 'blob', id = thumb ? key.slice(6) : key;
   const rec = thumb ? outfits.find((o) => o.id === id) : itemById(id);
@@ -164,7 +170,10 @@ async function repairLocalImg(img, src) {
   let blob = cur && cur[field];
   if (!(await imgDecodes(blob))) {
     blob = await Cloud.fetchImage(store, id);
-    if (!(await imgDecodes(blob))) return; // z. B. offline: der nächste Versuch probiert es wieder
+    if (!(await imgDecodes(blob))) { // z. B. offline: der nächste Versuch probiert es wieder
+      if (navigator.onLine) Errors.report(`Bild auf dem Gerät nicht reparierbar (${store}/${id})`);
+      return;
+    }
     if (cur) { cur[field] = blob; cur._fp = String(blob.size); await rawPut(store, cur); }
   }
   rec[field] = blob;
