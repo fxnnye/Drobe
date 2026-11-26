@@ -1472,13 +1472,13 @@ img.img-wait { opacity: 0 !important; animation: none !important; }
   .landing .legal-links { display: none; }
 }
 
-/* Einstellungen am Handy: Gruppen mit Symbolen und Trennlinien; Hilfe und Infos gibt es nur hier */
+/* Einstellungen: am Handy Gruppen mit Symbolen und Trennlinien, am Computer die einfache Liste */
+a.set-row { color: inherit; text-decoration: none; }
 .set-ic { display: none; }
 .set-group { display: contents; }
 .help-body { font-size: 15px; line-height: 1.55; }
 .help-body li { margin-bottom: 8px; }
 .help-body ol, .help-body ul { padding-left: 20px; }
-@media (min-width: 701px) { .set-group.phone-only { display: none; } }
 @media (max-width: 700px) {
   #settingsDialog { height: calc(100dvh - 16px - env(safe-area-inset-top, 0px)); }
   .set-panel[data-panel="main"] > .set-head { display: none; }
