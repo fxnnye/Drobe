@@ -84,6 +84,7 @@ function renderCloset() {
     card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>`;
     const im = card.querySelector('img'); im.loading = 'lazy'; im.decoding = 'async'; im.src = gridUrl(it); im.dataset.id = it.id;
     card.querySelector('b').textContent = it.name;
+    card.querySelector('b').setAttribute('data-no-i18n', ''); // eigene Namen nie übersetzen
     card.querySelector('span').textContent = [it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');
     // Lange drücken wählt das Teil aus und startet die Auswahl
     let lp = null, sx = 0, sy = 0;

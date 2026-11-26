@@ -90,43 +90,24 @@ const Profile = (() => {
     return out;
   }
   const money = (n) => Number(n).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+  const raw = (node) => { node.setAttribute('data-no-i18n', ''); return node; }; // Namen und Texte von Leuten nie übersetzen
 
-  function card(rec, urls, tags, action, open) {
+  // Kompakte Karte für „Teile in diesem Outfit“ (am Handy als Zeile); überall sonst steht die Feed-Karte
+  function card(rec, urls, open) {
     const c = el('div', 'card');
-    const img = el(open ? 'button' : 'div', 'img');
-    if (open) { img.type = 'button'; img.onclick = open; img.setAttribute('aria-label', (rec.name || 'Teil') + ' ansehen'); }
+    const img = el('button', 'img');
+    img.type = 'button';
+    img.onclick = open;
+    img.setAttribute('aria-label', (rec.name || 'Teil') + ' ansehen');
     if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.src = urls[rec.path]; img.append(i); }
     const meta = el('div', 'meta');
-    meta.append(el('b', null, rec.name || ''));
+    meta.append(raw(el('b', null, rec.name || '')));
     const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
     if (sub) meta.append(el('span', null, sub));
-    if (tags && tags.length) {
-      const row = el('div', 'pub-tags');
-      for (const [text, cls] of tags) row.append(el('span', 'pub-tag' + (cls ? ' ' + cls : ''), text));
-      meta.append(row);
-    }
-    if (action) {
-      const b = action.node || el('button', 'btn pub-action', action.label);
-      b.type = 'button';
-      if (!action.node) b.onclick = action.fn;
-      meta.append(b);
-      if (action.alt) {
-        const r = el('button', 'pub-report', action.alt.label);
-        r.type = 'button';
-        r.onclick = action.alt.fn;
-        meta.append(r);
-      }
-    }
+    if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
     c.append(img, meta);
     return c;
   }
-  const itemTags = (it) => {
-    const t = [];
-    if (it.vis === 'sale') t.push([it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf', 'hot']);
-    if (it.rarity && it.rarity !== 'Alltag') t.push([it.rarity, '']);
-    if (it.cond) t.push([it.cond, '']);
-    return t;
-  };
   function section(title, cards, cls) {
     const s = el('div', 'pub-section');
     s.append(el('h3', null, title));
@@ -192,7 +173,7 @@ const Profile = (() => {
     fBtn.onclick = () => openPeople('followers', data.username, people);
     gBtn.onclick = () => openPeople('following', data.username, people);
     fetchPeople(data.username).then((pp) => { if (!pp) return; people = pp; fBtn.textContent = pp.followers.length + ' Follower'; gBtn.textContent = pp.following.length + ' Folge ich'; });
-    if (data.bio) info.append(el('span', 'small pub-bio', data.bio));
+    if (data.bio) info.append(raw(el('span', 'small pub-bio', data.bio)));
     const rvBtn = el('button', 'linkish', '0 Bewertungen');
     rvBtn.type = 'button';
     rvBtn.onclick = () => openReviews(data.username);
@@ -213,7 +194,7 @@ const Profile = (() => {
       bb.type = 'button';
       bb.onclick = async () => {
         const on = !blocked.has(data.username);
-        if (on && !confirm(data.username + ' sperren? Die Person kann dir dann nichts mehr schicken.')) return;
+        if (on && !(await askConfirm(data.username + ' sperren? Die Person kann dir dann nichts mehr schicken.', 'Sperren'))) return;
         bb.disabled = true;
         try {
           const { error } = await Cloud.client().rpc('set_block', { p_username: data.username, p_block: on });
@@ -228,15 +209,6 @@ const Profile = (() => {
       box.append(bar);
     }
 
-    // Bei fremden Profilen: „Interesse“ an Teilen
-    const askLogin = () => Cloud.showAuth(false);
-    const rep = (rec) => ({ label: 'Melden', fn: me ? () => askReport(data.username, rec) : askLogin });
-    const itemCard = (it) => {
-      const tags = itemTags(it);
-      const buy = it.vis === 'sale';
-      const open = () => { location.hash = itemLink(data.username, it.id); };
-      return card(it, urls, tags, own ? null : it.vis === 'public' ? { node: saveBtn(it, data.username, 'pub-action'), alt: rep(it) } : { label: 'Anfrage senden', fn: me ? () => askInterest('interest', data.username, it) : askLogin, alt: rep(it) }, open);
-    };
     // Gleicher Aufbau wie das eigene Profil: Reiter Schrank und Outfits; im Schrank Kategorie-Chips
     const byId = new Map(data.items.map((i) => [i.id, i]));
     const pinned = data.showcase.map((id) => byId.get(id)).filter(Boolean);
@@ -244,22 +216,21 @@ const Profile = (() => {
     const tabs = el('div', 'subtabs');
     tabs.setAttribute('role', 'tablist');
     const pane = el('div');
-    let tab = data.items.length || !data.outfits.length ? 'closet' : 'outfits', cat = 'Alle';
+    let tab = data.items.length || !data.outfits.length ? 'closet' : 'outfits';
     const tabDefs = [['closet', 'Schrank'], ['outfits', 'Outfits', data.outfits.length]];
     const grid = (cards, cls) => { const g = el('div', 'grid' + (cls ? ' ' + cls : '')); g.append(...cards); return g; };
-    const tile = (rec, sub, open, extra) => {
-      const c = card(rec, urls, null, extra || null, open);
-      const meta = c.querySelector('.meta');
-      meta.replaceChildren(el('b', null, rec.name || ''));
-      if (sub) meta.append(el('span', null, sub));
-      if (extra) { const b2 = extra.node || null; if (!b2) { const bt = el('button', 'btn pub-action', extra.label); bt.type = 'button'; bt.onclick = extra.fn; meta.append(bt); } }
-      return c;
-    };
-    const itemSub = (it) => [it.category, it.vis === 'sale' ? (it.price != null ? 'Verkauf · ' + money(it.price) : 'Zum Verkauf') : 'Öffentlich'].filter(Boolean).join(' · ');
-    const itemTile = (it) => {
-      const c = tile(it, itemSub(it), () => { location.hash = itemLink(data.username, it.id); });
-      if (!own) withHeart(c, 'item', data.username, it.id);
-      return c;
+    // Teile und Outfits sehen überall aus wie im Feed; im Profil ohne die Zeile mit dem Namen, der steht schon oben
+    const own1 = (rec) => ({ ...rec, username: data.username });
+    const itemTile = (it) => feedCard(own1(it), urls, 'items', { owner: false });
+    // Kategorien wie im eigenen Schrank (große Kacheln mit Unterkategorien)
+    state.profileFilter = 'Alle';
+    const catRow = el('div', 'filter-row'), chips = el('div', 'chips'), catList = el('div');
+    chips.id = 'pubFilter';
+    catRow.append(chips);
+    const paintCats = () => {
+      renderChips(chips, 'profileFilter', paintCats);
+      const list = data.items.filter((i) => matchesFilter(i, state.profileFilter));
+      catList.replaceChildren(list.length ? grid(list.map(itemTile)) : el('p', 'muted', 'Nichts in dieser Kategorie.'));
     };
     // Die Reiter werden nur einmal gebaut, damit der schwarze Strich beim Wechsel gleiten kann (placeIndicator in feed.js)
     const tabBtns = new Map();
@@ -279,18 +250,10 @@ const Profile = (() => {
       pane.replaceChildren();
       if (tab === 'closet') {
         if (pinned.length) pane.append(section('Showcase', pinned.map(itemTile), 'pub-showcase'));
-        const chips = el('div', 'chips');
-        for (const c of ['Alle', ...TOP]) {
-          const b2 = el('button', 'chip' + (cat === c ? ' active' : ''), c);
-          b2.type = 'button';
-          b2.onclick = () => { cat = c; paint(); };
-          chips.append(b2);
-        }
-        pane.append(chips);
-        const list = data.items.filter((i) => matchesFilter(i, cat));
-        pane.append(list.length ? grid(list.map(itemTile)) : el('p', 'muted', 'Nichts in dieser Kategorie.'));
+        pane.append(catRow, catList);
+        paintCats();
       } else if (tab === 'outfits') {
-        pane.append(data.outfits.length ? grid(data.outfits.map((o) => { const c = tile(o, 'Öffentlich', () => { location.hash = outfitLink(data.username, o.id); }); return c; }), 'outfits') : el('p', 'muted', 'Keine öffentlichen Outfits.'));
+        pane.append(data.outfits.length ? grid(data.outfits.map((o) => feedCard(own1(o), urls, 'outfits', { owner: false })), 'outfits') : el('p', 'muted', 'Keine öffentlichen Outfits.'));
       }
     };
     box.append(tabs, pane);
@@ -380,7 +343,7 @@ const Profile = (() => {
     const photo = el('div', 'outfit-photo');
     if (urls[data.path]) { const i = el('img'); i.alt = data.name || 'Outfit'; i.src = urls[data.path]; photo.append(i); }
     const info = el('div', 'outfit-info');
-    info.append(el('h2', 'item-name', data.name || 'Outfit'));
+    info.append(data.name ? raw(el('h2', 'item-name', data.name)) : el('h2', 'item-name', 'Outfit'));
     const owner = el('button', 'seller');
     owner.type = 'button';
     const on = el('span', 'seller-name');
@@ -393,9 +356,8 @@ const Profile = (() => {
     if (data.items.length) {
       const grid = el('div', 'grid outfit-items');
       for (const it of data.items) {
-        const tags = it.vis === 'sale' && it.price != null ? [[money(it.price), 'sale']] : [];
-        if (data.local) { const rec = itemById(it.id); grid.append(card(it, urls, [], null, () => openItemDialog(rec))); continue; }
-        grid.append(card(it, urls, tags, null, () => { location.hash = itemLink(data.username, it.id); }));
+        if (data.local) { const rec = itemById(it.id); grid.append(card({ ...it, vis: null }, urls, () => openItemDialog(rec))); continue; }
+        grid.append(card(it, urls, () => { location.hash = itemLink(data.username, it.id); }));
       }
       info.append(grid);
     } else {
@@ -567,11 +529,19 @@ const Profile = (() => {
     const photo = el('div', 'item-photo');
     if (urls[it.path]) { const i = el('img'); i.alt = it.name || ''; i.src = urls[it.path]; photo.append(i); }
     const info = el('div', 'item-info');
-    info.append(el('h2', 'item-name', it.name || 'Teil'));
+    info.append(it.name ? raw(el('h2', 'item-name', it.name)) : el('h2', 'item-name', 'Teil'));
     const pickBadge = el('span', 'pick-badge', 'Staff Pick');
     pickBadge.hidden = true;
     info.append(pickBadge);
     if (it.vis === 'sale' && it.price != null) info.append(el('p', 'item-price', money(it.price)));
+    let goBtn = null;
+    if (!own) { // direkt unter dem Preis: erst „Merken“, darunter „Kaufanfrage senden“ (bei jedem fremden Teil, auch wenn es nur gezeigt und nicht angeboten wird)
+      info.append(saveBtn(it, data.username, 'full'));
+      goBtn = el('button', 'btn primary full', 'Kaufanfrage senden');
+      goBtn.type = 'button';
+      goBtn.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
+      info.append(goBtn);
+    }
 
     const facts = el('dl', 'item-facts');
     for (const [k, v] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : '']]) {
@@ -616,32 +586,23 @@ const Profile = (() => {
       }, () => {}); // Migration 0060 fehlt noch: dann ohne Verlauf
     }
 
-    let goBtn = null;
     if (it.vis !== 'private') info.append(legitBox(data.username, id, own, !!me, askLogin, same, (frozen) => { if (goBtn) goBtn.disabled = frozen; }));
 
     const pickBox = el('div', 'pick-box'); // Knopf für Admins und Helfer, auch beim eigenen Teil
     pickBox.hidden = true;
+    info.append(pickBox);
     if (!own) {
-      // Erst „Merken“, darunter „Kaufanfrage senden“ (bei jedem fremden Teil, auch wenn es nur gezeigt und nicht angeboten wird)
-      info.append(saveBtn(it, data.username, 'full'));
-      const go = el('button', 'btn primary full', 'Kaufanfrage senden');
-      go.type = 'button';
-      go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
-      goBtn = go;
-      info.append(go);
-      info.append(pickBox);
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
       rp.onclick = me ? () => askReport(data.username, it) : askLogin;
       info.append(rp);
-    } else info.append(pickBox);
+    }
     page.append(photo, info);
     box.append(page);
 
     const more = data.items.filter((x) => x.id !== id).slice(0, 6);
     if (more.length) {
-      const open = (x) => () => { location.hash = itemLink(data.username, x.id); };
-      box.append(section('Mehr von ' + data.username, more.map((x) => card(x, urls, itemTags(x), null, open(x)))));
+      box.append(section('Mehr von ' + data.username, more.map((x) => feedCard({ ...x, username: data.username }, urls, 'items', { owner: false }))));
     }
   }
 
@@ -1147,7 +1108,7 @@ const Profile = (() => {
         im.onload = () => { if (atEnd) box.scrollTop = box.scrollHeight; };
         a.append(im); b.append(a);
       }
-      if (m.text) b.append(el('span', null, m.text));
+      if (m.text) b.append(m.system ? el('span', null, m.text) : raw(el('span', null, m.text)));
       b.append( el('time', 'muted small', new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })));
       box.append(b);
     }
@@ -1509,12 +1470,7 @@ const Profile = (() => {
     if (stale()) return;
     box.replaceChildren();
     const grid = el('div', 'grid');
-    for (const it of list) {
-      const tags = itemTags(it);
-      tags.push(['von ' + it.username, '']);
-      const open = () => { location.hash = itemLink(it.username, it.id); };
-      grid.append(card(it, urls, tags, { label: 'Ansehen', fn: open }, open));
-    }
+    for (const it of list) grid.append(feedCard(it, urls, 'items'));
     box.append(grid);
   }
 
@@ -1554,12 +1510,12 @@ const Profile = (() => {
     try { const { data, error } = await sb.rpc('feed_stage'); return error ? 0 : Number(data) || 0; } catch (e) { return 0; }
   }
   // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
-  function feedCard(rec, urls, kind) {
+  function feedCard(rec, urls, kind, opts = {}) {
     const c = el('div', 'card feed-card' + (kind === 'items' ? '' : ' feed-outfit'));
     const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : outfitLink(rec.username, rec.id); };
     const owner = el('button', 'feed-owner');
     owner.type = 'button';
-    owner.append(avatarFor(rec.username, 'sm'), el('span', null, rec.username));
+    owner.append(avatarFor(rec.username, 'sm'), raw(el('span', null, rec.username)));
     owner.onclick = () => { location.hash = '#/u/' + rec.username; };
     const img = el('button', 'img feed-img');
     img.type = 'button';
@@ -1568,14 +1524,14 @@ const Profile = (() => {
     img.onclick = open;
     const meta = el('div', 'meta');
     if (kind === 'items') {
-      meta.append(el('span', 'feed-name', rec.name || ''));
+      meta.append(raw(el('span', 'feed-name', rec.name || '')));
       const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
       if (sub) meta.append(el('span', 'muted small', sub));
-      if (rec.vis === 'sale' && rec.price != null) meta.append(el('b', 'feed-price', money(rec.price)));
+      if (rec.vis === 'sale') meta.append(el('b', 'feed-price', rec.price != null ? money(rec.price) : 'Zum Verkauf'));
     } else {
-      meta.append(el('b', null, rec.name || 'Outfit'));
+      meta.append(rec.name ? raw(el('b', null, rec.name)) : el('b', null, 'Outfit'));
     }
-    c.append(owner, img, meta);
+    if (opts.owner === false) c.append(img, meta); else c.append(owner, img, meta);
     const me3 = Cloud.user();
     if (!me3 || me3.name !== rec.username) withHeart(c, kind === 'items' ? 'item' : 'outfit', rec.username, rec.id);
     return c;

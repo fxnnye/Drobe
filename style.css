@@ -388,9 +388,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .pub-banner { background: var(--gray); border-radius: 14px; padding: 8px 16px; font-size: 13px; margin: 0 0 16px; }
 .pub-section { margin-bottom: 24px; }
 .pub-section h3 { margin: 0 0 8px; font-size: 18px; }
-.pub-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-.pub-tag { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 999px; background: var(--gray); }
-.pub-tag.hot { background: var(--text); color: var(--on-text); }
 @media (max-width: 700px) {
   .guest-actions .btn { padding: 8px 12px; font-size: 14px; }
   .landing, .public { padding: 24px 16px 48px; }
@@ -419,8 +416,6 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 @media (hover: hover) and (pointer: fine) { .member:hover { background: var(--gray-hover); } }
 
 /* ---------- Interesse, Treffer, Mitteilungen ---------- */
-.pub-action { margin-top: 8px; padding: 8px 12px; font-size: 13px; }
-.pub-tag.match { background: #1f7a3d; color: #fff; }
 .pub-banner.match { background: #1f7a3d; color: #fff; }
 .menu { position: relative; }
 .menu.has-unread::after, .menu.has-reports::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--bg); }
@@ -594,7 +589,7 @@ dialog .field input, dialog .field select, dialog .field textarea { width: 100%;
 /* Knöpfe */
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--h-ctrl); padding: 0 24px; border-radius: var(--r-ctrl); line-height: 1.2; }
 .btn.full { margin-bottom: var(--gap); }
-.card-actions .btn, .pub-action, .pub-tools .btn, .guest-actions .btn { min-height: var(--h-sm); padding: 0 16px; font-size: 13px; }
+.card-actions .btn, .pub-tools .btn, .guest-actions .btn { min-height: var(--h-sm); padding: 0 16px; font-size: 13px; }
 .panel .row .btn, .up-draw-row .btn { padding: 0 16px; }
 .icon { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: var(--r-ctrl); }
 .rotate .icon { width: var(--h-ctrl); height: var(--h-ctrl); }
@@ -1083,7 +1078,7 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 .tab[data-view="add"] { display: none; }
 @media (max-width: 700px) { .tab[data-view="add"] { display: inline-flex; } }
 /* Am Handy sind alle Hauptkategorien im Schrank so hoch wie die gewählte mit ihren vier Unterkategorien */
-@media all { #closetFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
+@media all { #closetFilter > .chip, #pubFilter > .chip { min-height: calc(var(--h-chip) * 4 + 24px); } }
 /* Unterkategorien gleiten weich herein, statt plötzlich da zu sein */
 /* Der Block wächst auch in der Höhe weich; --sub-from ist die Höhe der Hauptknöpfe, --sub-to die des größten Blocks (Accessoires: 5 Einträge) */
 .chips { --sub-from: calc(var(--h-chip) * 4 + 24px); --sub-to: calc(var(--h-chip) * 5 + 32px); }
@@ -1247,7 +1242,6 @@ dialog.sheet .member .avatar { width: 56px; height: 56px; font-size: 22px; }
 .offer-card[hidden] { display: none; }
 
 /* Handy, öffentliches Profil: Melden und Sperren beginnen links bündig mit dem Beschreibungstext (58 px wären Kante auf Textlinie, 5 px weiter links nach Wunsch) */
-@media (max-width: 700px) { #publicView .pub-tools { padding-left: 53px; } }
 
 /* Willkommen: X oben rechts */
 #welcomeDialog { position: relative; }
@@ -1552,4 +1546,37 @@ body:not(.guest) .web-lang { display: none; }
 /* Handy, Teil bearbeiten: Das Foto bleibt oben an seinem Platz und scrollt mit. Nur beim Radieren, Einzeichnen und Drehen bleibt es stehen, damit man sieht, was man tut. */
 @media (max-width: 700px) {
   #itemDialog.editing:not(.tooling):not(.turning) .up-preview { position: relative; box-shadow: none; }
+}
+
+/* Am Handy und Tablet kann man nichts ziehen: dort steht ein anderer Hinweis */
+.touch-only { display: none; }
+@media (max-width: 700px), (pointer: coarse) {
+  .mouse-only { display: none; }
+  .touch-only { display: inline; }
+}
+
+/* Teil-Seite: etwas Luft zwischen Preis und den Knöpfen darunter */
+.item-info > .item-price + .btn { margin-top: var(--s-2); }
+
+/* Eigenes Teil: dieselbe graue Fläche wie bei fremden Teilen; das Karomuster nur beim Radieren und Einzeichnen */
+#itemDialog:not(.tooling) .up-preview { background: var(--gray); }
+
+@media (max-width: 700px) {
+  /* Teil bearbeiten: Löschen, Abbrechen, Speichern bleiben in einer Zeile */
+  #itEditRow { flex-wrap: nowrap; }
+  #itEditRow .spacer { display: none; }
+  #itEditRow .btn { flex: 1 1 0; min-width: 0; padding: 0 8px; }
+  /* Profil (eigenes und fremdes): Follower, Folge ich und Bewertungen in einer Zeile über die ganze Breite */
+  #meBar .me-head, #publicView .me-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; row-gap: 2px; }
+  #meBar .me-info, #publicView .me-info { display: contents; }
+  #meBar .me-head .avatar, #publicView .me-head .avatar { grid-area: 1 / 1 / 3 / 2; }
+  #meBar .me-info > strong, #publicView .me-info > strong { grid-area: 1 / 2; align-self: end; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  #meBar .me-info > strong + span, #publicView .me-info > strong + span { grid-area: 2 / 2; align-self: start; }
+  #meBar .me-social, #publicView .me-social { grid-area: 3 / 1 / 4 / -1; margin-top: var(--s-3); }
+  .me-social .linkish { white-space: nowrap; }
+  #publicView .me-info > .pub-bio { grid-area: 4 / 1 / 5 / -1; }
+  #meBar #meProfile { grid-area: 1 / 3 / 3 / 4; }
+  #meBar #menuBtn { grid-area: 1 / 4 / 3 / 5; }
+  #publicView .me-head > .btn { grid-area: 1 / 3 / 3 / 5; }
+  #publicView .pub-tools { padding-left: 0; margin-top: 0; }
 }

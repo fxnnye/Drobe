@@ -102,6 +102,7 @@ const state = {
   searchMode: 'items',
   soStage: 'home', // Suche am Handy: 'home', 'open' (Suchfenster) oder 'results'
   closetFilter: 'Alle',
+  profileFilter: 'Alle', // Kategorie im geöffneten fremden Profil
   pickerFilter: 'Alle',
   outfit: { id: null, name: '', layers: [] }, // layers: {uid,itemId,x,y,w}
   selected: null,

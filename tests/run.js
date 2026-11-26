@@ -327,7 +327,7 @@ test('Sprachliste: nur Einträge mit Text, Muster sind gültig', () => {
   const bad = Object.entries(d).filter(([k, v]) => !k.trim() || typeof v !== 'string' || !v.trim());
   eq(bad, []);
   ok(Object.keys(d).length > 100, 'zu wenige Einträge');
-  for (const [re, rep] of W('I18N_PATTERNS').en) ok(Object.prototype.toString.call(re) === '[object RegExp]' && typeof rep === 'string');
+  for (const [re, rep] of W('I18N_PATTERNS').en) ok(Object.prototype.toString.call(re) === '[object RegExp]' && ['string', 'function'].includes(typeof rep)); // Funktionen übersetzen Satzteile mit
 });
 test('Sprachliste: Kategorien, Zustände und Farben der App sind übersetzt', () => {
   const d = W('I18N').en;
@@ -382,6 +382,14 @@ test('Englisch: Sätze mit Zahlen, Namen und Serverfehler', async () => {
     eq(tr('Annehmen'), 'Accept'); eq(tr('Als verkauft markieren'), 'Mark as sold');
     eq(tr('Angebot abgelehnt.'), 'Offer declined.');
     eq(tr('Aktuell gespeichert: 4 Teile, 2 Outfits.'), 'Currently saved: 4 items, 2 outfits.');
+    eq(tr('24 Teile · 3 Outfits'), '24 items · 3 outfits');
+    eq(tr('3 Teile · 1 fehlt · Öffentlich'), '3 items · 1 missing · Public');
+    eq(tr('★ 4,5 · 2 Bewertungen'), '★ 4,5 · 2 reviews');
+    eq([tr('♡ Merken'), tr('♥ Gemerkt'), tr('Zum Verkauf'), tr('Folgen'), tr('✓ 2 echt')], ['♡ Save', '♥ Saved', 'For sale', 'Follow', '✓ 2 real']);
+    eq(tr('1 Teil: Öffentlich'), '1 item: Public');
+    eq(tr('3 Teile löschen? 2 Outfits verwenden davon Teile, sie verschwinden dort. Das lässt sich nicht rückgängig machen.'), 'Delete 3 items? 2 outfits use some of them; they will disappear there. This cannot be undone.');
+    eq(tr('Um dein Profil zu nutzen, musst du dich anmelden.'), 'To use your profile you need to sign in.');
+    eq(tr('Danke für deine Meldung.\nDeine Meldung zu mara: Das Konto wurde gesperrt.'), 'Thanks for your report.\nYour report about mara: The account was blocked.');
   } finally { localStorage.removeItem('jawnz-lang'); f.remove(); }
 });
 
@@ -637,6 +645,40 @@ test('Sprachwahl oben: nur für Besucher, angemeldet steht sie in den Einstellun
     eq([shown('', false), shown('not-feed', false), shown('not-feed', true)], [false, false, false]);
     ok(d.querySelector('[data-open=lang]') && d.getElementById('langChips'), 'Sprache fehlt in den Einstellungen');
   } finally { b.className = classes; bar.hidden = barHidden; lang.hidden = langHidden; }
+});
+
+test('Handy: Teil bearbeiten in einer Zeile, graue Fotofläche, kein „Ziehen“-Hinweis', () => {
+  const w = frame.contentWindow, d = w.document, dlg = d.getElementById('itemDialog'), box = dlg.querySelector('.up-preview'), classes = dlg.className;
+  const css = (n) => w.getComputedStyle(n);
+  try {
+    eq(css(d.getElementById('itEditRow')).flexWrap, 'nowrap');
+    dlg.className = '';
+    eq(css(box).backgroundImage, 'none');
+    dlg.className = 'tooling';
+    ok(css(box).backgroundImage.includes('gradient'), 'beim Radieren fehlt das Karomuster');
+    for (const n of d.querySelectorAll('.mouse-only')) eq(css(n).display, 'none');
+    ok(d.querySelectorAll('.touch-only').length >= 2 && css(d.querySelector('.touch-only')).display !== 'none', 'Hinweis für das Handy fehlt');
+  } finally { dlg.className = classes; }
+});
+test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knopf steht unter dem Preis', async () => {
+  const w = frame.contentWindow, d = w.document, C = W('Cloud'), client = C.client, user = C.user, view = W('state.view');
+  const its = ['a', 'b'].map((id, i) => ({ id, path: 'p' + id, name: 'Teil ' + id, category: i ? 'Hosen' : 'Oberteile', brand: 'Nike', size: 'M', vis: i ? 'sale' : 'public', price: i ? 90 : null }));
+  const rpc = { public_profile: { username: 'mara', items: its, outfits: [{ id: 'o', path: 'po', name: 'Look' }], showcase: ['a'], followers: 0 } };
+  const chain = () => new Proxy(function () {}, { get: (t, k) => (k === 'then' ? (res) => res({ data: null, error: null }) : chain()), apply: () => chain() });
+  const sb = { rpc: async (n) => ({ data: rpc[n] || null, error: null }), from: () => chain(), storage: { from: () => ({ createSignedUrls: async (ps) => ({ data: ps.map((path) => ({ path, signedUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' })) }) }) } };
+  const wait = () => new Promise((r) => setTimeout(r, 700)), q = (s) => [...d.querySelectorAll('#publicView ' + s)];
+  try {
+    C.client = () => sb; C.user = () => null;
+    w.location.hash = '#/u/mara'; await wait();
+    eq([q('.pub-showcase .feed-card').length, q('.feed-card').length, q('.feed-owner').length, q('#pubFilter .chip').length > 4], [1, 3, 0, true]);
+    ok(!d.getElementById('publicView').textContent.includes('Öffentlich'), '„Öffentlich“ steht noch im fremden Profil');
+    q('#pubFilter .chip').find((c) => c.textContent === 'Hosen').click();
+    eq([q('.pub-showcase .feed-card').length, q('.feed-card').length], [1, 2]);
+    w.location.hash = '#/i/mara/b'; await wait();
+    const kids = q('.item-info > *'), at = (s) => kids.findIndex((n) => n.matches(s));
+    ok(at('.item-price') >= 0 && at('.save-btn') === at('.item-price') + 1 && at('.btn.primary') === at('.save-btn') + 1 && at('.btn.primary') < at('.item-facts'), kids.map((n) => n.className).join(' | '));
+    eq(q('.pub-section .feed-card').length, 1);
+  } finally { w.location.hash = ''; await wait(); C.client = client; C.user = user; W('showView')(view); }
 });
 
 test('Teil bearbeiten am Handy: Foto scrollt mit, steht nur beim Radieren und Drehen', () => {
