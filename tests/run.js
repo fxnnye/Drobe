@@ -627,6 +627,16 @@ test('Sprachwahl oben: im Browser sichtbar, in der App nicht', () => {
   eq([...sel.options].map((o) => [o.value, o.textContent]), [['de', 'Deutsch'], ['en', 'English']]);
   eq([sel.value, d.getElementById('webLang').hidden], [W('LANG'), inApp()]);
 });
+test('Sprachwahl oben: angemeldet nur beim Profil, Besucher immer', () => {
+  const w = frame.contentWindow, d = w.document, b = d.body, bar = d.getElementById('meBar'), lang = d.getElementById('webLang');
+  const classes = b.className, barHidden = bar.hidden, langHidden = lang.hidden;
+  const shown = (cls, profile) => { b.className = cls; bar.hidden = !profile; return w.getComputedStyle(lang).display !== 'none'; };
+  try {
+    lang.hidden = false;
+    eq([shown('guest', false), shown('guest not-feed', false)], [true, true]);
+    eq([shown('', false), shown('not-feed', false), shown('not-feed', true), shown('not-feed viewing-profile', true)], [false, false, true, false]);
+  } finally { b.className = classes; bar.hidden = barHidden; lang.hidden = langHidden; }
+});
 
 /* ---------- Lauf ---------- */
 (async () => {
