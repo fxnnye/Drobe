@@ -10,11 +10,23 @@ function rememberSearch() {
   const mode = state.searchMode;
   writeHistory([{ q, mode }, ...readHistory().filter((x) => !(x.q.toLowerCase() === q.toLowerCase() && x.mode === mode))]);
 }
+/* Am Handy drei Stufen wie bei Vinted: Start (neueste Teile), Suchfenster (Reiter Artikel/Mitglieder, Verlauf,
+   Vorschläge) und Ergebnisse (ohne Reiter, mit Zurück). Am Computer bleibt alles auf einer Seite. */
+const phoneSearch = () => matchMedia('(max-width: 700px)').matches;
+function setStage(stage) {
+  state.soStage = stage;
+  $('view-search').classList.toggle('so-open', stage === 'open');
+  $('view-search').classList.toggle('so-results', stage === 'results');
+}
 function renderHistory() {
-  const box = $('soHistory'), list = readHistory();
+  const box = $('soHistory'), phone = phoneSearch(), members = state.searchMode === 'members';
+  const list = readHistory().map((x, i) => ({ ...x, i })).filter((x) => !phone || (x.mode === 'members') === members); // am Handy zeigt jeder Reiter seinen Verlauf
+  const empty = $('soInput').value.trim() === '';
+  const open = phone && state.soStage === 'open';
   box.replaceChildren();
-  box.hidden = !list.length || $('soInput').value.trim() !== '' || document.activeElement !== $('soInput'); // nur beim Antippen des Suchfelds
-  $('view-search').classList.toggle('so-focus', !box.hidden); // Rest der Seite ausgegraut, solange der Verlauf offen ist
+  box.hidden = !list.length || !empty || (phone ? !open : document.activeElement !== $('soInput')); // am Computer nur beim Antippen des Suchfelds
+  $('soMembersEmpty').hidden = !(open && members && empty && !list.length);
+  $('view-search').classList.toggle('so-focus', !phone && !box.hidden); // Rest der Seite ausgegraut, solange der Verlauf offen ist
   if (box.hidden) return;
   const head = document.createElement('div');
   head.className = 'so-history-head';
@@ -22,21 +34,26 @@ function renderHistory() {
   t.textContent = 'Zuletzt gesucht';
   const clear = document.createElement('button');
   clear.type = 'button'; clear.className = 'so-link'; clear.textContent = 'Löschen';
-  clear.onclick = () => { writeHistory([]); renderHistory(); };
+  clear.onclick = () => { writeHistory(phone ? readHistory().filter((x) => (x.mode === 'members') !== members) : []); renderHistory(); };
   head.append(t, clear);
   box.append(head);
-  list.forEach((x, idx) => {
+  list.forEach((x) => {
     const row = document.createElement('div');
     row.className = 'so-history-row';
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'so-history-item';
     const m = document.createElement('span');
     m.className = 'muted small'; m.textContent = x.mode === 'members' ? 'Mitglied' : 'Artikel';
-    b.append(document.createTextNode(x.q + ' '), m);
-    b.onclick = () => { $('soInput').value = x.q; setSearchMode(x.mode === 'members' ? 'members' : 'items', true); };
+    b.append(document.createTextNode(x.q + ' '));
+    if (!phone) b.append(m);
+    b.onclick = () => {
+      $('soInput').value = x.q;
+      if (phone) { state.searchMode = x.mode === 'members' ? 'members' : 'items'; showSearchResults(); }
+      else setSearchMode(x.mode === 'members' ? 'members' : 'items', true);
+    };
     const del = document.createElement('button');
     del.type = 'button'; del.className = 'icon so-del'; del.setAttribute('aria-label', 'Eintrag entfernen'); del.textContent = '×';
-    del.onclick = () => { const h = readHistory(); h.splice(idx, 1); writeHistory(h); renderHistory(); };
+    del.onclick = () => { const h = readHistory(); h.splice(x.i, 1); writeHistory(h); renderHistory(); };
     row.append(b, del);
     box.append(row);
   });
@@ -57,9 +74,41 @@ function syncFilters() {
 function setSearchMode(mode, showResults = false) {
   state.searchMode = mode;
   state.showResults = showResults;
-  document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === mode));
-  $('soInput').placeholder = mode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
+  paintMode();
   runSearch();
+}
+function paintMode() {
+  document.querySelectorAll('#searchMode .chip').forEach((c) => c.classList.toggle('active', c.dataset.mode === state.searchMode));
+  $('soInput').placeholder = state.searchMode === 'members' ? 'Benutzername suchen' : 'Marke oder Teil suchen';
+}
+// Gesucht: Ergebnisse zeigen (am Handy auf einer eigenen Seite ohne Reiter)
+function showSearchResults() {
+  clearTimeout(searchTimer);
+  state.showResults = true;
+  paintMode();
+  rememberSearch();
+  const phone = phoneSearch();
+  if (phone) { setStage('results'); $('soInput').blur(); window.scrollTo(0, 0); }
+  runSearch();
+}
+// Suchfenster öffnen: Reiter, Verlauf und Vorschläge
+function openSearch() {
+  closePhotoSearch();
+  setStage('open');
+  state.showResults = false;
+  window.scrollTo(0, 0);
+  runSearch();
+}
+// Zurück zum Start der Suche: leeres Feld, neueste Teile
+function resetSearch() {
+  clearTimeout(searchTimer);
+  closePhotoSearch();
+  $('soInput').value = '';
+  $('soInput').blur();
+  state.searchMode = 'items';
+  state.showResults = false;
+  setStage('home');
+  paintMode();
 }
 // Vorschläge beim Tippen: passende Marken und Artikelnamen; ein Tipp zeigt alle Teile, bei denen Marke oder Beschreibung passt
 function renderSuggestions(list, t, box) {
@@ -86,7 +135,7 @@ function renderSuggestions(list, t, box) {
     l.className = 'muted small';
     l.textContent = r.label;
     b.append(s, l);
-    b.onclick = () => { $('soInput').value = r.text; state.showResults = true; rememberSearch(); runSearch(); };
+    b.onclick = () => { $('soInput').value = r.text; showSearchResults(); };
     box.append(b);
   }
 }
@@ -104,7 +153,7 @@ const filtersActive = () => state.searchMode === 'items' && Object.values(search
 // Unter der leeren Suchleiste: die zuletzt hochgeladenen öffentlichen Teile anderer, neueste zuerst (der Algorithmus gilt nur im Feed)
 let newestToken = 0;
 async function showNewest(box) {
-  const my = ++newestToken, still = () => my === newestToken && !$('soInput').value.trim() && state.searchMode === 'items';
+  const my = ++newestToken, still = () => my === newestToken && !$('soInput').value.trim() && state.searchMode === 'items' && !(phoneSearch() && state.soStage === 'open');
   box.hidden = false;
   if (!box.querySelector('.grid')) { box.replaceChildren(); const g = document.createElement('div'); g.className = 'grid'; box.append(g); skeletons(g, 6); }
   try {
@@ -125,7 +174,7 @@ async function runSearch() {
   const box = $('memberResults');
   renderHistory();
   if (!t && !filtersActive()) {
-    if (mode === 'items') return showNewest(box); // ohne Suchbegriff: immer die neuesten Teile, ohne Algorithmus
+    if (mode === 'items' && !(phoneSearch() && state.soStage === 'open')) return showNewest(box); // ohne Suchbegriff: immer die neuesten Teile, ohne Algorithmus
     box.hidden = true; box.replaceChildren(); return;
   }
   box.hidden = false;
@@ -161,12 +210,22 @@ async function runSearch() {
     box.append(b);
   }
 }
-$('soInput').addEventListener('focus', renderHistory);
+$('soInput').addEventListener('focus', () => { if (phoneSearch() && state.soStage !== 'open') openSearch(); else renderHistory(); });
+$('soClose').addEventListener('click', () => { resetSearch(); runSearch(); });
+// Zurück aus den Ergebnissen: ins Suchfenster (dort wieder Artikel oder Mitglieder wählen); nach der Fotosuche zum Start
+$('soBack').addEventListener('click', () => { if ($('view-search').classList.contains('so-photo-on')) { resetSearch(); runSearch(); } else openSearch(); });
+$('searchMode').addEventListener('mousedown', (e) => e.preventDefault()); // Reiterwechsel lässt die Tastatur offen
 $('soInput').addEventListener('blur', () => setTimeout(renderHistory, 200));
 $('view-search').addEventListener('click', (e) => { if ($('view-search').classList.contains('so-focus') && !e.target.closest('.so-head, #soHistory')) $('soInput').blur(); });
 $('soHistory').addEventListener('mousedown', (e) => e.preventDefault()); // Tippen auf einen Eintrag soll das Suchfeld nicht verlassen
 $('soInput').addEventListener('input', () => { state.showResults = false; syncFilters(); clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
-$('soInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); state.showResults = true; rememberSearch(); runSearch(); $('soInput').blur(); } });
+$('soInput').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if (phoneSearch() && $('soInput').value.trim().length < 2) return; // zu kurz: im Suchfenster bleiben
+  showSearchResults();
+  $('soInput').blur();
+});
 $('memberResults').addEventListener('click', (e) => { if (e.target.closest('.card')) rememberSearch(); }, true);
 document.querySelectorAll('#searchMode .chip').forEach((c) => { c.onclick = () => setSearchMode(c.dataset.mode); });
 for (const c of COLORS) { $('fColor').append(new Option(c, c)); $('upColor').append(new Option(c, c)); }
@@ -175,6 +234,8 @@ for (const id of ['fColor', 'fSize', 'fBrand']) {
   $(id).addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 }
 
+// Fotosuche beenden (wird unten gesetzt)
+let closePhotoSearch = () => {};
 // Fotosuche: ein Foto wählen, dann zeigt die Suche ähnliche (am besten gleiche) öffentliche Teile anderer.
 // Neben dem Gesamteindruck (Bild-Vektor) zählen erkannte Marke (Logo, Aufdruck) und Farbe: passende Teile rücken nach vorn.
 {
@@ -183,9 +244,11 @@ for (const id of ['fColor', 'fSize', 'fBrand']) {
   const note = (t) => res.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted small', textContent: t }));
   const close = () => {
     token++; box.hidden = true; res.replaceChildren(); tags.replaceChildren(); found = null;
+    $('view-search').classList.remove('so-photo-on');
     if (thumbUrl) { URL.revokeObjectURL(thumbUrl); thumbUrl = null; }
     thumb.removeAttribute('src');
   };
+  closePhotoSearch = close;
   $('photoClose').addEventListener('click', close);
   $('soInput').addEventListener('input', () => { if (!box.hidden) close(); }); // Tippen beendet die Fotosuche
   const same = (a, b) => a && b && brandKey(a) === brandKey(b);
@@ -215,7 +278,8 @@ for (const id of ['fColor', 'fSize', 'fBrand']) {
     e.target.value = '';
     if (!f) return;
     if (!Cloud.user()) { toast('Dafür musst du angemeldet sein'); return; }
-    close();
+    if (phoneSearch()) { resetSearch(); setStage('results'); $('view-search').classList.add('so-photo-on'); window.scrollTo(0, 0); }
+    else close();
     const my = ++token;
     thumbUrl = URL.createObjectURL(f); thumb.src = thumbUrl;
     box.hidden = false; $('soHistory').hidden = true;

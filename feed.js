@@ -161,7 +161,11 @@ function showView(name) {
   if (name === 'feed' && !keepFeed) loadFeed(true);
   if (name === 'saved') renderSaved();
   if (name === 'messages') Profile.leaveThread(), Profile.loadInbox(true);
-  if (name === 'search') { renderHistory(); runSearch(); if (matchMedia('(pointer: fine)').matches) $('soInput').focus(); }
+  if (name === 'search') {
+    if (phoneSearch() && (state.soStage === 'open' || (prev === 'search' && $('publicView').hidden))) resetSearch(); // nochmal auf „Suche“ tippen: zurück zum Start
+    renderHistory(); runSearch();
+    if (matchMedia('(pointer: fine)').matches && !phoneSearch()) $('soInput').focus();
+  }
   if (name === 'followers' || name === 'following') Profile.loadPeople(name, $(name === 'followers' ? 'followersList' : 'followingList'));
   if (ME_VIEWS.includes(name)) renderMeHead();
   window.scrollTo(0, keepFeed ? (feed.scrollY || 0) : 0);
@@ -398,7 +402,7 @@ function fillSelect(sel) {
     if (src && dst) dst.scrollTop = src.scrollTop;
     c.page.style.visibility = 'hidden';
     document.body.classList.add('peek');
-    if (c.page.classList.contains('view')) { const u = document.getElementById('view-' + (state.lastMe || 'closet')); if (u && u !== c.page) { u.classList.add('peek-under'); c.under = u; c.page.style.display = 'none'; } }
+    if (c.page.classList.contains('view') && c.page.id !== 'view-search') { const u = document.getElementById('view-' + (state.lastMe || 'closet')); if (u && u !== c.page) { u.classList.add('peek-under'); c.under = u; c.page.style.display = 'none'; } }
     c.ghost = gh;
     return gh;
   }

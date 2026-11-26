@@ -100,6 +100,7 @@ const state = {
   view: 'feed',
   search: '',
   searchMode: 'items',
+  soStage: 'home', // Suche am Handy: 'home', 'open' (Suchfenster) oder 'results'
   closetFilter: 'Alle',
   pickerFilter: 'Alle',
   outfit: { id: null, name: '', layers: [] }, // layers: {uid,itemId,x,y,w}

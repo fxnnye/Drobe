@@ -1489,3 +1489,26 @@ a.set-row { color: inherit; text-decoration: none; }
   .set-panel[data-panel="main"] .set-group.set-legal .set-row { width: auto; min-height: 34px; padding: 0 12px; border: 0; font-size: 14px; color: var(--muted); }
   .set-panel[data-panel="main"] .set-group.set-legal .set-row::after { content: none; }
 }
+
+/* Suche am Handy wie bei Vinted: runde Suchleiste; antippen öffnet das Suchfenster mit den Reitern Artikel/Mitglieder, Ergebnisse haben nur Zurück */
+.so-field { display: contents; }
+.so-lens, .so-head .so-back, .so-head .so-close, .so-empty { display: none; }
+@media (max-width: 700px) {
+  #view-search.active { display: flex; flex-direction: column; }
+  #view-search .so-head { order: -2; gap: 8px; }
+  .so-field { display: flex; flex: 1; min-width: 0; align-items: center; height: var(--h-ctrl); padding-left: 16px; border-radius: 999px; background: var(--gray); }
+  .so-lens { display: block; flex: none; color: var(--muted); }
+  .so-head .so-field input[type=text] { height: 100%; padding: 0 8px 0 10px; border-radius: 0; background: transparent; box-shadow: none; text-overflow: ellipsis; }
+  .so-field .so-photo { width: var(--h-ctrl); height: var(--h-ctrl); border-radius: 999px; background: transparent; }
+  #view-search.so-results .so-head .so-back { display: inline-flex; align-items: center; justify-content: flex-start; flex: none; width: 32px; height: var(--h-ctrl); padding: 0 0 0 4px; border: 0; background: none; color: var(--text); cursor: pointer; }
+  #view-search.so-open .so-head .so-close { display: inline-flex; flex: none; padding: 0 16px; border-radius: 999px; }
+  #view-search #searchMode { display: none; }
+  #view-search.so-open #searchMode { display: flex; flex-wrap: nowrap; order: -1; gap: 0; margin: 0 calc(-1 * var(--pad-page)) var(--s-3); border-bottom: 1px solid var(--gray-hover); }
+  #view-search.so-open #searchMode .chip { flex: 1; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); }
+  #view-search.so-open #searchMode .chip.active { border-bottom-color: var(--text); color: var(--text); }
+  #view-search.so-open .so-empty:not([hidden]) { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 16px; text-align: center; }
+  .so-empty svg { color: var(--muted); }
+  .so-empty b { font-size: 20px; }
+  .so-empty p { max-width: 320px; margin: 0; color: var(--muted); line-height: 1.4; }
+  #view-search.so-photo-on #soFilters, #view-search.so-photo-on #memberResults, #view-search.so-photo-on #photoClose { display: none; }
+}

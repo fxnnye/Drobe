@@ -582,6 +582,43 @@ test('Hochladen ohne Anmeldung ist gesperrt', async () => {
   ok(r.status >= 400, 'Upload ohne Anmeldung hat geklappt: ' + r.status);
 });
 
+test('Suche am Handy: Suchfenster mit Reitern, Ergebnisse ohne Reiter, zurück und schließen', async () => {
+  const w = frame.contentWindow, d = w.document, input = d.getElementById('soInput');
+  const el = (id) => d.getElementById(id), shown = (id) => w.getComputedStyle(el(id)).display !== 'none';
+  const bar = () => [shown('searchMode'), shown('soClose'), shown('soBack')];
+  const stage = () => W('state').soStage;
+  const enter = () => input.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  const history = w.localStorage.getItem('jawnz-search-history'), view = W('state').view;
+  w.localStorage.setItem('jawnz-search-history', '[]');
+  W('showView')('search');
+  try {
+    eq([stage(), ...bar()], ['home', false, false, false]);
+    input.dispatchEvent(new w.Event('focus'));
+    eq([stage(), ...bar()], ['open', true, true, false]);
+    d.querySelector('#searchMode [data-mode=members]').click();
+    ok(shown('soMembersEmpty'), 'leerer Mitglieder-Reiter fehlt');
+    d.querySelector('#searchMode [data-mode=items]').click();
+    input.value = 'n'; enter();
+    eq(stage(), 'open', 'ein Zeichen reicht nicht');
+    input.value = 'nike'; enter();
+    eq([stage(), ...bar()], ['results', false, false, true]);
+    ok(!el('soFilters').hidden && !shown('soMembersEmpty'), 'Filter fehlen');
+    el('soBack').click();
+    ok(await until(() => stage() === 'open'), 'Zurück führt nicht ins Suchfenster');
+    ok(el('soFilters').hidden && shown('searchMode') && input.value === 'nike');
+    el('soClose').click();
+    eq([stage(), input.value, ...bar()], ['home', '', false, false, false]);
+    input.dispatchEvent(new w.Event('focus'));
+    ok(!el('soHistory').hidden && el('soHistory').textContent.includes('nike'), 'Verlauf fehlt');
+    d.querySelector('#searchMode [data-mode=members]').click();
+    ok(el('soHistory').hidden && shown('soMembersEmpty'), 'Artikel-Verlauf steht bei Mitgliedern');
+  } finally {
+    W('resetSearch')(); W('runSearch')();
+    if (history === null) w.localStorage.removeItem('jawnz-search-history'); else w.localStorage.setItem('jawnz-search-history', history);
+    W('showView')(view);
+  }
+});
+
 /* ---------- Lauf ---------- */
 (async () => {
   await ready;

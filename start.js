@@ -413,7 +413,7 @@ document.querySelectorAll('dialog').forEach((d) => {
   }
   document.addEventListener('focusin', (e) => {
     const f = e.target;
-    if (!f || !/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName) || f.closest('.thread-form') || !phone()) return;
+    if (!f || !/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName) || f.closest('.thread-form, .so-head') || !phone()) return;
     setTimeout(() => { try { f.scrollIntoView({ block: 'center', behavior: reduce() ? 'auto' : 'smooth' }); } catch (err) { /* egal */ } }, 320);
   });
 
