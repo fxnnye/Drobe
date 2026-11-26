@@ -1512,3 +1512,39 @@ a.set-row { color: inherit; text-decoration: none; }
   .so-empty p { max-width: 320px; margin: 0; color: var(--muted); line-height: 1.4; }
   #view-search.so-photo-on #soFilters, #view-search.so-photo-on #memberResults, #view-search.so-photo-on #photoClose { display: none; }
 }
+
+/* Sprachwahl oben, nur im Browser (settings.js blendet sie ein): Weltkugel mit Kürzel, die Auswahlliste liegt unsichtbar darüber */
+.web-lang { position: relative; display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 6px; height: var(--h-ctrl); margin-left: auto; padding: 0 14px; border-radius: var(--r-ctrl); background: var(--gray); font-size: 14px; font-weight: 600; cursor: pointer; }
+.web-lang[hidden] { display: none; }
+.web-lang select { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; opacity: 0; cursor: pointer; }
+.web-lang:has(select:focus-visible) { box-shadow: 0 0 0 2px #0074e8; }
+.web-lang:not([hidden]) ~ .guest-actions { margin-left: 0; }
+@media (hover: hover) and (pointer: fine) { .web-lang:hover { background: var(--gray-hover); } }
+@media (min-width: 701px) { body:has(#meBar:not([hidden])) .web-lang { margin-right: 64px; } } /* Platz für den Einstellungs-Knopf rechts */
+@media (max-width: 700px) { .not-feed:not(.guest) .top .web-lang { display: none; } } /* dort gibt es am Handy keine Kopfzeile */
+/* Am Handy nur das Kürzel; für Gäste rücken Logo und Knöpfe etwas zusammen, damit alles in eine Zeile passt */
+@media (max-width: 700px) {
+  .web-lang { width: 40px; padding: 0; font-size: 13px; }
+  .web-lang svg { display: none; }
+  .guest .top { gap: 6px; padding-left: 12px; padding-right: 12px; }
+  .guest .top h1 { font-size: 20px; }
+  .guest .guest-actions { gap: 6px; }
+  .guest .guest-actions .btn { padding: 0 10px; font-size: 13px; }
+}
+/* Schmale Browserfenster und Tablets hochkant: auch hier bleibt für Gäste alles in einer Zeile */
+@media (min-width: 701px) and (max-width: 900px) {
+  .guest .top { flex-wrap: nowrap; gap: 6px; }
+  .guest .top h1 { margin-right: 4px; }
+  .guest .tab { padding-left: 8px; padding-right: 8px; }
+  .guest .web-lang { width: 40px; padding: 0; }
+  .guest .web-lang svg { display: none; }
+  .guest .guest-actions { gap: 6px; }
+  .guest .guest-actions .btn { padding: 0 10px; }
+}
+@media (max-width: 360px) {
+  .guest .top { gap: 4px; padding-left: 8px; padding-right: 8px; }
+  .guest .top h1 { font-size: 16px; }
+  .guest .guest-actions { gap: 4px; }
+  .guest .guest-actions .btn { padding: 0 7px; font-size: 12px; }
+  .guest .web-lang { width: 32px; font-size: 12px; }
+}

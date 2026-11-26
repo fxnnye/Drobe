@@ -182,6 +182,16 @@ document.querySelectorAll('#langChips .chip').forEach((c) => {
   c.classList.toggle('active', c.dataset.lang === LANG);
   c.onclick = () => { if (c.dataset.lang !== LANG) setLang(c.dataset.lang); };
 });
+// Nur im Browser sitzt die Sprachwahl auch oben in der Kopfzeile, nicht in der iPhone-App und nicht in der installierten Web-App
+const inApp = (w = window) => !!w.Capacitor || w.navigator.standalone === true || w.matchMedia('(display-mode: standalone)').matches;
+{
+  const sel = $('webLangSelect');
+  for (const [code, name] of Object.entries(LANGS)) sel.append(new Option(name, code));
+  sel.value = LANG;
+  $('webLangCode').textContent = LANG.toUpperCase();
+  sel.addEventListener('change', () => { if (sel.value !== LANG) setLang(sel.value); });
+  $('webLang').hidden = inApp();
+}
 $('backupClose').onclick = () => backupDlg.close();
 
 $('backupExport').onclick = async () => {

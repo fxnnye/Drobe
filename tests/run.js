@@ -619,6 +619,15 @@ test('Suche am Handy: Suchfenster mit Reitern, Ergebnisse ohne Reiter, zurück u
   }
 });
 
+test('Sprachwahl oben: im Browser sichtbar, in der App nicht', () => {
+  const w = frame.contentWindow, d = w.document, sel = d.getElementById('webLangSelect');
+  const fake = (o) => ({ navigator: {}, matchMedia: () => ({ matches: false }), ...o });
+  const inApp = W('inApp');
+  eq([inApp(fake({})), inApp(fake({ Capacitor: {} })), inApp(fake({ navigator: { standalone: true } })), inApp(fake({ matchMedia: () => ({ matches: true }) }))], [false, true, true, true]);
+  eq([...sel.options].map((o) => [o.value, o.textContent]), [['de', 'Deutsch'], ['en', 'English']]);
+  eq([sel.value, d.getElementById('webLang').hidden], [W('LANG'), inApp()]);
+});
+
 /* ---------- Lauf ---------- */
 (async () => {
   await ready;
