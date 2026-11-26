@@ -436,7 +436,7 @@ const Profile = (() => {
       const pickBox = info.querySelector('.pick-box');
       const paint = () => {
         pickBadge.hidden = !st.picked;
-        if (!pickBox || !st.can || own) return;
+        if (!pickBox || !st.can) return;
         pickBox.hidden = false;
         pickBox.replaceChildren();
         const b = el('button', 'btn full', st.picked ? 'Aus Staff Picks entfernen' : 'Zu Staff Picks hinzufügen');
@@ -619,6 +619,8 @@ const Profile = (() => {
     let goBtn = null;
     if (it.vis !== 'private') info.append(legitBox(data.username, id, own, !!me, askLogin, same, (frozen) => { if (goBtn) goBtn.disabled = frozen; }));
 
+    const pickBox = el('div', 'pick-box'); // Knopf für Admins und Helfer, auch beim eigenen Teil
+    pickBox.hidden = true;
     if (!own) {
       // Erst „Merken“, darunter „Kaufanfrage senden“ (bei jedem fremden Teil, auch wenn es nur gezeigt und nicht angeboten wird)
       info.append(saveBtn(it, data.username, 'full'));
@@ -627,14 +629,12 @@ const Profile = (() => {
       go.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
       goBtn = go;
       info.append(go);
-      const pickBox = el('div', 'pick-box');
-      pickBox.hidden = true;
       info.append(pickBox);
       const rp = el('button', 'pub-report', 'Melden');
       rp.type = 'button';
       rp.onclick = me ? () => askReport(data.username, it) : askLogin;
       info.append(rp);
-    }
+    } else info.append(pickBox);
     page.append(photo, info);
     box.append(page);
 
