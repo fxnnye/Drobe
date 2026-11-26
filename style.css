@@ -1520,16 +1520,8 @@ a.set-row { color: inherit; text-decoration: none; }
 .web-lang:has(select:focus-visible) { box-shadow: 0 0 0 2px #0074e8; }
 .web-lang:not([hidden]) ~ .guest-actions { margin-left: 0; }
 @media (hover: hover) and (pointer: fine) { .web-lang:hover { background: var(--gray-hover); } }
-/* Angemeldet am Computer: links neben dem Einstellungs-Knopf, ohne die Kopfzeile höher zu machen */
-@media (min-width: 701px) { body:not(.guest) .web-lang { position: absolute; right: calc(var(--pad-page) + 64px); top: 0; bottom: 0; margin: auto 0; } }
-/* Angemeldet nur beim eigenen Profil, dort wo auch die Einstellungen sind; Besucher sehen sie immer */
-body:not(.guest):not(:has(#meBar:not([hidden]))) .web-lang { display: none; }
-@media (max-width: 700px) {
-  body.viewing-profile:not(.guest) .web-lang { display: none; }
-  /* Am Handy bekommt das Profil dafür oben eine schmale Zeile, rechtsbündig über dem Einstellungs-Knopf */
-  body.not-feed:not(.guest):not(.viewing-profile):has(#meBar:not([hidden])) .top:has(.web-lang:not([hidden])) { padding: calc(env(safe-area-inset-top, 0px) + 8px) var(--pad-page) 0; }
-  body:not(.guest) .web-lang { width: 44px; height: 36px; }
-}
+/* Nur für Besucher: Angemeldete stellen die Sprache in den Einstellungen um */
+body:not(.guest) .web-lang { display: none; }
 /* Am Handy nur das Kürzel; für Gäste rücken Logo und Knöpfe etwas zusammen, damit alles in eine Zeile passt */
 @media (max-width: 700px) {
   .web-lang { width: 40px; padding: 0; font-size: 13px; }
