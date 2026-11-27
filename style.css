@@ -278,6 +278,9 @@ dialog { max-height: 92vh; max-height: 92dvh; overflow: auto; }
     max-width: min(100% - 56px, calc(max(320px, 100dvh - 258px - env(safe-area-inset-top, 0px) - var(--tabs-pb, 6px)) * 9 / 16)); border-radius: 18px; }
   .picker .chips { margin-bottom: 0; }
   .picker .filter-row { margin-bottom: 8px; }
+  /* Unterkategorien in einer Zeile, damit die Teile darunter sichtbar bleiben */
+  #pickerFilter .subchips { flex-direction: row; }
+  #pickerFilter .subchips.enter { animation: subIn-y .26s var(--ease-out) both; overflow: visible; }
   .picker-grid { display: flex; overflow-x: auto; gap: 8px; overflow-y: hidden; scroll-snap-type: x proximity; }
   .pick { flex: none; width: 72px; height: 72px; padding: 6px; aspect-ratio: auto; scroll-snap-align: start; overflow: hidden; }
   .pick img { max-width: 60px; max-height: 60px; }

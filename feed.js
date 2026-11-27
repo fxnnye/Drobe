@@ -275,10 +275,14 @@ function renderChips(el, key, onChange) {
   const oldSub = el.querySelector(':scope > .subchips'), oldGroup = el._group; // wird beim Wechsel weich ausgeblendet
   const idx = ['Alle', ...TOP].indexOf(inGroup(state[key]) || state[key]);
   el._idx = idx;
+  // Outfit-Auswahl am Handy: Kategorien und Unterkategorien stehen in einer Zeile
+  const row = el.id === 'pickerFilter' && window.matchMedia('(max-width: 700px)').matches;
+  const picked = el._value !== state[key];
+  el._value = state[key];
   // Wechselt die Hauptkategorie, rückt die Reihe (am Handy) in Klickrichtung so weit, dass die Nachbarn links und rechts der gewählten Kategorie noch ganz zu sehen und anzutippen sind
   const nudge = (sel, after) => {
     el.scrollLeft = prevScroll;
-    if (!window.matchMedia('(max-width: 700px)').matches || !sel || idx === prevIdx && prevIdx != null) return;
+    if (!window.matchMedia('(max-width: 700px)').matches || !sel || (row ? !picked : idx === prevIdx && prevIdx != null)) return;
     const x = (n) => n.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
     const prev = sel.previousElementSibling, next = after !== undefined ? after : sel.nextElementSibling; // mit Unterkategorien ist der rechte Nachbar die nächste Hauptkategorie hinter dem Block
     const gap = 12, view = el.clientWidth;
@@ -286,6 +290,10 @@ function renderChips(el, key, onChange) {
     let t = prevScroll;
     if (prevIdx == null || idx > prevIdx) { if (L < t) t = L; if (R > t + view) t = R - view; }
     else { if (R > t + view) t = R - view; if (L < t) t = L; }
+    if (row) { // die zuletzt gewählte Kategorie bzw. Unterkategorie rückt in die Mitte
+      const now = el.querySelector(':scope > .subchips .chip.active:not(:first-child)') || sel;
+      t = Math.min(x(now) - (view - now.offsetWidth) / 2, el.scrollWidth - view);
+    }
     t = Math.max(0, t);
     if (t === prevScroll) return;
     // Eigene Bewegung statt scrollTo: der Block wächst gerade noch, das Ziel liegt anfangs außerhalb des Scrollbereichs
@@ -299,7 +307,7 @@ function renderChips(el, key, onChange) {
   };
   // Der alte Unterkategorien-Block bleibt kurz als Kopie stehen und blendet aus, statt plötzlich zu verschwinden
   const leave = (chips, group) => {
-    if (!oldSub || !oldGroup || oldGroup === group) return;
+    if (!oldSub || !oldGroup || oldGroup === group || row) return; // in der einen Zeile würde die Kopie nur eine Lücke lassen
     oldSub.classList.remove('enter'); oldSub.classList.add('leave'); oldSub.setAttribute('inert', ''); oldSub.style.animation = '';
     if (window.matchMedia('(max-width: 700px)').matches && chips[oldGroup]) chips[oldGroup].after(oldSub); else el.appendChild(oldSub);
     setTimeout(() => oldSub.remove(), 380);

@@ -118,12 +118,12 @@ async function addLayer(it) {
 // Von Hand verschobene Teile bleiben liegen. Am Handy gilt arrangePhone.
 function phoneBuilder() { return matchMedia('(max-width: 700px)').matches; }
 
-// Am Handy: flach hingelegt wie die Outfit-Bilder bei Pinterest, nichts gestapelt. Jedes Teil hat die Einheitsgröße
-// seiner Kategorie (phoneSize). Ein Oberteil: oben das Teil, darunter die Hose, links daneben die Schuhe (unter Shorts).
-// Zwei Oberteile: rechts Shirt bzw. Pullover über der Hose, links die Jacke (sonst der Pullover) und darunter die Schuhe.
-// Accessoires liegen in den freien Ecken. Zum Schluss rückt alles nur in die Höhenmitte, ohne die Größe zu ändern.
+// Am Handy: flach hingelegt wie die Outfit-Bilder bei Pinterest, nichts liegt übereinander. Jedes Teil hat die
+// Einheitsgröße seiner Kategorie (phoneSize). Von oben nach unten: Jacke bzw. zweites Oberteil (leicht links), Oberteil
+// (dann leicht rechts), Hose; die Schuhe stehen links neben der Hose (unter Shorts). Accessoires liegen in den freien Ecken.
+// Ist der Stapel zu hoch, wird alles gleichmäßig kleiner (l.fit), danach rückt die Collage in die Höhenmitte.
 const PHONE_GAP = 0.02;
-const TWO_TOPS = 0.8; // nebeneinander passen zwei Oberteile nur etwas kleiner
+const TWO_TOPS = 0.85; // zwei Oberteile brauchen zusammen Platz
 function phoneSize(it, aspect) {
   const tops = state.outfit.layers.filter((l) => GROUPS.Oberteile.includes(itemById(l.itemId)?.category));
   return phoneWidth(it, aspect, torsos.get(it.id)) * (tops.length > 1 && GROUPS.Oberteile.includes(it.category) ? TWO_TOPS : 1);
@@ -138,16 +138,19 @@ function arrangePhone(auto) {
   }
   const [main, side] = [...of('Shirts'), ...of('Pullover'), ...of('Jacken')];
   const leg = of('Hosen')[0], shoes = of('Schuhe')[0];
-  const legY = main ? hf(main) + PHONE_GAP : 0;
   const shorts = leg && hf(leg) < 0.35;
-  const beside = leg && shoes && !shorts; // Schuhe neben der Hose: die Spalte rückt etwas nach rechts
-  if (main) put(main, side ? 0.99 - main.w : (beside ? 0.52 : 0.5) - main.w / 2, 0);
-  if (leg) put(leg, side ? Math.min(0.99 - leg.w, main.x + (main.w - leg.w) / 2) : (beside ? 0.56 : 0.5) - leg.w / 2, legY);
+  const beside = leg && shoes && !shorts; // Schuhe neben der Hose: die Hose rückt etwas nach rechts
+  if (side) {
+    put(side, 0.5 - 0.12 - side.w / 2, 0);
+    put(main, 0.5 + 0.12 - main.w / 2, hf(side) + PHONE_GAP);
+  } else if (main) put(main, (beside ? 0.52 : 0.5) - main.w / 2, 0);
+  const legY = main ? main.y + hf(main) + PHONE_GAP : 0;
+  if (leg) put(leg, (beside ? (side ? 0.62 : 0.56) : 0.5) - leg.w / 2, legY);
   // Accessoires: mehrere untereinander
   const column = (list, cx, y) => list.reduce((at, l) => { put(l, cx - l.w / 2, at); return at + hf(l) + PHONE_GAP; }, y);
-  if (side) {
-    const end = Math.max(column([...of('Schmuck'), ...of('Taschen')], 0.14, 0), column(of('Caps'), 0.34, 0));
-    put(side, 0.01, Math.max(hf(main) * 0.65, end));
+  if (side) { // frei sind: rechts neben der Jacke und links neben dem Oberteil
+    column(of('Caps'), 0.87, 0);
+    column([...of('Schmuck'), ...of('Taschen')], 0.13, main.y);
   } else {
     column(of('Schmuck'), 0.12, 0);
     const under = column(of('Caps'), 0.87, 0);
@@ -157,13 +160,15 @@ function arrangePhone(auto) {
   if (shoes) {
     const upperEnd = Math.max(0, ...[main, side].filter(Boolean).map((l) => l.y + hf(l)));
     const legEnd = leg ? legY + hf(leg) : 0;
-    if (side) put(shoes, Math.max(0.01, 0.25 - shoes.w / 2), Math.max(legEnd, side.y + hf(side) + PHONE_GAP + hf(shoes)) - hf(shoes));
-    else if (beside) put(shoes, leg.x + 0.03 - shoes.w, legEnd - hf(shoes));
+    if (beside) put(shoes, leg.x + 0.02 - shoes.w, legEnd - hf(shoes));
     else put(shoes, 0.5 - shoes.w / 2, leg ? legEnd + PHONE_GAP : upperEnd && upperEnd + PHONE_GAP);
   }
   if (!auto.length) return;
   if (auto.length === 1) auto[0].x = 0.5 - auto[0].w / 2;
-  const dy = 0.5 - (Math.min(...auto.map((l) => l.y)) + Math.max(...auto.map((l) => l.y + hf(l)))) / 2;
+  const top = () => Math.min(...auto.map((l) => l.y)), end = () => Math.max(...auto.map((l) => l.y + hf(l)));
+  const fit = Math.min(1, 0.94 / (end() - top()));
+  for (const l of auto) { l.fit = fit; l.w *= fit; l.x = 0.5 + (l.x - 0.5) * fit; l.y *= fit; }
+  const dy = 0.5 - (top() + end()) / 2;
   for (const l of auto) { // was über den Rand ragen würde, rückt hinein
     l.x = Math.max(0.01, Math.min(0.99 - l.w, l.x));
     l.y = Math.max(0.01, Math.min(0.99 - hf(l), l.y + dy));
@@ -333,8 +338,9 @@ $('rememberSize').onclick = async () => {
   const l = state.outfit.layers.find((x) => x.uid === state.selected);
   const it = l && itemById(l.itemId);
   if (!it) return;
-  const base = phoneBuilder() ? phoneSize : fitWidth;
-  const scale = Math.round(l.w / base(it, await aspectOf(it)) * 100) / 100;
+  const aspect = await aspectOf(it);
+  const base = phoneBuilder() ? phoneSize(it, aspect) * (l.fit || 1) : fitWidth(it, aspect);
+  const scale = Math.round(l.w / base * 100) / 100;
   if (scale === 1) delete it.scale; else it.scale = scale;
   await dbPut('items', it);
   toast(`Größe gemerkt: „${it.name}“ wird künftig mit ${Math.round(scale * 100)} % eingefügt`);

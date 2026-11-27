@@ -271,9 +271,9 @@ test('Outfit-Anordnung am Handy: flach hingelegt, Einheitsgrößen, nichts gesta
       ok(Math.abs((y0 + y1) / 2 - 0.5) < 0.001, 'in der Höhenmitte: ' + what);
       for (const n of names) {
         const f = names.includes('jacke') && (n === 'jacke' || n === 'hoodie') ? W('TWO_TOPS') : 1; // nebeneinander etwas kleiner
-        ok(Math.abs(L(n).w - f * W('phoneWidth')(mine.find((m) => m.name === n), W('aspects').get('p_' + n), W('torsos').get('p_' + n))) < 0.0001, 'Einheitsgröße: ' + n + ' bei ' + what);
+        ok(Math.abs(L(n).w - L(n).fit * f * W('phoneWidth')(mine.find((m) => m.name === n), W('aspects').get('p_' + n), W('torsos').get('p_' + n))) < 0.0001, 'Einheitsgröße: ' + n + ' bei ' + what);
       }
-      for (const p of names) for (const q of names) if (p < q) ok(over(L(p), L(q)) < 0.03 * Math.min(L(p).w * H(L(p)), L(q).w * H(L(q))) + 0.004, 'nicht gestapelt: ' + p + ' / ' + q + ' ' + over(L(p), L(q)).toFixed(4));
+        for (const p of names) for (const q of names) if (p < q) ok(over(L(p), L(q)) < 0.003, 'liegt nicht übereinander: ' + p + ' / ' + q + ' ' + over(L(p), L(q)).toFixed(4));
     };
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
     await W('addLayer')(mine[2]); check('nur Hose', ['jeans']);
@@ -281,16 +281,17 @@ test('Outfit-Anordnung am Handy: flach hingelegt, Einheitsgrößen, nichts gesta
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
     for (const it of mine.slice(1, 4)) await W('addLayer')(it);
     check('ein Oberteil', ['hoodie', 'jeans', 'schuhe']);
-    ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) + 0.015, 'Hose mit Abstand unter dem Oberteil');
+    ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) + 0.01, 'Hose mit Abstand unter dem Oberteil');
     ok(L('schuhe').x < L('jeans').x && Math.abs(L('schuhe').y + H(L('schuhe')) - L('jeans').y - H(L('jeans'))) < 0.001, 'Schuhe links unten neben der Hose');
     await W('addLayer')(mine[0]);
     check('zwei Oberteile', ['jacke', 'hoodie', 'jeans', 'schuhe']);
-    ok(L('jacke').x < 0.05 && L('hoodie').x + L('hoodie').w > 0.95 && L('jacke').y > L('hoodie').y, 'Jacke links, Pullover rechts oben');
-    ok(L('jeans').x > 0.4 && L('jeans').y > L('hoodie').y + H(L('hoodie')), 'Hose rechts darunter');
-    ok(L('schuhe').y >= L('jacke').y + H(L('jacke')) && L('schuhe').x < 0.2, 'Schuhe unter der Jacke');
+    ok(L('hoodie').y >= L('jacke').y + H(L('jacke')) + 0.01 && L('jeans').y >= L('hoodie').y + H(L('hoodie')) + 0.01, 'Jacke, Pullover, Hose untereinander');
+    ok(L('jacke').x + L('jacke').w / 2 < L('hoodie').x + L('hoodie').w / 2 - 0.1, 'Jacke leicht links, Pullover leicht rechts');
+    ok(L('schuhe').x < L('jeans').x && Math.abs(L('schuhe').y + H(L('schuhe')) - L('jeans').y - H(L('jeans'))) < 0.001, 'Schuhe links neben der Hose');
+    ok(Math.abs(L('jacke').fit - L('jeans').fit) < 0.0001 && L('jeans').fit > 0.7, 'alles gleichmäßig eingepasst');
     for (const it of mine.slice(4)) await W('addLayer')(it);
     check('mit Accessoires', ['jacke', 'hoodie', 'jeans', 'schuhe']);
-    ok(L('cap').y < L('jacke').y && L('tasche').y < L('jacke').y, 'Accessoires links oben über der Jacke');
+    ok(L('cap').x > 0.6 && L('cap').y < L('hoodie').y && L('tasche').x < 0.2, 'Cap rechts oben, Tasche links');
     // von Hand verschobene Teile bleiben liegen
     const cap = L('cap'); cap.manual = true; cap.x = 0.7; cap.y = 0.1;
     await W('relayout')();
@@ -322,6 +323,30 @@ test('Rumpf zählt, nicht die Ärmel: Hoodie wirkt so groß wie das T-Shirt', ()
   const inStage = (c, cat) => f({ category: cat, name: '' }, c.height / c.width, torso(c)) * 100 / c.width; // Rumpfbreite im Outfit
   const t = inStage(tee, 'Shirts'), h = inStage(hoodie, 'Pullover');
   ok(Math.abs(h / t - 1) < 0.12, 'Rumpf Hoodie ' + h.toFixed(3) + ' / T-Shirt ' + t.toFixed(3));
+});
+
+test('Outfit bauen am Handy: Unterkategorien in einer Zeile, die gewählte Kategorie bleibt sichtbar', async () => {
+  const d = frame.contentDocument, w = frame.contentWindow, st = W('state'), guest = d.body.classList.contains('guest'), view = st.view, filter = st.pickerFilter;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  d.body.classList.remove('guest');
+  try {
+    st.pickerFilter = 'Alle';
+    W('showView')('builder');
+    await wait(400);
+    const el = d.getElementById('pickerFilter'), chip = (t) => [...el.querySelectorAll('.chip')].find((c) => c.textContent === t);
+    chip('Oberteile').click();
+    await wait(700);
+    const sub = el.querySelector('.subchips'), r = (n) => n.getBoundingClientRect(), box = r(el);
+    eq(w.getComputedStyle(sub).flexDirection, 'row');
+    ok(box.height <= 48, 'Zeile bleibt niedrig: ' + box.height);
+    const middle = (t) => { const c = r(chip(t)); ok(Math.abs((c.left + c.right) / 2 - (box.left + box.right) / 2) < 3, t + ' in der Mitte: ' + Math.round(c.left)); };
+    middle('Oberteile');
+    for (const t of ['Pullover', 'Hosen']) { chip(t).click(); await wait(700); middle(t); }
+    eq(el.querySelectorAll('.subchips').length, 0);
+    // selbst gewischt: neu zeichnen ohne neue Wahl springt nicht zurück
+    el.scrollLeft = 0; W('renderPicker')(); await wait(500);
+    eq(el.scrollLeft, 0);
+  } finally { st.pickerFilter = filter; W('showView')(view); if (guest) d.body.classList.add('guest'); }
 });
 
 test('Dunkles Design: Teile stehen auf heller Fläche, Outfits behalten ihren Hintergrund', async () => {
