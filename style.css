@@ -1154,10 +1154,12 @@ dialog { overscroll-behavior: contain; }
 .msg-tab { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .msg-tab .badge:empty { display: none; }
 
-/* Feed: das Weiß hinter den Teilen und Outfits nimmt das Grau der Karte an (Multiplizieren); beim Öffnen zeigt die Ansicht den echten Hintergrund */
+/* Teile-Fotos sehen überall gleich aus: Weiß hinter dem Teil nimmt im hellen Design das Grau der Fläche an (Multiplizieren).
+   Betrifft Karten (Feed, Suche, Schrank), Teil-Seite, eigenes Teil, Outfit-Baukasten und Nachrichten. Outfits stehen auf Weiß, dort ändert sich nichts. */
 .card.feed-card .img.feed-img, .outfits .card.feed-card .img.feed-img { background: var(--gray); }
-@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .card.feed-card .img.feed-img img { mix-blend-mode: multiply; } }
-:root[data-theme="light"] .card.feed-card .img.feed-img img { mix-blend-mode: multiply; }
+.item-photo img, .msg-thumb img { background: none; margin: 0; } /* ohne eigene Fläche, auch in Fenstern */
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) :is(.card .img img, .item-photo img, #itemDialog:not(.tooling) .up-preview img, .pick img, .msg-thumb img) { mix-blend-mode: multiply; } }
+:root[data-theme="light"] :is(.card .img img, .item-photo img, #itemDialog:not(.tooling) .up-preview img, .pick img, .msg-thumb img) { mix-blend-mode: multiply; }
 
 /* Feed: Outfits in der Größe wie im Profil (9:16) und mit ihrem echten Hintergrund; nur Teile nehmen das Grau der Karte an */
 .card.feed-card.feed-outfit .img.feed-img { --pad: 0px; aspect-ratio: 9 / 16; overflow: hidden; background: #fff; border: 1px solid var(--gray-hover); }

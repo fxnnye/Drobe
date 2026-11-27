@@ -660,6 +660,23 @@ test('Handy: Teil bearbeiten in einer Zeile, graue Fotofläche, kein „Ziehen�
     ok(d.querySelectorAll('.touch-only').length >= 2 && css(d.querySelector('.touch-only')).display !== 'none', 'Hinweis für das Handy fehlt');
   } finally { dlg.className = classes; }
 });
+test('Teile-Fotos: Weiß nimmt überall das Grau der Fläche an, beim Radieren nicht', () => {
+  const w = frame.contentWindow, d = w.document, root = d.documentElement, theme = root.getAttribute('data-theme'), dlg = d.getElementById('itemDialog'), classes = dlg.className;
+  const host = d.createElement('div');
+  host.innerHTML = '<div class="card"><div class="img"><img alt=""></div></div><div class="item-photo"><img alt=""></div><button class="pick"><img alt=""></button><span class="msg-thumb"><img alt=""></span>';
+  d.body.append(host);
+  const modes = () => [...host.querySelectorAll('img'), d.getElementById('itemPreview')].map((i) => w.getComputedStyle(i).mixBlendMode);
+  try {
+    dlg.className = '';
+    root.setAttribute('data-theme', 'light');
+    eq(modes(), Array(5).fill('multiply'));
+    dlg.className = 'tooling';
+    eq(w.getComputedStyle(d.getElementById('itemPreview')).mixBlendMode, 'normal');
+    dlg.className = '';
+    root.setAttribute('data-theme', 'dark');
+    eq(modes(), Array(5).fill('normal'));
+  } finally { if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); dlg.className = classes; host.remove(); }
+});
 test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knopf steht unter dem Preis', async () => {
   const w = frame.contentWindow, d = w.document, C = W('Cloud'), client = C.client, user = C.user, view = W('state.view');
   const its = ['a', 'b'].map((id, i) => ({ id, path: 'p' + id, name: 'Teil ' + id, category: i ? 'Hosen' : 'Oberteile', brand: 'Nike', size: 'M', vis: i ? 'sale' : 'public', price: i ? 90 : null }));
