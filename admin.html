@@ -188,7 +188,6 @@
         <button role="tab" data-tab="reviews" aria-selected="false">Bewertungen</button></div>
       <div class="tabgroup" data-admin><span class="tablabel">Community</span>
         <button role="tab" data-tab="members" aria-selected="false">Mitglieder</button>
-        <button role="tab" data-tab="flex" aria-selected="false">Flex</button>
         <button role="tab" data-tab="roles" aria-selected="false">Rollen</button></div>
       <div class="tabgroup"><span class="tablabel">Kuratieren</span>
         <button role="tab" data-tab="picks" aria-selected="false">Staff Picks</button></div>
@@ -205,7 +204,6 @@
     <div id="reviews" hidden></div>
     <div id="members" hidden></div>
     <div id="moderation" hidden></div>
-    <div id="flex" hidden></div>
     <div id="roles" hidden></div>
     <div id="errors" hidden></div>
     <div id="log" hidden></div>
@@ -494,7 +492,7 @@
     if (!restored) goTab('overview');
     loadReports();
   }
-  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), flex: () => loadFlex(), roles: () => loadRoles(), picks: () => loadPicks(), errors: () => loadErrors(), log: () => loadLog() };
+  const loaders = { overview: () => loadOverview(), reports: () => loadReports(), legit: () => loadLegit(), sales: () => loadSales(), reviews: () => loadReviews(), members: () => loadMembers(), moderation: () => loadModeration(), roles: () => loadRoles(), picks: () => loadPicks(), errors: () => loadErrors(), log: () => loadLog() };
   const PAGES = {
     overview: ['Übersicht', 'Was gerade zu tun ist und die wichtigsten Zahlen.'],
     reports: ['Meldungen', 'Offene Meldungen von Mitgliedern.'],
@@ -503,7 +501,6 @@
     sales: ['Verkäufe', 'Angebote, Bestellungen und Anzeigen.'],
     reviews: ['Bewertungen', 'Bewertungen ansehen und missbräuchliche entfernen.'],
     members: ['Mitglieder', 'Suchen, aufklappen und handeln.'],
-    flex: ['Flex of the Week', 'Wer diese Woche oben im Feed steht.'],
     roles: ['Rollen', 'Wer Admin oder Helfer ist.'],
     picks: ['Staff Picks', 'Teile, die im Feed unter der Flamme stehen.'],
     errors: ['Fehlerprotokoll', 'Fehler, die die App gemeldet hat.'],
@@ -1017,53 +1014,6 @@
       }
       segmented(box, 'moderation', [['Gesperrte Konten', s1, banned.data.length], ['Versteckte Inhalte', s2, hidden.data.length]]);
     } catch (e) { console.error(e); failed(box, 'Das konnte nicht geladen werden. Ist Migration 0053 ausgeführt? (' + ((e && e.message) || '?') + ')', loadModeration); }
-  }
-
-  /* ---------- Flex of the Week ---------- */
-  async function loadFlex() {
-    await simpleLoad('flex', 'admin_flex_list', {}, async (box, data) => {
-      const fth = {};
-      for (const name of [...new Set(data.entries.map((e) => e.username))]) {
-        const rows = data.entries.filter((e) => e.username === name).map((e) => ({ kind: e.kind === 'item' ? 'items' : 'outfits', id: e.target }));
-        const t = await contentThumbs(name, rows);
-        data.entries.filter((e) => e.username === name).forEach((e) => { fth[e.id] = t[(e.kind === 'item' ? 'items' : 'outfits') + '/' + e.target]; });
-      }
-      const s1 = section('Diese Woche (ab ' + day(data.week_start) + ')', 'Steht oben im Feed. Nur öffentliche Teile und Outfits lassen sich eintragen.');
-      if (!data.entries.length) s1.append(el('p', 'muted', 'Diese Woche ist noch niemand eingetragen.'));
-      for (const e of data.entries) {
-        const d = el('div', 'content-row');
-        d.append(thumbBox(fth[e.id]));
-        d.append(el('span', null, (e.kind === 'item' ? 'Teil' : 'Outfit') + ': ' + (e.name || '?') + ' · von ' + e.username + (e.note ? ' · „' + e.note + '“' : '')));
-        d.append(btn('Entfernen …', 'danger', async () => {
-          const a = await confirmAction({ title: 'Aus dem Flex der Woche nehmen?', intro: '„' + (e.name || '?') + '“ von ' + e.username + ' verschwindet aus dem Flex. Das Teil selbst bleibt unverändert.', confirmLabel: 'Entfernen', danger: true });
-          if (a && !(await call('admin_remove_flex', { p_entry: e.id }, 'Entfernt.')).failed) loadFlex();
-        }));
-        s1.append(d);
-      }
-      const s2 = section('Jemanden eintragen');
-      const form = el('form', 'search'); const input = el('input'); input.placeholder = 'Benutzername'; input.maxLength = 20; input.autocapitalize = 'none';
-      const go = el('button', 'primary', 'Öffentliche Inhalte zeigen'); go.type = 'submit'; form.append(input, go);
-      const list = el('div'); s2.append(form, list);
-      form.onsubmit = async (ev) => {
-        ev.preventDefault(); const name = input.value.trim().toLowerCase(); if (!name) return;
-        loading(list);
-        const { data: c, error } = await sb.rpc('admin_member_content', { p_username: name });
-        list.replaceChildren();
-        if (error) return list.append(el('p', 'err', 'Das Profil wurde nicht gefunden.'));
-        const pub = c.filter((x) => x.vis === 'public' || x.vis === 'sale');
-        if (!pub.length) return list.append(el('p', 'muted', name + ' hat keine öffentlichen Inhalte.'));
-        const cth = await contentThumbs(name, pub);
-        for (const x of pub) {
-          const d = el('div', 'content-row'); d.append(thumbBox(cth[x.kind + '/' + x.id]), el('span', null, (x.kind === 'items' ? 'Teil' : 'Outfit') + ': ' + (x.name || '(ohne Name)')));
-          d.append(btn('Eintragen …', 'primary', async () => {
-            const a = await confirmAction({ title: '„' + (x.name || 'Inhalt') + '“ zum Flex der Woche machen?', intro: 'Der Inhalt von ' + name + ' steht diese Woche oben im Feed.', reasonLabel: 'Kurzer Text dazu (optional, bis 140 Zeichen)', confirmLabel: 'Eintragen' });
-            if (a && !(await call('admin_set_flex', { p_username: name, p_kind: x.kind === 'items' ? 'item' : 'outfit', p_id: x.id, p_note: a.reason || null }, 'Eingetragen.')).failed) loadFlex();
-          }));
-          list.append(d);
-        }
-      };
-      segmented(box, 'flex', [['Diese Woche', s1, data.entries.length], ['Eintragen', s2]]);
-    }, loadFlex);
   }
 
   /* ---------- Rollen ---------- */
