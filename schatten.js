@@ -18,9 +18,9 @@ const SHADOW = {
     around: { opacity: 0.05, offset: 0.012, blur: 0.03 },
   },
   flat: {
-    contact: { opacity: 0.10, height: 0.012, blur: 0.012 },
-    ground: { opacity: 0.06, squash: 0.2, level: 0.5, offset: 0.015, blur: 0.036 },
-    around: { opacity: 0.17, offset: 0.018, blur: 0.028 },
+    contact: { opacity: 0.18, height: 0.012, blur: 0.012 },
+    ground: { opacity: 0.11, squash: 0.2, level: 0.5, offset: 0.018, blur: 0.036 },
+    around: { opacity: 0.32, offset: 0.024, blur: 0.03 },
   },
   neutral: {
     contact: { opacity: 0.22, height: 0.014, blur: 0.01 },

@@ -717,7 +717,7 @@ test('Tabellen sind direkt nicht lesbar', async () => {
 test('feed_public liefert eine Liste, nur freigegebene Felder', async () => {
   const r = await rpc('feed_public', { p_kind: 'items' });
   eq(r.status, 200); ok(Array.isArray(r.body));
-  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'ts']);
+  const allowed = new Set(['username', 'id', 'path', 'name', 'category', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'ts']);
   for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld im Feed: ' + k);
   for (const it of r.body) ok(['public', 'sale'].includes(it.vis), 'privates Teil im Feed');
 });
@@ -775,7 +775,7 @@ test('feed_stage liefert 0, 1 oder 2; Kernfunktion ist gesperrt', async () => {
 test('feed_ranked liefert nur freigegebene Felder', async () => {
   const r = await rpc('feed_ranked', { p_offset: 0 });
   eq(r.status, 200); ok(Array.isArray(r.body)); ok(r.body.length <= 30, 'mehr als 30 Einträge');
-  const allowed = new Set(['username', 'id', 'path', 'name', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'ts', 'outfit']);
+  const allowed = new Set(['username', 'id', 'path', 'name', 'category', 'brand', 'size', 'cond', 'rarity', 'color', 'vis', 'price', 'ts', 'outfit']);
   for (const it of r.body) for (const k of Object.keys(it)) ok(allowed.has(k), 'unerwartetes Feld: ' + k);
   for (const it of r.body) ok(['public', 'sale'].includes(it.vis), 'privater Eintrag');
 });
