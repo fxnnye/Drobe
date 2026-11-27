@@ -26,7 +26,7 @@ for i, (pos, key) in enumerate(marks):
     nav = ''.join(f'<a href="{f}">{t}</a>' for f, t in pages.values())
     out = f'''<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title} – JAWNZ</title><meta name="robots" content="index,follow"><style>{css}</style></head>
+<title>{title} – JAWNZ</title><meta name="robots" content="index,follow"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=2"><style>{css}</style></head>
 <body><main><h1>JAWNZ</h1><nav>{nav}<a href="./">Zur App</a></nav>
 {inner}
 </main></body></html>
