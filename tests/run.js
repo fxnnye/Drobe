@@ -254,36 +254,60 @@ test('Ausbessern: ohne Vergleichsfarben passiert nichts', () => {
   eq(W('refineRestored')(cur, src, mask, w, h), -1);
 });
 
-test('Outfit-Anordnung am Handy: mittig, Schuhe neben der Hose, nichts ragt heraus', async () => {
+test('Outfit-Anordnung am Handy: flach hingelegt, Einheitsgrößen, nichts gestapelt', async () => {
   const doc = frame.contentDocument;
   const mk = async (name, cat, asp) => { const c = doc.createElement('canvas'); c.width = 300; c.height = Math.round(300 * asp); c.getContext('2d').fillRect(0, 0, c.width, c.height); return { id: 'p_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };
   const st = W('state'), setItems = W('(v) => { items = v; }'), saveItems = W('items'), saveOutfit = st.outfit;
   try {
-    const mine = [await mk('jacke', 'Jacken', 0.75), await mk('hoodie', 'Pullover', 1.4), await mk('jeans', 'Hosen', 1.7), await mk('schuhe', 'Schuhe', 0.6), await mk('guertel', 'Gürtel', 0.2), await mk('cap', 'Caps', 0.8), await mk('tasche', 'Taschen', 0.9)];
+    const mine = [await mk('jacke', 'Jacken', 0.9), await mk('hoodie', 'Pullover', 1.1), await mk('jeans', 'Hosen', 1.7), await mk('schuhe', 'Schuhe', 0.7), await mk('guertel', 'Gürtel', 0.2), await mk('cap', 'Caps', 0.8), await mk('tasche', 'Taschen', 0.9)];
     setItems(mine);
     const L = (n) => st.outfit.layers.find((l) => l.itemId === 'p_' + n);
     const H = (l) => l.w * W('aspects').get(l.itemId) / W('STAGE_RATIO');
-    const box = () => { const a = st.outfit.layers; return { x0: Math.min(...a.map((l) => l.x)), x1: Math.max(...a.map((l) => l.x + l.w)), y0: Math.min(...a.map((l) => l.y)), y1: Math.max(...a.map((l) => l.y + H(l))) }; };
-    const centered = (what) => { const b = box(); ok(Math.abs((b.x0 + b.x1) / 2 - 0.5) < 0.001 && Math.abs((b.y0 + b.y1) / 2 - 0.5) < 0.001, 'mittig: ' + what); ok(b.x0 >= 0.019 && b.x1 <= 0.981 && b.y0 >= 0.039 && b.y1 <= 0.961, 'in der Fläche: ' + what + ' ' + JSON.stringify(b)); };
+    const over = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + H(a), b.y + H(b)) - Math.max(a.y, b.y));
+    const check = (what, names) => {
+      const a = st.outfit.layers;
+      ok(a.every((l) => l.x >= 0.009 && l.x + l.w <= 0.991 && l.y >= 0.009 && l.y + H(l) <= 0.991), 'in der Fläche: ' + what);
+      const y0 = Math.min(...a.map((l) => l.y)), y1 = Math.max(...a.map((l) => l.y + H(l)));
+      ok(Math.abs((y0 + y1) / 2 - 0.5) < 0.001, 'in der Höhenmitte: ' + what);
+      for (const n of names) {
+        const f = names.includes('jacke') && (n === 'jacke' || n === 'hoodie') ? W('TWO_TOPS') : 1; // nebeneinander etwas kleiner
+        ok(Math.abs(L(n).w - f * W('phoneWidth')(mine.find((m) => m.name === n), W('aspects').get('p_' + n))) < 0.0001, 'Einheitsgröße: ' + n + ' bei ' + what);
+      }
+      for (const p of names) for (const q of names) if (p < q) ok(over(L(p), L(q)) < 0.03 * Math.min(L(p).w * H(L(p)), L(q).w * H(L(q))) + 0.004, 'nicht gestapelt: ' + p + ' / ' + q + ' ' + over(L(p), L(q)).toFixed(4));
+    };
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
-    await W('addLayer')(mine[2]); centered('nur Hose');
+    await W('addLayer')(mine[2]); check('nur Hose', ['jeans']);
+    ok(Math.abs(L('jeans').x + L('jeans').w / 2 - 0.5) < 0.001, 'einzelnes Teil mittig');
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
-    for (const it of mine.slice(0, 4)) await W('addLayer')(it);
-    centered('Jacke, Hoodie, Jeans, Schuhe');
-    ok(L('schuhe').x + L('schuhe').w <= L('jeans').x + 0.001, 'Schuhe verdecken die Hose nicht');
-    ok(Math.abs(L('schuhe').y + H(L('schuhe')) - L('jeans').y - H(L('jeans'))) < 0.001, 'Schuhe stehen unten auf Höhe der Hosenbeine');
-    ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) - 0.001, 'Hose unter dem Oberteil');
-    const off = L('jacke').x + L('jacke').w / 2 - L('hoodie').x - L('hoodie').w / 2;
-    ok(off > 0.05 && off < 0.17 && L('jacke').y < L('hoodie').y, 'Jacke nur leicht nach rechts oben versetzt: ' + off);
-    ok(L('hoodie').w / L('jeans').w > W('fitWidth')(mine[1], 1.4) / W('fitWidth')(mine[2], 1.7) * 1.1, 'schmales Oberteil ist größer');
+    for (const it of mine.slice(1, 4)) await W('addLayer')(it);
+    check('ein Oberteil', ['hoodie', 'jeans', 'schuhe']);
+    ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) + 0.015, 'Hose mit Abstand unter dem Oberteil');
+    ok(L('schuhe').x < L('jeans').x && Math.abs(L('schuhe').y + H(L('schuhe')) - L('jeans').y - H(L('jeans'))) < 0.001, 'Schuhe links unten neben der Hose');
+    await W('addLayer')(mine[0]);
+    check('zwei Oberteile', ['jacke', 'hoodie', 'jeans', 'schuhe']);
+    ok(L('jacke').x < 0.05 && L('hoodie').x + L('hoodie').w > 0.95 && L('jacke').y > L('hoodie').y, 'Jacke links, Pullover rechts oben');
+    ok(L('jeans').x > 0.4 && L('jeans').y > L('hoodie').y + H(L('hoodie')), 'Hose rechts darunter');
+    ok(L('schuhe').y >= L('jacke').y + H(L('jacke')) && L('schuhe').x < 0.2, 'Schuhe unter der Jacke');
     for (const it of mine.slice(4)) await W('addLayer')(it);
-    centered('mit Accessoires');
-    ok(L('guertel').x >= L('jeans').x + L('jeans').w - 0.001 && Math.abs(L('guertel').y - L('jeans').y) < 0.001, 'Gürtel rechts neben der Hose');
+    check('mit Accessoires', ['jacke', 'hoodie', 'jeans', 'schuhe']);
+    ok(L('cap').y < L('jacke').y && L('tasche').y < L('jacke').y, 'Accessoires links oben über der Jacke');
     // von Hand verschobene Teile bleiben liegen
     const cap = L('cap'); cap.manual = true; cap.x = 0.7; cap.y = 0.1;
     await W('relayout')();
     eq([cap.x, cap.y], [0.7, 0.1]);
   } finally { setItems(saveItems); st.outfit = saveOutfit; }
+});
+
+test('Einheitsgrößen am Handy: Hosen gleich lang, Oberteile gleich viel Fläche, Schuhe gleich groß', () => {
+  const f = W('phoneWidth'), R = W('STAGE_RATIO');
+  const len = (c, a) => f({ category: c, name: '' }, a) * a / R;
+  near([1.5, 1.6, 2, 2.6].map((a) => len('Hosen', a)), 'Hosen');
+  for (const c of ['Jacken', 'Shirts', 'Pullover']) near([0.9, 0.95, 1].map((a) => f({ category: c, name: '' }, a) * Math.sqrt(a)), c);
+  for (const c of ['Shirts', 'Pullover']) for (const a of [0.6, 0.8, 1, 1.3, 1.6]) ok(len(c, a) <= 0.331 && f({ category: c, name: '' }, a) <= 0.621, c + ' in den Grenzen bei ' + a);
+  near([0.4, 0.7, 1, 1.4].map((a) => f({ category: 'Schuhe', name: '' }, a) * Math.max(1, a)), 'Schuhe');
+  eq(f({ category: 'Shirts', name: '' }, 1), f({ category: 'Pullover', name: '' }, 1));
+  ok(len('Hosen', 1) < len('Hosen', 2) * 0.6, 'Shorts bleiben kürzer');
+  ok(f({ category: 'Jacken', name: 'Wollmantel' }, 1.5) * 1.5 / R > len('Jacken', 1.5), 'Mäntel bleiben länger');
 });
 
 test('Outfit bauen am Handy: Speichern oben neben dem Pfeil, darunter Bild und Auswahl', async () => {
@@ -337,7 +361,7 @@ test('Oberteile: Jacke und Pullover mischbar, höchstens zwei, Pullover an der S
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
     await W('addLayer')(mine[0]); await W('addLayer')(mine[1]);
     eq(st.outfit.layers.length, 2, 'Jacke und Pullover zusammen');
-    ok(st.outfit.layers.find((l) => l.itemId === 'o_jacke').x > st.outfit.layers.find((l) => l.itemId === 'o_pulli').x, 'Jacke rechts, Pullover mittig');
+    ok(st.outfit.layers.find((l) => l.itemId === 'o_jacke').x < st.outfit.layers.find((l) => l.itemId === 'o_pulli').x, 'am Handy: Jacke links, Pullover rechts');
     await W('addLayer')(mine[2]);
     eq(st.outfit.layers.map((l) => l.itemId).sort(), ['o_pulli', 'o_shirt'], 'drittes Oberteil ersetzt das älteste');
   } finally { setItems(saveItems); st.outfit = saveOutfit; }
