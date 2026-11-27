@@ -348,25 +348,37 @@ document.querySelectorAll('dialog').forEach((d) => {
     document.addEventListener('touchcancel', () => { if (p && p.on) paint(0); p = null; }, { passive: true });
   }
 
-  // 4) Fenster von unten (nur Handy): Griff oben, nach unten wegziehbar
-  ['oldItemDialog', 'ordersDialog', 'peopleDialog', 'reviewsDialog', 'reviewDialog', 'reportDialog', 'interestDialog', 'backupDialog'].forEach((id) => {
+  // 4) Fenster von unten (nur Handy): Griff oben, nach unten wegziehbar, Fenster ohne Aktion haben oben rechts ein ✕
+  ['oldItemDialog', 'ordersDialog', 'peopleDialog', 'reviewsDialog', 'reviewDialog', 'reportDialog', 'interestDialog', 'backupDialog',
+    'itemDialog', 'profileDialog', 'settingsDialog', 'colorsDialog', 'legalDialog', 'resetDialog', 'welcomeDialog'].forEach((id) => {
     const d = $(id);
     if (!d) return;
     d.classList.add('bsheet');
-    const nativeClose = d.close.bind(d);
-    let closing = false;
+    const nativeClose = d.close.bind(d), nativeShow = d.showModal.bind(d);
+    let leaving = null; // läuft die Ausfahr-Bewegung, steht hier, wie sie zu Ende gebracht wird
     d.close = (v) => {
-      if (!d.open || closing || !phone() || reduce()) return nativeClose(v);
-      closing = true;
+      if (leaving) return;
+      if (!d.open || !phone() || reduce()) return nativeClose(v);
       const from = d._dragY || 0;
       const a = d.animate([{ transform: 'translateY(' + from + 'px)' }, { transform: 'translateY(100%)' }], { duration: 220, easing: 'cubic-bezier(.23, 1, .32, 1)', fill: 'forwards' });
-      a.onfinish = () => { closing = false; d._dragY = 0; a.cancel(); nativeClose(v); };
+      leaving = () => { if (!leaving) return; leaving = null; d._dragY = 0; a.cancel(); nativeClose(v); };
+      a.onfinish = leaving;
     };
+    d.showModal = () => { if (leaving) leaving(); nativeShow(); }; // gleich wieder geöffnet: erst fertig schließen
     d.addEventListener('cancel', (e) => { e.preventDefault(); d.close(); });
+    const x = d.querySelector('.x-close');
+    if (x) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'dlg-x'; b.setAttribute('aria-label', 'Schließen');
+      b.onclick = () => { if (x.type === 'submit') d.close(x.value); else x.click(); };
+      d.querySelector('form').prepend(b);
+    }
+    // Beim Bearbeiten eines Teils nicht wegziehbar, damit nichts versehentlich verloren geht
+    const fixed = () => (id === 'itemDialog' && !d.classList.contains('viewing')) || id === 'resetDialog' || id === 'welcomeDialog';
     let g = null;
     d.addEventListener('touchstart', (e) => {
       g = null;
-      if (!phone() || e.touches.length !== 1) return;
+      if (!phone() || e.touches.length !== 1 || fixed() || d.scrollTop > 0 || e.target.closest('.dlg-x')) return;
       const t = e.touches[0], r = d.getBoundingClientRect();
       if (t.clientY - r.top <= 44) g = { y0: t.clientY, t0: Date.now(), dy: 0 };
     }, { passive: true });

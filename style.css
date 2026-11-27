@@ -536,6 +536,7 @@ dialog.tooling .up-preview { position: sticky; top: 0; z-index: 3; box-shadow: 0
 .offer-card .offer-status { font-size: 13px; padding: 2px 8px; border-radius: 99px; background: var(--bg, #fff); }
 .offer-card .offer-note { flex-basis: 100%; margin: 0; }
 .offer-card .offer-actions { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+.offer-card .offer-actions .btn:not(.primary) { background: var(--bg); box-shadow: inset 0 0 0 1px var(--field); } /* auf der grauen Karte als Knopf erkennbar */
 .bubble { align-self: flex-start; max-width: 80%; background: var(--gray); border-radius: 16px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
 .bubble.mine { align-self: flex-end; background: var(--text); color: var(--on-text); }
 .bubble.mine .muted { color: inherit; opacity: .7; }
@@ -860,7 +861,6 @@ textarea::placeholder { color: #a8a8a8; opacity: 1; }
 .msg-row .thread-top, .msg-row .thread-last { grid-column: auto; }
 .msg-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .msg-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.msg-who { display: flex; align-items: center; gap: 8px; }
 .msg-row.unread .msg-title::before { content: '● '; color: var(--red); }
 .avatar.xs { width: 20px; height: 20px; font-size: 10px; }
 
@@ -1097,7 +1097,7 @@ input[type=checkbox], input[type=radio] { margin: 0; }
 
 /* Hinzufügen-Seite: eigene Kopfzeile (Schließen, Titel) ohne Logo, Abschnitte mit Überschriften */
 /* Logo nur im Feed; abseits von Feed und Profil gibt es keine sichtbare Kopfzeile mehr (Gäste behalten ihre Anmelde-Knöpfe) */
-@media (max-width: 700px) { .not-feed .top h1 { display: none; } } /* am Computer bleibt das Logo oben */
+@media (max-width: 700px) { .not-feed:not(.guest) .top h1 { display: none; } } /* am Computer und für Besucher bleibt das Logo oben */
 /* Am Handy bleibt von der Kopfzeile nur der Streifen für die Statusleiste; die untere Leiste gehört zur Kopfzeile und muss bleiben */
 @media (max-width: 700px) {
   .not-feed:not(.guest) .top { padding: env(safe-area-inset-top, 0px) 0 0; min-height: 0; gap: 0; }
@@ -1599,3 +1599,82 @@ body:not(.guest) .web-lang { display: none; }
   #itemMore .more-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-3); align-items: end; }
 }
 
+/* Outfit bauen (Handy): ohne den grauen Kasten bekommen Namensfeld und Auswahl selbst die graue Fläche */
+@media (max-width: 700px) { .panel input[type=text], .panel select { background-color: var(--gray); } }
+/* Suchfenster (Besucher am Handy): keine Fußzeile mitten im Fenster */
+@media (max-width: 700px) { body:has(#view-search.active.so-open) #landing { display: none; } }
+
+/* ✕ oben rechts in Fenstern gibt es nur am Handy */
+.dlg-x { display: none; }
+
+@media (max-width: 700px) {
+  /* Reiter sehen überall gleich aus: Text mit Strich darunter */
+  #feedSwitch, #legalTabs { gap: 0; }
+  .feed-top { align-items: center; border-bottom: 1px solid var(--gray-hover); }
+  .feed-top #feedSwitch { margin-bottom: -1px; }
+  #legalTabs { clear: both; flex-wrap: nowrap; border-bottom: 1px solid var(--gray-hover); }
+  #feedSwitch .chip, #legalTabs .chip { flex: 1 1 auto; min-width: 0; height: var(--h-ctrl); min-height: var(--h-ctrl); padding: 0 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 15px; font-weight: 700; }
+  #feedSwitch .chip { flex-basis: 0; }
+  #legalTabs .chip { margin-bottom: -1px; }
+  #feedSwitch .chip.active, #legalTabs .chip.active { background: none; color: var(--text); border-bottom-color: var(--text); }
+  /* „Teile / Outfits“ unter „Gemerkt“ ist eine zweite Ebene: kleine Filter wie die Kategorien im Schrank, keine zweite Reiterleiste */
+  #savedSwitch .chip { flex: 0 0 auto; height: var(--h-chip); min-height: var(--h-chip); padding: 0 16px; font-size: 14px; }
+  .feed-top .picks-btn { background: none; color: var(--text); }
+  .feed-top .picks-btn.active { background: none; color: var(--red); }
+  .it-tabs { gap: 0; padding: 0; background: none; border-radius: 0; border-bottom: 1px solid var(--gray-hover); }
+  .it-tab { min-height: 44px; margin-bottom: -1px; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); font-size: 14px; }
+  .it-tab.active { background: none; box-shadow: none; color: var(--text); border-bottom-color: var(--text); }
+
+  /* Zurück ist immer ein Pfeil, Schließen immer ein ✕ (der Text bleibt für Vorlese-Hilfen im Knopf) */
+  .btn.back-btn { width: 44px; height: 44px; min-height: 44px; flex: none; justify-content: center; gap: 0; margin-left: -12px; padding: 0; background: none; font-size: 0; }
+  .btn.pub-back, .btn.builder-back { margin-top: 0; margin-bottom: var(--s-2); }
+  .thread-head .btn.back-btn { margin-bottom: 0; margin-right: -6px; }
+  #view-search.so-open .so-head .so-close, .dlg-x { position: relative; width: 44px; height: 44px; min-height: 44px; flex: none; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); font-size: 0; cursor: pointer; }
+  #view-search.so-open .so-head .so-close { margin-right: -10px; }
+  #view-search.so-open .so-head .so-close::before, .dlg-x::before { content: ''; position: absolute; inset: 0; margin: auto; width: 20px; height: 20px; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M5 5l14 14M19 5L5 19'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M5 5l14 14M19 5L5 19'/%3E%3C/svg%3E") center / contain no-repeat; }
+
+  /* Fenster: alle von unten, Knöpfe unten über die ganze Breite */
+  dialog.bsheet .x-close { display: none; }
+  dialog.bsheet .dlg-x { display: block; position: sticky; top: 0; z-index: 6; float: right; margin: -6px -8px 0 8px; background: var(--bg); }
+  #itemDialog .dlg-x { position: absolute; top: 28px; right: 24px; float: none; margin: 0; background: color-mix(in srgb, var(--bg) 88%, transparent); box-shadow: 0 1px 6px rgba(0, 0, 0, .16); }
+  #itemDialog:not(.viewing) .dlg-x, #itemDialog:not(.viewing)::before { display: none; }
+  dialog.bsheet form > .row:last-child { flex-wrap: nowrap; }
+  dialog.bsheet form > .row:last-child > .spacer { display: none; }
+  dialog.bsheet form > .row:last-child > .btn { flex: 1 1 0; min-width: 0; }
+  #settingsDialog { top: auto; right: 0; bottom: 0; left: 0; margin: 0; width: 100%; max-width: none; transform-origin: bottom center; }
+  #settingsDialog[open] { animation: sheet-up .38s var(--ease-out); }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) { #settingsDialog[open] { animation-name: fade-bg; } }
+
+/* Karten und Teil-Seite: Angaben mit Punkt getrennt */
+.sub-line span + span::before { content: ' · '; }
+.feed-card .meta .sub-line { display: block; }
+.feed-card .meta .sub-line span { white-space: normal; color: inherit; font-size: inherit; }
+.feed-card .meta .feed-name { font-size: 14px; }
+.item-sub { margin: 0 0 var(--s-3); }
+.item-info .item-sub + .item-price { margin-top: 0; }
+.item-buy { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-2); }
+.item-buy .btn { margin: 0; }
+.item-info .seller { margin-top: var(--s-4); }
+.buy-bar { display: none; }
+@media (max-width: 700px) {
+  body:has(#publicView:not([hidden]) .item-page[data-buy]) .buy-bar { display: block; position: fixed; left: 0; right: 0; bottom: var(--tabs-h, 64px); z-index: 15; padding: var(--s-2) var(--pad-page); background: var(--bg); border-top: 1px solid var(--gray-hover); }
+  body:has(#publicView:not([hidden]) .item-page[data-buy]) .public { padding-bottom: calc(var(--tabs-h, 64px) + 112px); }
+  .buy-bar .item-buy { flex-direction: row; margin: 0; }
+  .buy-bar .item-buy .btn { flex: 1 1 0; width: auto; min-width: 0; min-height: var(--h-ctrl); padding: 0 var(--s-2); }
+  body:has(#publicView:not([hidden]) .item-page[data-buy]) .toast { bottom: calc(var(--tabs-h, 64px) + 80px); }
+}
+
+/* Nachrichtenliste: Person links, Teil rechts */
+.msg-row { grid-template-columns: 48px minmax(0, 1fr) 56px; column-gap: var(--s-3); align-items: center; }
+.msg-row .avatar.msg-face { grid-row: 1; grid-column: 1; align-self: center; width: 48px; height: 48px; font-size: 18px; }
+.msg-row .msg-main { grid-row: 1; grid-column: 2; }
+.msg-row .msg-thumb { grid-row: 1; grid-column: 3; width: 56px; height: 56px; }
+.msg-row .msg-thumb:empty { visibility: hidden; }
+.msg-team { background: var(--text); color: var(--on-text); font-weight: 800; }
+.msg-date { flex: none; }
+.msg-row.unread .thread-last { font-weight: 700; }
+
+.item-info .seller .avatar { background-color: var(--bg); }
+#settingsDialog form > .set-head h2 { color: var(--text); }

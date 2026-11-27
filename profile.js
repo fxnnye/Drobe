@@ -491,6 +491,15 @@ const Profile = (() => {
   }
 
   /* ---------- Detailseite eines Teils (#/i/<name>/<id>) ---------- */
+  // Kauf-Knöpfe: am Handy in der festen Leiste unten (#buyBar), am Computer neben dem Foto unter dem Preis
+  const phoneWidth = matchMedia('(max-width: 700px)');
+  let buyBar = null;
+  function placeBuy() {
+    if (!buyBar) return;
+    if (phoneWidth.matches) $('buyBar').replaceChildren(buyBar.node);
+    else { buyBar.slot.append(buyBar.node); $('buyBar').replaceChildren(); }
+  }
+  phoneWidth.addEventListener('change', placeBuy);
   async function renderItem(name, id) {
     const box = $('publicView');
     box.replaceChildren();
@@ -533,18 +542,36 @@ const Profile = (() => {
     const pickBadge = el('span', 'pick-badge', 'Staff Pick');
     pickBadge.hidden = true;
     info.append(pickBadge);
+    const sub = subLine('p', 'item-sub muted', [[it.brand, true], [it.size, true], [it.cond]]);
+    if (sub) info.append(sub);
     if (it.vis === 'sale' && it.price != null) info.append(el('p', 'item-price', money(it.price)));
     let goBtn = null;
-    if (!own) { // direkt unter dem Preis: erst „Merken“, darunter „Kaufanfrage senden“ (bei jedem fremden Teil, auch wenn es nur gezeigt und nicht angeboten wird)
-      info.append(saveBtn(it, data.username, 'full'));
+    buyBar = null;
+    if (!own) { // „Merken“ und „Kaufanfrage senden“ (bei jedem fremden Teil, auch wenn es nur gezeigt und nicht angeboten wird): am Handy fest am unteren Rand
+      const buy = el('div', 'item-buy');
       goBtn = el('button', 'btn primary full', 'Kaufanfrage senden');
       goBtn.type = 'button';
       goBtn.onclick = me ? () => askInterest('interest', data.username, it) : askLogin;
-      info.append(goBtn);
+      buy.append(saveBtn(it, data.username, 'full'), goBtn);
+      const slot = el('div', 'item-buy-slot');
+      info.append(slot);
+      page.dataset.buy = '1';
+      buyBar = { node: buy, slot };
+      placeBuy();
     }
 
+    const seller = el('button', 'seller');
+    seller.type = 'button';
+    const sn = el('span', 'seller-name');
+    const rated = el('span', 'muted small seller-rating', 'Zum Profil');
+    sn.append(raw(el('b', null, data.username)), rated);
+    seller.append(avatarFor(data.username), sn);
+    seller.onclick = () => { location.hash = '#/u/' + data.username; };
+    info.append(seller);
+    fetchReviews(data.username).then((r) => { if (r && same()) rated.textContent = r.count ? ratingText(r) : 'Noch keine Bewertungen'; });
+
     const facts = el('dl', 'item-facts');
-    for (const [k, v] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : '']]) {
+    for (const [k, v] of [['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : '']]) {
       if (!v) continue;
       const row = el('div', 'item-fact');
       row.append(el('dt', null, k), el('dd', null, v));
@@ -555,19 +582,11 @@ const Profile = (() => {
       Cloud.client()?.rpc('public_item_note', { p_username: data.username, p_id: id }).then((r) => {
         if (r.error || !r.data || !same()) return;
         const row = el('div', 'item-fact');
-        row.append(el('dt', null, 'Notizen'), el('dd', null, r.data));
+        row.append(el('dt', null, 'Notizen'), raw(el('dd', null, r.data)));
         facts.append(row);
-        if (!facts.isConnected) info.insertBefore(facts, info.querySelector('.seller'));
+        if (!facts.isConnected) seller.after(facts);
       }, () => {}); // Migration 0050 fehlt noch: dann eben ohne Notizen
     }
-
-    const seller = el('button', 'seller');
-    seller.type = 'button';
-    const sn = el('span', 'seller-name');
-    sn.append(el('b', null, data.username), el('span', 'muted small', 'Zum Profil'));
-    seller.append(avatarFor(data.username), sn);
-    seller.onclick = () => { location.hash = '#/u/' + data.username; };
-    info.append(seller);
 
     // Verlauf der Besitzer: öffentlich, wenn das Teil schon einmal den Besitzer gewechselt hat
     if (it.vis !== 'private') {
@@ -936,6 +955,15 @@ const Profile = (() => {
   // Kaufen = ich habe angefragt (oder mir bietet jemand etwas zu meinem Wunsch an), Verkaufen = jemand fragt nach meinem Teil (oder ich biete an)
   let inboxData = [], inboxTab = 'buy';
   const sideOf = (m) => (m.kind === 'team' ? 'buy' : ((m.kind === 'interest') === m.mine ? 'buy' : 'sell'));
+  // „heute“, „gestern“, sonst nur Tag und Monat (Jahr nur, wenn es ein anderes ist)
+  function relDay(t) {
+    const d = new Date(t), now = new Date();
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const ago = Math.round((day(now) - day(d)) / 864e5);
+    if (ago <= 0) return 'heute';
+    if (ago === 1) return 'gestern';
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', ...(d.getFullYear() === now.getFullYear() ? {} : { year: '2-digit' }) });
+  }
   async function renderInbox() {
     const sb = Cloud.client();
     const box = $('inboxList');
@@ -955,22 +983,23 @@ const Profile = (() => {
       const subject = m.kind === 'team' ? 'Nachricht von JAWNZ' : m.kind === 'interest'
         ? (m.mine ? 'Interesse an „' : 'Interesse an deinem „') + (m.record_name || 'Teil') + '“'
         : (m.mine ? 'Zu „' : 'Zu deinem Wunsch „') + (m.record_name || 'Wunsch') + '“' + (m.ref_name ? ': ' + m.ref_name : '');
-      const thumb = el('span', 'msg-thumb');
-      const own = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null; // mein eigenes Teil: Foto liegt lokal
-      if (own && own.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(own); thumb.append(i); }
-      else if (m.record_path && m.kind !== 'team') rows.push({ m, thumb });
+      const team = m.kind === 'team';
+      // wie bei Vinted: links die Person, in der Mitte Name, Datum und letzte Nachricht, rechts das Foto vom Teil
+      const face = team ? el('span', 'avatar msg-face msg-team', 'J') : avatarFor(m.other, 'msg-face');
       const main = el('span', 'msg-main');
       const top = el('span', 'thread-top');
-      top.append(el('b', 'msg-title', m.kind === 'team' ? 'JAWNZ' : (m.record_brand || m.record_name || 'Teil')), el('span', 'muted small', new Date(m.last_at).toLocaleDateString('de-DE')));
+      top.append(team ? el('b', 'msg-title', 'JAWNZ') : raw(el('b', 'msg-title', m.other)), el('span', 'muted small msg-date', relDay(m.last_at)));
       main.append(top);
-      if (m.record_brand && m.record_name) main.append(el('span', 'small msg-name', m.record_name));
       if (m.last_text) main.append(el('span', 'thread-last', (m.last_mine ? 'Du: ' : '') + m.last_text));
-      if (m.kind !== 'team') {
-        const who = el('span', 'msg-who muted small');
-        who.append(avatarFor(m.other, 'xs'), el('span', null, m.other));
-        main.append(who);
+      if (!team) main.append(raw(el('span', 'small msg-name', m.record_name || m.record_brand || 'Teil')));
+      row.append(face, main);
+      if (!team) {
+        const thumb = el('span', 'msg-thumb');
+        const own = m.record_id && !m.mine && m.kind === 'interest' && typeof itemById === 'function' ? itemById(m.record_id) : null; // mein eigenes Teil: Foto liegt lokal
+        if (own && own.blob) { const i = el('img'); i.alt = ''; i.src = urlFor(own); thumb.append(i); }
+        else if (m.record_path) rows.push({ m, thumb });
+        row.append(thumb);
       }
-      row.append(thumb, main);
       row.onclick = () => openThread(m, subject);
       box.append(row);
     }
@@ -1509,7 +1538,15 @@ const Profile = (() => {
     if (!sb || !navigator.onLine) return 0;
     try { const { data, error } = await sb.rpc('feed_stage'); return error ? 0 : Number(data) || 0; } catch (e) { return 0; }
   }
-  // Karte wie bei Vinted: Besitzer oben, darunter Foto, Preis, Name und Marke · Größe
+  // Zeile „Marke · Größe · Zustand“: jede Angabe einzeln, damit nur feste Wörter übersetzt werden (true = vom Nutzer eingegeben)
+  function subLine(tag, cls, parts) {
+    const used = parts.filter(([text]) => text);
+    if (!used.length) return null;
+    const line = el(tag, cls + ' sub-line');
+    for (const [text, own] of used) { const s = el('span', null, text); line.append(own ? raw(s) : s); }
+    return line;
+  }
+  // Karte wie bei Vinted: Besitzer oben, Foto, darunter Marke (sonst Name), Größe · Zustand und Preis
   function feedCard(rec, urls, kind, opts = {}) {
     const c = el('div', 'card feed-card' + (kind === 'items' ? '' : ' feed-outfit'));
     const open = () => { location.hash = kind === 'items' ? itemLink(rec.username, rec.id) : outfitLink(rec.username, rec.id); };
@@ -1524,9 +1561,9 @@ const Profile = (() => {
     img.onclick = open;
     const meta = el('div', 'meta');
     if (kind === 'items') {
-      meta.append(raw(el('span', 'feed-name', rec.name || '')));
-      const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
-      if (sub) meta.append(el('span', 'muted small', sub));
+      meta.append(raw(el('span', 'feed-name', rec.brand || rec.name || '')));
+      const sub = subLine('span', 'muted small', [[rec.size, true], [rec.cond]]);
+      if (sub) meta.append(sub);
       if (rec.vis === 'sale') meta.append(el('b', 'feed-price', rec.price != null ? money(rec.price) : 'Zum Verkauf'));
     } else {
       meta.append(rec.name ? raw(el('b', null, rec.name)) : el('b', null, 'Outfit'));

@@ -34,6 +34,7 @@ function growIn(node, fromTop, key) {
   const o = growFrom; growFrom = null;
   if (o && key) growOrigins[key] = { el: o.el, scrollY: o.scrollY };
   if (!o || Date.now() - o.t > 1500 || !node.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (node.tagName === 'DIALOG' && matchMedia('(max-width: 700px)').matches) return; // am Handy kommen Fenster von unten
   const b = node.getBoundingClientRect();
   if (!b.width || !o.rect.width) return;
   const dx = o.rect.left + o.rect.width / 2 - (b.left + b.width / 2);

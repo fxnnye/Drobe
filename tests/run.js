@@ -677,7 +677,7 @@ test('Teile-Fotos: Weiß nimmt überall das Grau der Fläche an, beim Radieren n
     eq(modes(), Array(5).fill('normal'));
   } finally { if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); dlg.className = classes; host.remove(); }
 });
-test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knopf steht unter dem Preis', async () => {
+test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knöpfe stehen unten fest', async () => {
   const w = frame.contentWindow, d = w.document, C = W('Cloud'), client = C.client, user = C.user, view = W('state.view');
   const its = ['a', 'b'].map((id, i) => ({ id, path: 'p' + id, name: 'Teil ' + id, category: i ? 'Hosen' : 'Oberteile', brand: 'Nike', size: 'M', vis: i ? 'sale' : 'public', price: i ? 90 : null }));
   const rpc = { public_profile: { username: 'mara', items: its, outfits: [{ id: 'o', path: 'po', name: 'Look' }], showcase: ['a'], followers: 0 } };
@@ -693,9 +693,50 @@ test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knopf steht unter dem Pr
     eq([q('.pub-showcase .feed-card').length, q('.feed-card').length], [1, 2]);
     w.location.hash = '#/i/mara/b'; await wait();
     const kids = q('.item-info > *'), at = (s) => kids.findIndex((n) => n.matches(s));
-    ok(at('.item-price') >= 0 && at('.save-btn') === at('.item-price') + 1 && at('.btn.primary') === at('.save-btn') + 1 && at('.btn.primary') < at('.item-facts'), kids.map((n) => n.className).join(' | '));
+    const order = ['.item-name', '.item-sub', '.item-price', '.seller', '.item-facts'].map(at);
+    ok(order.every((n, i) => n >= 0 && (!i || n > order[i - 1])), kids.map((n) => n.className).join(' | '));
+    eq([...q('.item-sub span')].map((n) => n.textContent), ['Nike', 'M']);
+    ok(!q('.item-facts dt').some((n) => ['Marke', 'Größe', 'Zustand'].includes(n.textContent)), 'Marke/Größe stehen doppelt');
+    const bar = d.getElementById('buyBar');
+    eq([[...bar.querySelectorAll('.btn')].map((b) => b.classList.contains('save-btn') ? 'merken' : b.textContent), w.getComputedStyle(bar).position], [['merken', 'Kaufanfrage senden'], 'fixed']);
+    eq(q('.pub-section .feed-name').map((n) => n.textContent), ['Nike']);
     eq(q('.pub-section .feed-card').length, 1);
+    w.location.hash = ''; await wait();
+    eq(w.getComputedStyle(bar).display, 'none');
   } finally { w.location.hash = ''; await wait(); C.client = client; C.user = user; W('showView')(view); }
+});
+
+test('Nachrichtenliste: Person links, heute/gestern, Teil rechts, JAWNZ ohne leeres Kästchen', async () => {
+  const w = frame.contentWindow, d = w.document, C = W('Cloud'), client = C.client, user = C.user, view = W('state.view');
+  const ago = (n) => new Date(Date.now() - n * 864e5).toISOString();
+  const threads = [
+    { id: 't1', kind: 'interest', mine: true, other: 'mara', record_id: 'x', record_name: 'Hoodie', record_brand: 'Nike', last_text: 'Hallo', last_at: ago(0) },
+    { id: 't2', kind: 'team', other: 'jawnz', last_text: 'Willkommen', last_at: ago(1) },
+  ];
+  const chain = () => new Proxy(function () {}, { get: (t, k) => (k === 'then' ? (res) => res({ data: [], error: null }) : chain()), apply: () => chain() });
+  const sb = { rpc: async (n) => ({ data: n === 'my_threads' ? threads : null, error: null }), from: () => chain(), channel: () => chain(), removeChannel() {}, storage: { from: () => ({ createSignedUrls: async () => ({ data: [] }) }) } };
+  const guest = d.body.classList.contains('guest');
+  try {
+    C.client = () => sb; C.user = () => ({ id: 'me', name: 'ich' });
+    d.body.classList.remove('guest');
+    W('showView')('messages'); await new Promise((r) => setTimeout(r, 700));
+    const rows = [...d.querySelectorAll('#inboxList .msg-row')];
+    eq(rows.map((r) => [r.querySelector('.msg-title').textContent, r.querySelector('.msg-date').textContent]), [['mara', 'heute'], ['JAWNZ', 'gestern']]);
+    eq(rows.map((r) => [r.firstElementChild.classList.contains('msg-face'), !!r.querySelector('.msg-thumb')]), [[true, true], [true, false]]);
+    eq(rows[0].lastElementChild.className, 'msg-thumb');
+  } finally { C.client = client; C.user = user; d.getElementById('inboxList').replaceChildren(); d.body.classList.toggle('guest', guest); W('showView')(view); }
+});
+
+test('Handy: Fenster kommen von unten, Zurück ist ein Pfeil, Schließen ein ✕', () => {
+  const w = frame.contentWindow, d = w.document;
+  const css = (n) => w.getComputedStyle(n);
+  eq([...d.querySelectorAll('dialog')].filter((n) => n.id !== 'uploadDialog' && !n.classList.contains('bsheet')).map((n) => n.id), []);
+  for (const id of ['ordersDialog', 'peopleDialog', 'reviewsDialog', 'settingsDialog', 'colorsDialog', 'legalDialog', 'backupDialog', 'itemDialog', 'oldItemDialog']) {
+    const n = d.getElementById(id);
+    eq([id, n.querySelectorAll('.dlg-x').length, css(n.querySelector('.x-close')).display], [id, 1, 'none']);
+  }
+  for (const id of ['threadBack', 'builderBack']) eq([id, css(d.getElementById(id)).fontSize], [id, '0px']);
+  ok(d.getElementById('soClose').getAttribute('aria-label') === 'Schließen' && d.getElementById('builderBack').getAttribute('aria-label') === 'Zurück', 'Beschriftung fehlt');
 });
 
 test('Teil bearbeiten: drei Reiter, nichts verschachtelt', () => {

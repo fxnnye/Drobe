@@ -100,6 +100,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 
 <!-- Für Gäste: Rechtliches unter dem Feed und der Suche -->
 <section id="publicView" class="public" hidden></section>
+<div id="buyBar" class="buy-bar"></div>
 
 <main>
   <!-- FEED -->
@@ -129,7 +130,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
           <input type="file" id="soPhotoInput" accept="image/*" hidden>
         </label>
       </div>
-      <button class="btn so-close" type="button" id="soClose">Schließen</button>
+      <button class="btn so-close" type="button" id="soClose" aria-label="Schließen">Schließen</button>
     </div>
     <div class="so-history" id="soHistory" hidden></div>
     <div class="photo-search" id="photoSearch" hidden>
@@ -341,7 +342,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 
   <!-- BUILDER -->
   <section id="view-builder" class="view">
-    <button class="btn builder-back back-btn" type="button" id="builderBack">Outfits</button>
+    <button class="btn builder-back back-btn" type="button" id="builderBack" aria-label="Zurück">Outfits</button>
     <div class="builder">
       <aside class="picker">
         <div class="filter-row"><div class="chips" id="pickerFilter"></div></div>
@@ -469,7 +470,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
     <div class="row" id="itViewRow">
       <span class="spacer"></span>
-      <button class="btn" value="cancel">Schließen</button>
+      <button class="btn x-close" value="cancel">Schließen</button>
       <button class="btn primary" type="button" id="itEditStart">Bearbeiten</button>
     </div>
     <div class="row" id="itEditRow">
@@ -485,7 +486,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div class="row">
       <h2>Farben, die zusammenpassen</h2>
       <span class="spacer"></span>
-      <button class="btn" type="button" id="colorsClose">Schließen</button>
+      <button class="btn x-close" type="button" id="colorsClose">Schließen</button>
     </div>
     <p class="muted intro">Faustregel: Neutrale Farben wie Schwarz, Weiß, Grau, Beige und Navy passen zu fast allem. Eine Akzentfarbe pro Outfit reicht.</p>
     <div class="chips" id="colorFilter"></div>
@@ -521,7 +522,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div id="oldItemBody" class="rev-list"></div>
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="oldItemClose">Schließen</button>
+      <button class="btn x-close" type="button" id="oldItemClose">Schließen</button>
     </div>
   </form>
 </dialog>
@@ -532,7 +533,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div id="ordersList" class="rev-list"></div>
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="ordersClose">Schließen</button>
+      <button class="btn x-close" type="button" id="ordersClose">Schließen</button>
     </div>
   </form>
 </dialog>
@@ -543,7 +544,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div id="peopleList" class="rev-list"></div>
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="peopleClose">Schließen</button>
+      <button class="btn x-close" type="button" id="peopleClose">Schließen</button>
     </div>
   </form>
 </dialog>
@@ -555,7 +556,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <div id="revList" class="rev-list"></div>
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="revClose">Schließen</button>
+      <button class="btn x-close" type="button" id="revClose">Schließen</button>
     </div>
   </form>
 </dialog>
@@ -750,7 +751,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="settingsClose">Schließen</button>
+      <button class="btn x-close" type="button" id="settingsClose">Schließen</button>
     </div>
   </form>
 </dialog>
@@ -927,7 +928,7 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     </div>
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="legalClose">Schließen</button>
+      <button class="btn x-close" type="button" id="legalClose">Schließen</button>
     </div>
   </form>
 </dialog>
@@ -961,12 +962,12 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
     <p class="muted small">Beim Laden wird alles hinzugefügt. Vorhandene Teile und Outfits werden nicht überschrieben oder gelöscht.</p>
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn" type="button" id="backupClose">Schließen</button>
+      <button class="btn x-close" type="button" id="backupClose">Schließen</button>
     </div>
   </form>
 </dialog>
 
-<dialog id="confirmDialog">
+<dialog id="confirmDialog" class="bsheet">
   <form method="dialog" onsubmit="return false">
     <p id="confirmText"></p>
     <div class="row">

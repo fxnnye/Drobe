@@ -172,6 +172,7 @@ const I18N = {
 };
 // Weitere Texte (Profil, Nachrichten, Schrank, Anmeldung, Hinzufügen)
 Object.assign(I18N.en, {
+    'heute': 'today', 'gestern': 'yesterday', 'Noch keine Bewertungen': 'No reviews yet',
     'Folgen': 'Follow', 'Du folgst': 'Following', 'Sperren': 'Block', 'Entsperren': 'Unblock', 'Gesperrt': 'Blocked', 'Entsperrt': 'Unblocked', '♡ Merken': '♡ Save', '♥ Gemerkt': '♥ Saved',
     '♡ Outfit merken': '♡ Save outfit', 'Outfit nachbauen': 'Recreate outfit',
     'Setzt passende Teile aus deinem Schrank ein. Danach kannst du sie in der Liste austauschen.': 'Places matching items from your closet. You can swap them in the list afterwards.',

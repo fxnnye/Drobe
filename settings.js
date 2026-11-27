@@ -53,7 +53,7 @@ const settingsDlg = $('settingsDialog');
 {
   const nativeClose = settingsDlg.close.bind(settingsDlg);
   settingsDlg.close = (v) => {
-    if (!settingsDlg.open || settingsDlg.classList.contains('closing') || matchMedia('(prefers-reduced-motion: reduce)').matches) return nativeClose(v);
+    if (!settingsDlg.open || settingsDlg.classList.contains('closing') || matchMedia('(prefers-reduced-motion: reduce), (max-width: 700px)').matches) return nativeClose(v); // am Handy schiebt start.js das Fenster nach unten weg
     settingsDlg.classList.add('closing');
     settingsDlg.addEventListener('animationend', (e) => { if (e.target !== settingsDlg) return; settingsDlg.classList.remove('closing'); nativeClose(v); }, { once: true });
   };
