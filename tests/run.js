@@ -271,7 +271,7 @@ test('Outfit-Anordnung am Handy: flach hingelegt, Einheitsgrößen, nichts gesta
       ok(Math.abs((y0 + y1) / 2 - 0.5) < 0.001, 'in der Höhenmitte: ' + what);
       for (const n of names) {
         const f = names.includes('jacke') && (n === 'jacke' || n === 'hoodie') ? W('TWO_TOPS') : 1; // nebeneinander etwas kleiner
-        ok(Math.abs(L(n).w - f * W('phoneWidth')(mine.find((m) => m.name === n), W('aspects').get('p_' + n))) < 0.0001, 'Einheitsgröße: ' + n + ' bei ' + what);
+        ok(Math.abs(L(n).w - f * W('phoneWidth')(mine.find((m) => m.name === n), W('aspects').get('p_' + n), W('torsos').get('p_' + n))) < 0.0001, 'Einheitsgröße: ' + n + ' bei ' + what);
       }
       for (const p of names) for (const q of names) if (p < q) ok(over(L(p), L(q)) < 0.03 * Math.min(L(p).w * H(L(p)), L(q).w * H(L(q))) + 0.004, 'nicht gestapelt: ' + p + ' / ' + q + ' ' + over(L(p), L(q)).toFixed(4));
     };
@@ -298,16 +298,30 @@ test('Outfit-Anordnung am Handy: flach hingelegt, Einheitsgrößen, nichts gesta
   } finally { setItems(saveItems); st.outfit = saveOutfit; }
 });
 
-test('Einheitsgrößen am Handy: Hosen gleich lang, Oberteile gleich viel Fläche, Schuhe gleich groß', () => {
+test('Einheitsgrößen am Handy: Hosen gleich lang, Schuhe gleich groß, Mäntel und Shorts anders', () => {
   const f = W('phoneWidth'), R = W('STAGE_RATIO');
   const len = (c, a) => f({ category: c, name: '' }, a) * a / R;
   near([1.5, 1.6, 2, 2.6].map((a) => len('Hosen', a)), 'Hosen');
-  for (const c of ['Jacken', 'Shirts', 'Pullover']) near([0.9, 0.95, 1].map((a) => f({ category: c, name: '' }, a) * Math.sqrt(a)), c);
-  for (const c of ['Shirts', 'Pullover']) for (const a of [0.6, 0.8, 1, 1.3, 1.6]) ok(len(c, a) <= 0.331 && f({ category: c, name: '' }, a) <= 0.621, c + ' in den Grenzen bei ' + a);
   near([0.4, 0.7, 1, 1.4].map((a) => f({ category: 'Schuhe', name: '' }, a) * Math.max(1, a)), 'Schuhe');
-  eq(f({ category: 'Shirts', name: '' }, 1), f({ category: 'Pullover', name: '' }, 1));
+  for (const c of ['Jacken', 'Shirts', 'Pullover']) {
+    near([0.6, 0.65, 0.75].map((t) => f({ category: c, name: '' }, 0.75, t) * t), c + ': gleicher Rumpf');
+    for (const a of [0.5, 0.9, 1.4]) for (const t of [0, 0.3, 0.6, 1]) ok(f({ category: c, name: '' }, a, t) <= 0.821 && len(c, a) <= 0.43, c + ' in den Grenzen');
+  }
+  eq(f({ category: 'Shirts', name: '' }, 0.9, 0.7), f({ category: 'Pullover', name: '' }, 0.9, 0.7));
   ok(len('Hosen', 1) < len('Hosen', 2) * 0.6, 'Shorts bleiben kürzer');
-  ok(f({ category: 'Jacken', name: 'Wollmantel' }, 1.5) * 1.5 / R > len('Jacken', 1.5), 'Mäntel bleiben länger');
+  ok(f({ category: 'Jacken', name: 'Wollmantel' }, 1.5) * 1.5 / R > f({ category: 'Jacken', name: '' }, 1.5, 0.8) * 1.5 / R, 'Mäntel bleiben länger');
+});
+
+test('Rumpf zählt, nicht die Ärmel: Hoodie wirkt so groß wie das T-Shirt', () => {
+  const doc = frame.contentDocument, torso = W('torsoOf'), f = W('phoneWidth');
+  // Beide mit demselben Rumpf (100 × 130); T-Shirt mit kurzen Ärmeln, Hoodie mit abstehenden langen Ärmeln und Kapuze
+  const draw = (w, h, paint) => { const c = doc.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); paint(x); return c; };
+  const poly = (x, pts) => { x.beginPath(); pts.forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b))); x.fill(); };
+  const tee = draw(150, 130, (x) => { x.fillRect(25, 0, 100, 130); x.fillRect(0, 0, 150, 40); });
+  const hoodie = draw(240, 162, (x) => { x.fillRect(100, 0, 40, 32); x.fillRect(70, 32, 100, 130); poly(x, [[70, 32], [70, 62], [18, 140], [0, 128]]); poly(x, [[170, 32], [170, 62], [222, 140], [240, 128]]); });
+  const inStage = (c, cat) => f({ category: cat, name: '' }, c.height / c.width, torso(c)) * 100 / c.width; // Rumpfbreite im Outfit
+  const t = inStage(tee, 'Shirts'), h = inStage(hoodie, 'Pullover');
+  ok(Math.abs(h / t - 1) < 0.12, 'Rumpf Hoodie ' + h.toFixed(3) + ' / T-Shirt ' + t.toFixed(3));
 });
 
 test('Outfit bauen am Handy: Speichern oben neben dem Pfeil, darunter Bild und Auswahl', async () => {

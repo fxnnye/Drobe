@@ -43,21 +43,25 @@ function placementFor(it, aspect) {
   if (it.category === 'Shirts' && /kleid\b/.test(name)) return LONG_BOX;
   return PLACEMENT[it.category];
 }
-// Am Handy hat jede Kategorie eine Einheitsgröße. Oberteile: gleich viel Fläche (size), egal wie die Ärmel liegen,
-// mit Grenzen für Breite und Länge. Hosen: gleich lang. Schuhe: längste Seite gleich lang. Mäntel und Shorts bleiben Ausnahmen.
+// Am Handy hat jede Kategorie eine Einheitsgröße. Oberteile: der Rumpf ist gleich groß (body), egal wie weit die Ärmel
+// liegen oder ob eine Kapuze dran ist (torsoOf misst das am Foto). Hosen: gleich lang. Schuhe: längste Seite gleich lang.
+// Mäntel und Shorts bleiben Ausnahmen.
 const PHONE_BOX = {
-  Jacken: { size: 0.60, w: 0.64, h: 0.34 },
-  Shirts: { size: 0.58, w: 0.62, h: 0.33 },
-  Pullover: { size: 0.58, w: 0.62, h: 0.33 },
+  Jacken: { body: 0.46, w: 0.82, h: 0.36 },
+  Shirts: { body: 0.44, w: 0.82, h: 0.36 },
+  Pullover: { body: 0.44, w: 0.82, h: 0.36 },
   Hosen: { w: 0.55, h: 0.45 },
   Schuhe: { w: 0.30, h: 0.30 / STAGE_RATIO },
 };
-function phoneWidth(it, aspect) {
+// torso: Größe des Rumpfs im Verhältnis zur Fotobreite (lange, abstehende Ärmel: klein; T-Shirt: groß)
+function phoneWidth(it, aspect, torso) {
   let box = placementFor(it, aspect);
   if (box === SHORTS_BOX) box = { w: 0.52, h: 0.26 };
   else if (box === LONG_BOX) box = { w: 0.56, h: 0.42 };
   else box = PHONE_BOX[it.category] || box;
-  return Math.min(box.w, box.h * STAGE_RATIO / aspect, box.size ? box.size / Math.sqrt(aspect) : box.w);
+  const measured = torso && torso < 0.95 ? torso : 0.72; // 0 oder fast 1: nicht messbar (z. B. Foto mit Hintergrund)
+  const byBody = box.body ? box.body / Math.max(0.45, Math.min(0.8, measured)) : box.w;
+  return Math.min(box.w, box.h * STAGE_RATIO / aspect, byBody);
 }
 const MULTI = ['Schmuck']; // Kategorien, von denen mehrere Teile gleichzeitig im Outfit sein dürfen
 const MAX_OBERTEILE = 2; // Jacke, Pullover und Shirt lassen sich mischen, zusammen aber höchstens zwei

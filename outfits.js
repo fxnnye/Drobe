@@ -41,11 +41,39 @@ function toggleItem(it) {
   addLayer(it);
 }
 
-// Seitenverhältnis (Höhe/Breite) eines Teils, einmal gemessen und gemerkt
-const aspects = new Map();
+// Rumpfgröße eines freigestellten Oberteils im Verhältnis zur Fotobreite: Wurzel aus Rumpfbreite mal Rumpflänge.
+// Breite: die zusammenhängende Fläche durch die Mitte in der unteren Hälfte (Ärmel liegen dort abgesetzt).
+// Länge: ab der ersten Zeile, die so breit ist (also ab den Schultern, ohne Kapuze). 0: nicht messbar.
+function torsoOf(img) {
+  const w = 120, h = Math.max(1, Math.round(w * (img.naturalHeight || img.height) / (img.naturalWidth || img.width)));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+  const a = ctx.getImageData(0, 0, w, h).data;
+  const on = (x, y) => a[(y * w + x) * 4 + 3] > 60;
+  const run = (y) => {
+    const mid = w >> 1;
+    if (!on(mid, y)) return 0;
+    const edge = (step) => { let last = mid; for (let x = mid + step; x >= 0 && x < w && x - last !== 3 * step; x += step) if (on(x, y)) last = x; return last; };
+    return edge(1) - edge(-1) + 1;
+  };
+  const rows = Array.from({ length: h }, (_, y) => run(y));
+  const low = rows.slice(Math.floor(h * 0.55), Math.floor(h * 0.92)).filter((v) => v > w * 0.2).sort((x, y) => x - y);
+  if (!low.length) return 0;
+  const core = low[Math.floor(low.length * 0.25)];
+  const shoulders = rows.findIndex((v) => v >= core * 0.9);
+  return Math.sqrt(core * (h - shoulders)) / w;
+}
+
+// Seitenverhältnis (Höhe/Breite) und Rumpfgröße eines Teils, einmal gemessen und gemerkt
+const aspects = new Map(), torsos = new Map();
 async function aspectOf(it) {
   if (!aspects.has(it.id)) {
     const img = await loadImage(urlFor(it));
+    let torso = 0;
+    if (GROUPS.Oberteile.includes(it.category)) try { torso = torsoOf(img); } catch (e) { console.error(e); }
+    torsos.set(it.id, torso);
     aspects.set(it.id, img.naturalHeight / img.naturalWidth);
   }
   return aspects.get(it.id);
@@ -95,10 +123,10 @@ function phoneBuilder() { return matchMedia('(max-width: 700px)').matches; }
 // Zwei Oberteile: rechts Shirt bzw. Pullover über der Hose, links die Jacke (sonst der Pullover) und darunter die Schuhe.
 // Accessoires liegen in den freien Ecken. Zum Schluss rückt alles nur in die Höhenmitte, ohne die Größe zu ändern.
 const PHONE_GAP = 0.02;
-const TWO_TOPS = 0.84; // nebeneinander passen zwei Oberteile nur etwas kleiner
+const TWO_TOPS = 0.8; // nebeneinander passen zwei Oberteile nur etwas kleiner
 function phoneSize(it, aspect) {
   const tops = state.outfit.layers.filter((l) => GROUPS.Oberteile.includes(itemById(l.itemId)?.category));
-  return phoneWidth(it, aspect) * (tops.length > 1 && GROUPS.Oberteile.includes(it.category) ? TWO_TOPS : 1);
+  return phoneWidth(it, aspect, torsos.get(it.id)) * (tops.length > 1 && GROUPS.Oberteile.includes(it.category) ? TWO_TOPS : 1);
 }
 function arrangePhone(auto) {
   const of = (cat) => auto.filter((l) => itemById(l.itemId).category === cat);
