@@ -1187,12 +1187,25 @@ dialog { overscroll-behavior: contain; }
 .card.feed-card.feed-outfit .img.feed-img { --pad: 0px; aspect-ratio: 9 / 16; overflow: hidden; background: #fff; border: 1px solid var(--gray-hover); }
 .card.feed-card.feed-outfit .img.feed-img img { mix-blend-mode: normal !important; }
 
-/* Computer: Fotos mit eigenem Hintergrund (nicht freigestellt, siehe markOwnBg) füllen wie bei Vinted die ganze Fläche.
+/* Fotos mit eigenem, nicht weißem Hintergrund (img.own-bg, schatten.js) füllen wie bei Vinted die ganze Fläche.
    Eingerückt stünde ihr helles Rechteck als Kante auf dem Grau. Das Multiplizieren (oben) bleibt, so passen sie zu den anderen Kacheln. */
-@media (min-width: 701px) {
-  :is(.card .img, .item-photo, .pick, .msg-thumb):has(> img.own-bg) { position: relative; overflow: hidden; }
-  :is(.card .img, .item-photo, .pick, .msg-thumb) > img.own-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; object-fit: cover; border-radius: inherit; }
-}
+:is(.card .img, .item-photo, .pick, .msg-thumb):has(> img.own-bg) { position: relative; overflow: hidden; }
+:is(.card .img, .item-photo, .pick, .msg-thumb) > img.own-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; object-fit: cover; border-radius: inherit; }
+
+/* Freigestellte Teile (img.cut): Farben unverändert, darunter der Schatten aus ihrer Form (.cut-shadow, Werte in schatten.js).
+   Unten bleibt bei allen Teile-Fotos etwas mehr Platz (--room), damit der Schatten nicht abgeschnitten wird und beim Erkennen nichts springt.
+   --shadow-strength: alle Schatten schwächer (< 1) oder aus (0).
+   Im dunklen Design stehen die Teile auf derselben hellen Fläche (oben), darum gelten dort dieselben Werte. */
+:root { --shadow-strength: 1; }
+:is(.card .img, .item-photo, .pick) > img.cut { mix-blend-mode: normal !important; }
+:is(.card .img, .item-photo, .pick):has(> .cut-shadow) { position: relative; overflow: hidden; }
+:is(.card .img, .item-photo, .pick) > .cut-shadow { position: absolute; pointer-events: none; background: center / contain no-repeat; opacity: var(--shadow-strength); animation: fade-bg .25s var(--ease-out); }
+.card .img img, .card .img > .cut-shadow { --room: calc(var(--pad) * .7); top: var(--pad); right: var(--pad); left: var(--pad); bottom: calc(var(--pad) + var(--room)); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad) - var(--room)); }
+.item-photo img { padding-bottom: 30px; }
+.item-photo > .cut-shadow { inset: 16px 16px 30px; }
+.pick > img.cut { position: relative; }
+.pick > .cut-shadow { inset: 8px; }
+@media (max-width: 700px) { .pick > .cut-shadow { inset: 6px; } }
 
 /* Doppeltippen zoomt die Oberfläche nicht; Bilder bleiben per Pinch zoombar */
 html, body, input, textarea, select { touch-action: pan-x pan-y; }

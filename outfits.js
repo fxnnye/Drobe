@@ -11,6 +11,7 @@ function renderPicker() {
     b.dataset.id = it.id;
     b.title = it.name;
     b.innerHTML = '<img alt="">';
+    b.firstChild.dataset.cat = it.category || '';
     b.firstChild.src = urlFor(it);
     b.onclick = () => toggleItem(it);
     grid.appendChild(b);

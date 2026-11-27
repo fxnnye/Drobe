@@ -372,31 +372,95 @@ test('Dunkles Design: Teile stehen auf heller Fläche, Outfits behalten ihren Hi
   } finally { box.remove(); if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); }
 });
 
-test('Fotos mit eigenem Hintergrund füllen am Computer die Kachel, freigestellte nicht', async () => {
+// Probefotos: grau hinterlegt, weiß hinterlegt, freigestellt (Form wie ein Hosenpaar)
+function testPhoto(d, kind) {
+  const c = d.createElement('canvas'); c.width = 60; c.height = 90;
+  const x = c.getContext('2d');
+  if (kind !== 'cut') { x.fillStyle = kind === 'white' ? '#fff' : '#f2f2f4'; x.fillRect(0, 0, 60, 90); }
+  x.fillStyle = '#234';
+  x.beginPath(); [[10, 8], [50, 8], [56, 82], [40, 82], [30, 30], [20, 82], [4, 82]].forEach(([px, py]) => x.lineTo(px, py)); x.fill();
+  return c;
+}
+
+test('Fotos: freigestellte bekommen einen Schatten, grau hinterlegte füllen die Kachel, weiß hinterlegte bleiben', async () => {
   const d = frame.contentDocument, w = frame.contentWindow, width = frame.style.width;
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  const photo = (cut) => { const c = d.createElement('canvas'); c.width = 60; c.height = 90; const x = c.getContext('2d'); x.fillStyle = '#f7f7f9'; if (cut) x.fillRect(15, 15, 30, 60); else x.fillRect(0, 0, 60, 90); return c; };
-  eq([W('isOpaque')(photo(false)), W('isOpaque')(photo(true))], [true, false]);
   const box = d.createElement('div'), urls = [];
-  box.innerHTML = '<div class="grid"><div class="card"><div class="img" id="oFull"></div></div><div class="card"><div class="img" id="oCut"></div></div></div><div class="grid outfits"><div class="card"><div class="img" id="oOutfit"></div></div></div><div class="item-photo" id="oPage"></div><button class="pick" id="oPick"></button>';
+  box.innerHTML = '<div class="grid"><div class="card"><div class="img" id="oGray"></div></div><div class="card"><div class="img" id="oWhite"></div></div><div class="card"><div class="img" id="oCut"></div></div></div><div class="grid outfits"><div class="card"><div class="img" id="oOutfit"></div></div></div><div class="item-photo" id="oPage"></div><button class="pick" id="oPick"></button><span class="msg-thumb" id="oMsg"></span>';
+  const url = async (kind) => { const u = w.URL.createObjectURL(await new Promise((r) => testPhoto(d, kind).toBlob(r))); urls.push(u); return u; };
+  const load = async (id, src) => { const i = d.createElement('img'); d.getElementById(id).appendChild(i); await new Promise((r) => { i.onload = r; i.src = src; }); return i; };
   try {
-    frame.style.width = '900px';
     d.body.appendChild(box);
-    await wait(100);
-    const load = async (id, cut) => { const url = w.URL.createObjectURL(await new Promise((r) => photo(cut).toBlob(r))); urls.push(url); const i = d.createElement('img'); d.getElementById(id).appendChild(i); await new Promise((r) => { i.onload = r; i.src = url; }); await wait(50); return i; };
-    const full = await load('oFull', false), cut = await load('oCut', true), outfit = await load('oOutfit', false), page = await load('oPage', false), pick = await load('oPick', false);
-    eq([full, cut, outfit, page, pick].map((i) => i.classList.contains('own-bg')), [true, false, false, true, true]);
-    const css = (i) => w.getComputedStyle(i);
-    for (const i of [full, page, pick]) {
-      eq(css(i).objectFit, 'cover');
-      const a = i.getBoundingClientRect(), b = i.parentElement.getBoundingClientRect();
-      ok(Math.abs(a.width - i.parentElement.clientWidth) < 1 && Math.abs(a.height - i.parentElement.clientHeight) < 1, 'füllt die Fläche: ' + i.parentElement.id + ' ' + Math.round(a.width) + '/' + Math.round(b.width));
+    const gray = await url('gray'), white = await url('white'), cut = await url('cut');
+    const g = await load('oGray', gray), wh = await load('oWhite', white), c = await load('oCut', cut);
+    const outfit = await load('oOutfit', gray), page = await load('oPage', cut), pick = await load('oPick', cut), msg = await load('oMsg', cut);
+    await until(() => g.classList.contains('own-bg') && [c, page, pick].every((i) => i.classList.contains('cut')));
+    await new Promise((r) => setTimeout(r, 300));
+    const state = (i) => [i.classList.contains('own-bg'), i.classList.contains('cut'), !!i.previousElementSibling?.matches('.cut-shadow')];
+    eq([g, wh, c, outfit, page, pick, msg].map(state), [[true, false, false], [false, false, false], [false, true, true], [false, false, false], [false, true, true], [false, true, true], [false, false, false]]);
+    const css = (n) => w.getComputedStyle(n), mid = (n) => { const r = n.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; };
+    for (const px of ['400px', '900px']) {
+      frame.style.width = px; await new Promise((r) => setTimeout(r, 150));
+      eq(css(g).objectFit, 'cover', px);
+      eq([css(wh).objectFit, css(c).objectFit, css(c).mixBlendMode], ['contain', 'contain', 'normal'], px);
+      for (const i of [c, page]) { // der Schatten liegt deckungsgleich hinter dem Teil und fängt keine Klicks ab
+        const shade = i.previousElementSibling, a = mid(shade), b = mid(i);
+        ok(Math.abs(a[0] - b[0]) < 1.5 && Math.abs(a[1] - (i === page ? b[1] - 7 : b[1])) < 1.5, px + ' Mitte ' + a.map(Math.round) + ' / ' + b.map(Math.round));
+        eq(css(shade).pointerEvents, 'none');
+      }
+      const tile = c.parentElement.getBoundingClientRect(), r = c.getBoundingClientRect();
+      ok(tile.bottom - r.bottom > r.top - tile.top + 3, px + ': unten mehr Platz');
     }
-    eq(css(cut).objectFit, 'contain');
-    frame.style.width = width;
-    await wait(100);
-    eq(css(full).objectFit, 'contain'); // am Handy bleibt alles wie bisher
+    await new Promise((r) => { c.onload = r; c.src = gray; }); // anderes Foto an derselben Stelle: Schatten weg
+    await until(() => c.classList.contains('own-bg'));
+    eq(state(c), [true, false, false]);
+    eq(c.parentElement.querySelectorAll('.cut-shadow').length, 0);
   } finally { frame.style.width = width; box.remove(); urls.forEach((u) => w.URL.revokeObjectURL(u)); }
+});
+
+test('Schatten: nur für echte Freisteller, nicht für volle Fotos oder gedrehte Rechtecke', async () => {
+  const d = frame.contentDocument;
+  const turned = d.createElement('canvas'); turned.width = turned.height = 100;
+  const x = turned.getContext('2d'); x.translate(50, 50); x.rotate(0.3); x.fillRect(-30, -35, 60, 70);
+  const check = (c) => W('isCutOut')(W('photoMask')(c));
+  eq([check(testPhoto(d, 'cut')), check(testPhoto(d, 'gray')), check(turned)], [true, false, false]);
+});
+
+test('Schatten: Art nach Kategorie, sonst Mittelweg', () => {
+  eq(['Schuhe', 'Taschen', 'Caps', 'Jacken', 'Hosen', 'Shirts', 'Schmuck', ''].map((c) => W('shadowType')(c)), ['standing', 'standing', 'standing', 'flat', 'flat', 'flat', 'neutral', 'neutral']);
+});
+
+test('Schatten: kommt aus der Form, liegt unten und ist bei stehenden Teilen unter der Kante kräftiger', async () => {
+  const d = frame.contentDocument, mask = W('photoMask')(testPhoto(d, 'cut'));
+  const read = async (type) => {
+    const s = W('renderShadow')(mask, type), img = new Image();
+    await new Promise((r) => { img.onload = r; img.src = s.url; });
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0);
+    // Punkt in Foto-Koordinaten (60 × 90) auf den Schatten umrechnen
+    return (px, py) => x.getImageData(Math.round(mask.mx + px * mask.iw / 60), Math.round(mask.my + py * mask.ih / 90), 1, 1).data;
+  };
+  const standing = await read('standing'), flat = await read('flat');
+  const under = standing(12, 83)[3], gap = standing(30, 83)[3], above = standing(30, 0)[3];
+  ok(under > gap + 15, `unter dem Bein ${under}, in der Lücke ${gap}`);
+  ok(above < 8, 'oben fast nichts: ' + above);
+  ok(under > flat(12, 83)[3] + 10, 'stehend kräftiger als flach');
+  const rgb = standing(12, 83), want = W('SHADOW').color;
+  ok(want.every((v, i) => Math.abs(rgb[i] - v) < 6), 'warmer dunkler Ton: ' + [...rgb]);
+});
+
+test('Schatten: wird je Foto nur einmal gerechnet', async () => {
+  const d = frame.contentDocument, w = frame.contentWindow, box = d.createElement('div');
+  box.innerHTML = '<div class="grid"><div class="card"><div class="img"></div></div><div class="card"><div class="img"></div></div></div>';
+  const u = w.URL.createObjectURL(await new Promise((r) => testPhoto(d, 'cut').toBlob(r)));
+  W('window.__render = renderShadow; window.__runs = 0; renderShadow = (...a) => { window.__runs++; return window.__render(...a); }');
+  try {
+    d.body.appendChild(box);
+    const imgs = [...box.querySelectorAll('.img')].map((t) => { const i = d.createElement('img'); t.appendChild(i); i.src = u; return i; });
+    await until(() => imgs.every((i) => i.classList.contains('cut')));
+    imgs[0].dispatchEvent(new w.Event('load'));
+    await new Promise((r) => setTimeout(r, 300));
+    eq([W('window.__runs'), box.querySelectorAll('.cut-shadow').length], [1, 2]);
+  } finally { W('renderShadow = window.__render'); box.remove(); w.URL.revokeObjectURL(u); }
 });
 
 test('Outfit bauen am Handy: Speichern oben neben dem Pfeil, darunter Bild und Auswahl', async () => {

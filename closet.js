@@ -82,7 +82,7 @@ function renderCloset() {
     card.className = 'card' + (closetSel && closetSel.has(it.id) ? ' selected' : '');
     if (closetSel) card.setAttribute('aria-pressed', closetSel.has(it.id));
     card.innerHTML = `<div class="img"><img alt=""></div><div class="meta"><b></b><span></span></div>`;
-    const im = card.querySelector('img'); im.loading = 'lazy'; im.decoding = 'async'; im.src = gridUrl(it); im.dataset.id = it.id;
+    const im = card.querySelector('img'); im.loading = 'lazy'; im.decoding = 'async'; im.dataset.cat = it.category || ''; im.src = gridUrl(it); im.dataset.id = it.id;
     card.querySelector('b').textContent = it.name;
     card.querySelector('b').setAttribute('data-no-i18n', ''); // eigene Namen nie übersetzen
     card.querySelector('span').textContent = [it.category, visLabel(it, 'items')].filter(Boolean).join(' · ');

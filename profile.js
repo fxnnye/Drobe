@@ -99,7 +99,7 @@ const Profile = (() => {
     img.type = 'button';
     img.onclick = open;
     img.setAttribute('aria-label', (rec.name || 'Teil') + ' ansehen');
-    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.src = urls[rec.path]; img.append(i); }
+    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.dataset.cat = rec.category || ''; i.src = urls[rec.path]; img.append(i); }
     const meta = el('div', 'meta');
     meta.append(raw(el('b', null, rec.name || '')));
     const sub = [rec.brand, rec.size].filter(Boolean).join(' · ');
@@ -536,7 +536,7 @@ const Profile = (() => {
 
     const page = el('div', 'item-page');
     const photo = el('div', 'item-photo');
-    if (urls[it.path]) { const i = el('img'); i.alt = it.name || ''; i.src = urls[it.path]; photo.append(i); }
+    if (urls[it.path]) { const i = el('img'); i.alt = it.name || ''; i.dataset.cat = it.category || ''; i.src = urls[it.path]; photo.append(i); }
     const info = el('div', 'item-info');
     info.append(it.name ? raw(el('h2', 'item-name', it.name)) : el('h2', 'item-name', 'Teil'));
     const pickBadge = el('span', 'pick-badge', 'Staff Pick');
@@ -783,7 +783,7 @@ const Profile = (() => {
     box.append(facts, el('p', 'muted small', 'Diese Anzeige ist nicht mehr öffentlich.'));
     if (!d.open) d.showModal();
     const sb = Cloud.client();
-    if (sb && it.path) signedUrls(sb, [it.path]).then((u) => { if (u[it.path] && d.open) { const i = el('img'); i.alt = it.name || ''; i.src = u[it.path]; ph.append(i); } });
+    if (sb && it.path) signedUrls(sb, [it.path]).then((u) => { if (u[it.path] && d.open) { const i = el('img'); i.alt = it.name || ''; i.dataset.cat = it.category || ''; i.src = u[it.path]; ph.append(i); } });
   }
   const ORDER_STATE_OLD = { open: 'Angebot offen', accepted: 'reserviert', declined: 'Angebot abgelehnt', withdrawn: 'Angebot zurückgezogen', sold: 'verkauft, wartet auf Erhalt', done: 'verkauft und übergeben' };
 
@@ -1555,7 +1555,7 @@ const Profile = (() => {
     const img = el('button', 'img feed-img');
     img.type = 'button';
     img.setAttribute('aria-label', (rec.name || 'Eintrag') + ' von ' + rec.username + ' ansehen');
-    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.src = urls[rec.path]; img.append(i); }
+    if (urls[rec.path]) { const i = el('img'); i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.dataset.cat = rec.category || ''; i.src = urls[rec.path]; img.append(i); }
     img.onclick = open;
     const meta = el('div', 'meta');
     if (kind === 'items') {

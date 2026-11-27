@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>JAWNZ Schatten</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  body { margin: 0; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .tool { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; margin-top: 16px; }
+  .tune { position: sticky; top: 12px; max-height: calc(100dvh - 24px); overflow: auto; display: grid; gap: 10px; font-size: 13px; }
+  .tune fieldset { border: 1px solid var(--gray-hover); border-radius: 12px; padding: 8px 12px 10px; margin: 0 0 10px; display: grid; gap: 6px; }
+  .tune legend { font-weight: 700; padding: 0 4px; }
+  .tune label { display: grid; grid-template-columns: 1fr 44px; gap: 2px 8px; align-items: center; }
+  .tune input[type=range] { grid-column: 1 / -1; width: 100%; margin: 0; }
+  .tune output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .tune label.pick-one { display: flex; gap: 8px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tune textarea { width: 100%; box-sizing: border-box; height: 140px; font: 11px/1.4 ui-monospace, monospace; }
+  #grid.big { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+  #state { font-size: 13px; color: var(--muted); }
+  @media (max-width: 700px) { .tool { grid-template-columns: 1fr; } .tune { position: static; max-height: none; order: 2; } }
+</style>
+</head>
+<body>
+<h1>Schatten einstellen</h1>
+<div id="state">Lade Teile aus dem Feed …</div>
+<div class="tool">
+  <div class="tune">
+    <fieldset><legend>Art des Teils</legend>
+      <div>
+        <label class="pick-one"><input type="radio" name="type" value="standing"> Stehend (Schuhe, Taschen, Caps)</label>
+        <label class="pick-one"><input type="radio" name="type" value="flat" checked> Flach (Kleidung)</label>
+        <label class="pick-one"><input type="radio" name="type" value="neutral"> Mittelweg</label>
+      </div>
+    </fieldset>
+    <div id="sliders"></div>
+    <fieldset><legend>Für alle</legend>
+      <label><span>Stärke aller Schatten</span><output id="strengthOut">1</output><input type="range" id="strength" min="0" max="1.5" step="0.05" value="1"></label>
+      <label><span>Farbe</span><input type="color" id="color"></label>
+      <div class="row">
+        <label class="pick-one"><input type="checkbox" id="dark"> Dunkles Design</label>
+        <label class="pick-one"><input type="checkbox" id="big"> Groß</label>
+        <label class="pick-one"><input type="checkbox" id="off"> Ohne Schatten vergleichen</label>
+      </div>
+      <input type="file" id="files" accept="image/*" multiple aria-label="Eigene freigestellte Fotos ansehen">
+    </fieldset>
+    <div class="row"><button type="button" class="btn primary" id="copy">Werte kopieren</button><button type="button" class="btn" id="reset">Zurücksetzen</button></div>
+    <textarea id="json" readonly aria-label="Aktuelle Werte"></textarea>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<iframe id="app" src="../index.html" tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;width:400px;height:900px"></iframe>
+<script src="../schatten.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const START = JSON.stringify(SHADOW);
+const NAMES = { contact: 'Kontaktschatten', ground: 'Gestaucht am Boden', around: 'Weich rundherum' };
+const FIELDS = { opacity: ['Deckkraft', 0, 0.6, 0.01], height: ['Höhe', 0, 0.05, 0.001], blur: ['Weichheit', 0.004, 0.1, 0.001], offset: ['Versatz nach unten', 0, 0.06, 0.001], squash: ['Höhe (Stauchung)', 0.05, 0.4, 0.01], level: ['Gerade (1) oder an der Kante (0)', 0, 1, 0.05] };
+const photos = []; // { name, url, mask, shade, tile }
+const type = () => document.querySelector('input[name=type]:checked').value;
+const hex = (rgb) => '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('');
+
+function sliders() {
+  $('sliders').replaceChildren(...Object.entries(SHADOW[type()]).map(([layer, values]) => {
+    const set = document.createElement('fieldset');
+    set.innerHTML = `<legend>${NAMES[layer]}</legend>`;
+    for (const [key, value] of Object.entries(values)) {
+      const [label, min, max, step] = FIELDS[key], row = document.createElement('label');
+      row.innerHTML = `<span>${label}</span><output>${value}</output><input type="range" min="${min}" max="${max}" step="${step}" aria-label="${NAMES[layer]}: ${label}">`;
+      const input = row.querySelector('input');
+      input.value = value;
+      input.oninput = () => { values[key] = Number(input.value); row.querySelector('output').textContent = input.value; draw(); };
+      set.append(row);
+    }
+    return set;
+  }));
+  $('color').value = hex(SHADOW.color);
+}
+let pending = false;
+function draw() {
+  if (pending) return;
+  pending = true;
+  setTimeout(() => {
+    pending = false;
+    const t0 = performance.now();
+    for (const p of photos) {
+      const s = renderShadow(p.mask, type());
+      p.shade.style.backgroundImage = `url(${s.url})`;
+      p.shade.style.transform = `scale(${s.sx}, ${s.sy})`;
+      p.shade.hidden = $('off').checked;
+    }
+    if (photos.length) $('state').textContent = `${photos.length} freigestellte Teile · ${((performance.now() - t0) / photos.length).toFixed(1)} ms je Schatten auf diesem Gerät`;
+    $('json').value = JSON.stringify({ color: SHADOW.color, standing: SHADOW.standing, flat: SHADOW.flat, neutral: SHADOW.neutral, strength: Number($('strength').value) });
+  });
+}
+async function add(blob, name) {
+  const bitmap = await createImageBitmap(blob);
+  if (isOpaque(bitmap)) return;
+  const mask = photoMask(bitmap);
+  if (!isCutOut(mask)) return;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<div class="img"><span class="cut-shadow"></span><img class="cut loaded" alt=""></div><div class="meta"><b></b></div>';
+  card.querySelector('img').src = URL.createObjectURL(blob);
+  card.querySelector('b').textContent = name;
+  $('grid').append(card);
+  photos.push({ mask, shade: card.querySelector('.cut-shadow') });
+  draw();
+}
+
+document.querySelectorAll('input[name=type]').forEach((r) => { r.onchange = () => { sliders(); draw(); }; });
+$('color').oninput = () => { SHADOW.color = [1, 3, 5].map((i) => parseInt($('color').value.slice(i, i + 2), 16)); draw(); };
+$('strength').oninput = () => { document.documentElement.style.setProperty('--shadow-strength', $('strength').value); $('strengthOut').textContent = $('strength').value; draw(); };
+$('dark').onchange = () => { document.documentElement.dataset.theme = $('dark').checked ? 'dark' : 'light'; };
+$('big').onchange = () => $('grid').classList.toggle('big', $('big').checked);
+$('off').onchange = draw;
+$('files').onchange = () => { for (const f of $('files').files) add(f, f.name); };
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('json').value); $('copy').textContent = 'Kopiert'; } catch (e) { $('json').select(); } setTimeout(() => { $('copy').textContent = 'Werte kopieren'; }, 1500); };
+$('reset').onclick = () => { Object.assign(SHADOW, JSON.parse(START)); $('strength').value = 1; $('strength').oninput(); sliders(); draw(); };
+document.documentElement.dataset.theme = 'light';
+sliders();
+
+// Freigestellte Teile aus dem Feed der App holen (läuft unsichtbar im Rahmen)
+(async () => {
+  let found = [], still = 0;
+  for (let i = 0; i < 60 && found.length < 24 && still < 6; i++) { // bis nichts mehr dazukommt
+    await new Promise((r) => setTimeout(r, 500));
+    const now = [...$('app').contentDocument.querySelectorAll('#feedGrid .card')].map((c) => ({ src: c.querySelector('.img img')?.src, name: c.querySelector('.feed-name')?.textContent || '' })).filter((x) => x.src?.startsWith('http'));
+    still = now.length && now.length === found.length ? still + 1 : 0;
+    found = now;
+  }
+  for (const x of found.slice(0, 24)) {
+    try { await add(await (await fetch(x.src, { cache: 'force-cache' })).blob(), x.name); } catch (e) { console.warn(e); }
+  }
+  $('app').remove();
+  if (!photos.length) $('state').textContent = 'Keine freigestellten Teile gefunden. Wähle links eigene Fotos.';
+})();
+</script>
+</body>
+</html>
