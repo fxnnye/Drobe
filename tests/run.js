@@ -339,9 +339,14 @@ test('Outfit bauen am Handy: Unterkategorien in einer Zeile, die gewählte Kateg
     const sub = el.querySelector('.subchips'), r = (n) => n.getBoundingClientRect(), box = r(el);
     eq(w.getComputedStyle(sub).flexDirection, 'row');
     ok(box.height <= 48, 'Zeile bleibt niedrig: ' + box.height);
-    const middle = (t) => { const c = r(chip(t)); ok(Math.abs((c.left + c.right) / 2 - (box.left + box.right) / 2) < 3, t + ' in der Mitte: ' + Math.round(c.left)); };
-    middle('Oberteile');
-    for (const t of ['Pullover', 'Hosen']) { chip(t).click(); await wait(700); middle(t); }
+    // im Hintergrund laufen Bewegungen langsamer: darum warten, bis die Kategorie angekommen ist
+    const middle = async (t) => {
+      const off = () => { const c = r(chip(t)), b = r(el); return (c.left + c.right - b.left - b.right) / 2; };
+      for (let i = 0; i < 80 && Math.abs(off()) >= 3; i++) await wait(100);
+      ok(Math.abs(off()) < 3, t + ' in der Mitte, daneben um ' + Math.round(off()));
+    };
+    await middle('Oberteile');
+    for (const t of ['Pullover', 'Hosen']) { chip(t).click(); await wait(700); await middle(t); }
     eq(el.querySelectorAll('.subchips').length, 0);
     // selbst gewischt: neu zeichnen ohne neue Wahl springt nicht zurück
     el.scrollLeft = 0; W('renderPicker')(); await wait(500);
@@ -365,6 +370,33 @@ test('Dunkles Design: Teile stehen auf heller Fläche, Outfits behalten ihren Hi
     root.setAttribute('data-theme', 'light');
     ok(bg('#tCard .img') !== light && bg('#tPick') !== light, 'hell unverändert');
   } finally { box.remove(); if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); }
+});
+
+test('Fotos mit eigenem Hintergrund füllen am Computer die Kachel, freigestellte nicht', async () => {
+  const d = frame.contentDocument, w = frame.contentWindow, width = frame.style.width;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const photo = (cut) => { const c = d.createElement('canvas'); c.width = 60; c.height = 90; const x = c.getContext('2d'); x.fillStyle = '#f7f7f9'; if (cut) x.fillRect(15, 15, 30, 60); else x.fillRect(0, 0, 60, 90); return c; };
+  eq([W('isOpaque')(photo(false)), W('isOpaque')(photo(true))], [true, false]);
+  const box = d.createElement('div'), urls = [];
+  box.innerHTML = '<div class="grid"><div class="card"><div class="img" id="oFull"></div></div><div class="card"><div class="img" id="oCut"></div></div></div><div class="grid outfits"><div class="card"><div class="img" id="oOutfit"></div></div></div><div class="item-photo" id="oPage"></div><button class="pick" id="oPick"></button>';
+  try {
+    frame.style.width = '900px';
+    d.body.appendChild(box);
+    await wait(100);
+    const load = async (id, cut) => { const url = w.URL.createObjectURL(await new Promise((r) => photo(cut).toBlob(r))); urls.push(url); const i = d.createElement('img'); d.getElementById(id).appendChild(i); await new Promise((r) => { i.onload = r; i.src = url; }); await wait(50); return i; };
+    const full = await load('oFull', false), cut = await load('oCut', true), outfit = await load('oOutfit', false), page = await load('oPage', false), pick = await load('oPick', false);
+    eq([full, cut, outfit, page, pick].map((i) => i.classList.contains('own-bg')), [true, false, false, true, true]);
+    const css = (i) => w.getComputedStyle(i);
+    for (const i of [full, page, pick]) {
+      eq(css(i).objectFit, 'cover');
+      const a = i.getBoundingClientRect(), b = i.parentElement.getBoundingClientRect();
+      ok(Math.abs(a.width - i.parentElement.clientWidth) < 1 && Math.abs(a.height - i.parentElement.clientHeight) < 1, 'füllt die Fläche: ' + i.parentElement.id + ' ' + Math.round(a.width) + '/' + Math.round(b.width));
+    }
+    eq(css(cut).objectFit, 'contain');
+    frame.style.width = width;
+    await wait(100);
+    eq(css(full).objectFit, 'contain'); // am Handy bleibt alles wie bisher
+  } finally { frame.style.width = width; box.remove(); urls.forEach((u) => w.URL.revokeObjectURL(u)); }
 });
 
 test('Outfit bauen am Handy: Speichern oben neben dem Pfeil, darunter Bild und Auswahl', async () => {

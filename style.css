@@ -1187,6 +1187,13 @@ dialog { overscroll-behavior: contain; }
 .card.feed-card.feed-outfit .img.feed-img { --pad: 0px; aspect-ratio: 9 / 16; overflow: hidden; background: #fff; border: 1px solid var(--gray-hover); }
 .card.feed-card.feed-outfit .img.feed-img img { mix-blend-mode: normal !important; }
 
+/* Computer: Fotos mit eigenem Hintergrund (nicht freigestellt, siehe markOwnBg) füllen wie bei Vinted die ganze Fläche.
+   Eingerückt stünde ihr helles Rechteck als Kante auf dem Grau. Das Multiplizieren (oben) bleibt, so passen sie zu den anderen Kacheln. */
+@media (min-width: 701px) {
+  :is(.card .img, .item-photo, .pick, .msg-thumb):has(> img.own-bg) { position: relative; overflow: hidden; }
+  :is(.card .img, .item-photo, .pick, .msg-thumb) > img.own-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; object-fit: cover; border-radius: inherit; }
+}
+
 /* Doppeltippen zoomt die Oberfläche nicht; Bilder bleiben per Pinch zoombar */
 html, body, input, textarea, select { touch-action: pan-x pan-y; }
 

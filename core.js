@@ -242,7 +242,33 @@ document.addEventListener('load', (e) => {
   delete img.dataset.retry;
   const a = img.closest('a.bubble-img');
   if (a) a.href = img.src; // Foto im Chat: Antippen öffnet den Link, der gerade funktioniert
+  markOwnBg(img);
 }, true);
+// Fotos mit eigenem Hintergrund (nicht freigestellt): am Computer füllen sie die ganze Kachel (style.css, img.own-bg).
+// Gelingt die Prüfung nicht, bleibt das Foto, wie es ist.
+const ownBg = new Map(); // Bildadresse → Antwort
+function isOpaque(source) { // das Foto ist nirgends durchsichtig
+  const c = document.createElement('canvas'); c.width = c.height = 48;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(source, 0, 0, 48, 48);
+  const d = x.getImageData(0, 0, 48, 48).data;
+  for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return false;
+  return true;
+}
+async function markOwnBg(img) {
+  if (!matchMedia('(min-width: 701px)').matches || !img.closest('.card .img, .item-photo, .pick, .msg-thumb') || img.closest('.outfits, .feed-outfit, .add-card')) return;
+  const src = img.src;
+  if (!ownBg.has(src)) ownBg.set(src, (async () => {
+    if (!/^https?:/.test(src)) return isOpaque(img);
+    const res = await fetch(src, { cache: 'force-cache' });
+    if (!res.ok) throw new Error(res.status);
+    const bitmap = await createImageBitmap(await res.blob()), own = isOpaque(bitmap);
+    bitmap.close();
+    return own;
+  })().catch(() => { ownBg.delete(src); return false; }));
+  const own = await ownBg.get(src);
+  if (img.src === src) img.classList.toggle('own-bg', own);
+}
 // Kommt die Verbindung oder die App zurück, werden alle wartenden Bilder sofort neu geladen
 function retryBrokenImages() {
   document.querySelectorAll('img.img-wait').forEach((img) => { img.dataset.retry = '0'; retryImg(img); });
