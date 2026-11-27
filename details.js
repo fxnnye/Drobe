@@ -48,7 +48,7 @@ function buildDetails(box, visBox, p, kind) {
     : '';
   box.innerHTML = `<div class="more-grid">${text('brand')}${text('size')}${extra}${text('sku', ' it-wide')}</div>`; // selten gebraucht: Artikelnummer zuletzt
   visBox.innerHTML = `${sel('vis', 'Sichtbarkeit', visOpts)}${sale}
-    <p class="muted small">Privat ist der Standard. Notizen und Shop-Links bleiben immer privat.</p>`;
+    <p class="muted small">Bei „Öffentlich“ und „Zum Verkauf“ sehen andere das Teil samt Notizen.</p>`;
   $(p + 'vis').onchange = () => syncVisRows(p);
 }
 function syncVisRows(p) {

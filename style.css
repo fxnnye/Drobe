@@ -1683,4 +1683,5 @@ body:not(.guest) .web-lang { display: none; }
 .item-note { margin: var(--s-4) 0; }
 .item-note h3 { margin: 0 0 var(--s-1); font-size: 15px; }
 .item-note p { margin: 0; font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.field > .field-hint { font-weight: 400; }
 

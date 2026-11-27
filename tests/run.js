@@ -750,6 +750,23 @@ test('Notizen stehen als eigener Abschnitt linksbündig, mit Zeilenumbrüchen', 
   } finally { host.remove(); }
 });
 
+test('Schrank unter „Alle“: nach Kategorie wie in den Filtern, innerhalb gleich wie bisher', () => {
+  const mixed = ['Schuhe', 'Taschen', 'Hosen', 'Shirts', 'Jacken', 'Unbekannt', 'Pullover', 'Hosen', 'Gürtel'].map((category, n) => ({ category, n }));
+  const out = W('byCategory')(mixed);
+  eq(out.map((i) => i.category), ['Jacken', 'Pullover', 'Shirts', 'Hosen', 'Hosen', 'Schuhe', 'Taschen', 'Gürtel', 'Unbekannt']);
+  eq(out.filter((i) => i.category === 'Hosen').map((i) => i.n), [2, 7]);
+  eq(mixed[0].category, 'Schuhe'); // die eigene Liste bleibt unverändert
+  const order = W("['Alle', ...TOP].flatMap((f) => GROUPS[f] || (f === 'Alle' ? [] : [f]))");
+  eq([...order], [...W('CATEGORIES')]);
+});
+
+test('Notiz-Texte stimmen: bei öffentlichen Teilen für andere sichtbar', () => {
+  const d = frame.contentWindow.document, all = d.body.textContent;
+  ok(!/Notizen[^.]*bleiben( immer)? privat/.test(all), 'Es steht noch da, Notizen blieben privat');
+  for (const id of ['upNote', 'itemNote']) ok(/sehen andere deine Notizen/.test(d.getElementById(id).closest('label').textContent), id + ' ohne Hinweis');
+  ok(/sehen andere auch deine Notizen/.test(d.querySelector('[data-legal-page=datenschutz]').textContent), 'Datenschutz ohne Hinweis');
+});
+
 test('Teil bearbeiten: drei Reiter, nichts verschachtelt', () => {
   const w = frame.contentWindow, d = w.document, dlg = d.getElementById('itemDialog'), classes = dlg.className;
   const open = () => [...dlg.querySelectorAll('.it-panel')].filter((p) => !p.hidden).map((p) => p.dataset.panel);

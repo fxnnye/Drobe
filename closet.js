@@ -71,7 +71,7 @@ function renderCloset() {
   grid.innerHTML = '';
   const q = state.search.trim().toLowerCase();
   const hit = (i) => !q || [i.name, i.brand, i.category, i.size, i.sku, i.note].some((v) => v && String(v).toLowerCase().includes(q));
-  const list = items.filter((i) => matchesFilter(i, state.closetFilter) && hit(i));
+  const list = byCategory(items.filter((i) => matchesFilter(i, state.closetFilter) && hit(i)));
   closetShown = list;
   if (closetSel) for (const id of [...closetSel]) if (!list.some((i) => i.id === id)) closetSel.delete(id); // Filter gewechselt: Verstecktes nicht mitändern
   grid.classList.toggle('selecting', !!closetSel);

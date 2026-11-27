@@ -6,6 +6,11 @@ const GROUPS = {
   Accessoires: ['Taschen', 'Schmuck', 'Caps', 'Gürtel'],
 };
 const DEFAULT_SUB = { Oberteile: 'Shirts', Accessoires: 'Taschen' }; // Vorauswahl beim Hochladen
+// Reihenfolge wie in den Filtern (CATEGORIES); innerhalb einer Kategorie bleibt die bisherige Reihenfolge
+const byCategory = (list) => {
+  const at = (i) => { const n = CATEGORIES.indexOf(i.category); return n < 0 ? CATEGORIES.length : n; };
+  return [...list].sort((a, b) => at(a) - at(b));
+};
 const TOP = ['Oberteile', 'Hosen', 'Schuhe', 'Accessoires'];
 // Alte Kategorien aus früheren Versionen (inklusive der früheren englischen Namen)
 const LEGACY = {

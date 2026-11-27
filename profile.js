@@ -229,7 +229,7 @@ const Profile = (() => {
     catRow.append(chips);
     const paintCats = () => {
       renderChips(chips, 'profileFilter', paintCats);
-      const list = data.items.filter((i) => matchesFilter(i, state.profileFilter));
+      const list = byCategory(data.items.filter((i) => matchesFilter(i, state.profileFilter)));
       catList.replaceChildren(list.length ? grid(list.map(itemTile)) : el('p', 'muted', 'Nichts in dieser Kategorie.'));
     };
     // Die Reiter werden nur einmal gebaut, damit der schwarze Strich beim Wechsel gleiten kann (placeIndicator in feed.js)

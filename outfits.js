@@ -4,7 +4,7 @@ function renderPicker() {
   renderChips($('pickerFilter'), 'pickerFilter', renderPicker);
   const grid = $('pickerGrid');
   grid.innerHTML = '';
-  const list = items.filter((i) => matchesFilter(i, state.pickerFilter));
+  const list = byCategory(items.filter((i) => matchesFilter(i, state.pickerFilter)));
   list.forEach((it) => {
     const b = document.createElement('button');
     b.className = 'pick';
