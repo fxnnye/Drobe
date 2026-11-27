@@ -261,24 +261,25 @@ dialog { max-height: 92vh; max-height: 92dvh; overflow: auto; }
   .upload-actions .field-inline { flex: 1; }
   .chips { margin-bottom: 12px; }
 
-  /* Outfit bauen: Name und Speichern oben, darunter das Bild, dann Hintergrund und Auswahl.
+  /* Outfit bauen: oben Pfeil und Speichern, darunter das Bild und gleich die Teile-Auswahl, dann Name, Hintergrund, Sichtbarkeit.
      Das Panel löst sich auf (display: contents), seine Teile werden einzeln angeordnet. */
   .builder { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .panel { display: contents; }
-  .panel > .field:first-child { order: 0; margin: 0; }
-  .panel > .row { order: 6; margin: 0; }
-  .stage-wrap { order: 2; }
-  .panel > .field:nth-child(2) { order: 3; margin: 0; }
-  .panel > .field:nth-child(3) { order: 5; margin: 0; }
-  .picker { order: 4; }
+  .stage-wrap { order: 1; position: relative; }
+  .picker { order: 2; }
+  .panel > .field { order: 3; margin: 0; }
+  .panel > .row { order: 4; margin: 0; }
   .panel .hint { display: none; }
   .builder .panel .btn:not(.primary) { background: var(--gray); }
   @media (hover: hover) and (pointer: fine) { .builder .panel .btn:not(.primary):hover:not(:disabled) { background: var(--gray-hover); } }
-  .stage { max-width: min(100%, calc(60vh * 9 / 16)); border-radius: 18px; }
+  /* Bild so hoch, dass die Auswahl darunter ohne Scrollen zu sehen ist */
+  .stage { max-width: min(100%, calc(max(320px, 100vh - 390px) * 9 / 16)); max-width: min(100%, calc(max(320px, 100dvh - 390px) * 9 / 16)); border-radius: 18px; }
   .picker-grid { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; overflow-y: hidden; scroll-snap-type: x proximity; }
   .pick { flex: none; width: 84px; height: 84px; aspect-ratio: auto; scroll-snap-align: start; overflow: hidden; }
   .pick img { max-width: 68px; max-height: 68px; }
-  .layer-tools { flex-wrap: wrap; justify-content: center; }
+  /* Werkzeuge für das gewählte Teil rechts neben dem Bild: nichts darunter springt */
+  .layer-tools { position: absolute; right: -8px; top: 0; flex-direction: column; }
+  .layer-tools .icon { width: 40px; height: 40px; }
 
   /* Dialoge nutzen die Breite */
   dialog { width: 94vw; padding: 16px; border-radius: 24px; }
@@ -1195,6 +1196,14 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 
 /* Scrollraum richtet sich nach dem Inhalt; nur Outfit-Bearbeitung bekommt unten extra Platz */
 #view-builder { padding-bottom: 240px; }
+.btn.builder-save { display: none; }
+@media (max-width: 700px) {
+  .builder-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 6px 0; background: var(--bg); }
+  .builder-bar .btn.builder-back { margin-bottom: 0; }
+  .btn.builder-save { display: inline-flex; }
+  .builder #saveOutfit { display: none; }
+  .builder .panel > .row .btn { flex: 1; }
+}
 @media (max-width: 700px) {
   main { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
   .public { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }

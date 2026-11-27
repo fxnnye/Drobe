@@ -254,11 +254,62 @@ test('Ausbessern: ohne Vergleichsfarben passiert nichts', () => {
   eq(W('refineRestored')(cur, src, mask, w, h), -1);
 });
 
-test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose darunter, Schuhe links unten', async () => {
+test('Outfit-Anordnung am Handy: mittig, Schuhe neben der Hose, nichts ragt heraus', async () => {
+  const doc = frame.contentDocument;
+  const mk = async (name, cat, asp) => { const c = doc.createElement('canvas'); c.width = 300; c.height = Math.round(300 * asp); c.getContext('2d').fillRect(0, 0, c.width, c.height); return { id: 'p_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };
+  const st = W('state'), setItems = W('(v) => { items = v; }'), saveItems = W('items'), saveOutfit = st.outfit;
+  try {
+    const mine = [await mk('jacke', 'Jacken', 0.75), await mk('hoodie', 'Pullover', 1.4), await mk('jeans', 'Hosen', 1.7), await mk('schuhe', 'Schuhe', 0.6), await mk('guertel', 'Gürtel', 0.2), await mk('cap', 'Caps', 0.8), await mk('tasche', 'Taschen', 0.9)];
+    setItems(mine);
+    const L = (n) => st.outfit.layers.find((l) => l.itemId === 'p_' + n);
+    const H = (l) => l.w * W('aspects').get(l.itemId) / W('STAGE_RATIO');
+    const box = () => { const a = st.outfit.layers; return { x0: Math.min(...a.map((l) => l.x)), x1: Math.max(...a.map((l) => l.x + l.w)), y0: Math.min(...a.map((l) => l.y)), y1: Math.max(...a.map((l) => l.y + H(l))) }; };
+    const centered = (what) => { const b = box(); ok(Math.abs((b.x0 + b.x1) / 2 - 0.5) < 0.001 && Math.abs((b.y0 + b.y1) / 2 - 0.5) < 0.001, 'mittig: ' + what); ok(b.x0 >= 0.019 && b.x1 <= 0.981 && b.y0 >= 0.039 && b.y1 <= 0.961, 'in der Fläche: ' + what + ' ' + JSON.stringify(b)); };
+    st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
+    await W('addLayer')(mine[2]); centered('nur Hose');
+    st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
+    for (const it of mine.slice(0, 4)) await W('addLayer')(it);
+    centered('Jacke, Hoodie, Jeans, Schuhe');
+    ok(L('schuhe').x + L('schuhe').w <= L('jeans').x + 0.001, 'Schuhe verdecken die Hose nicht');
+    ok(Math.abs(L('schuhe').y + H(L('schuhe')) - L('jeans').y - H(L('jeans'))) < 0.001, 'Schuhe stehen unten auf Höhe der Hosenbeine');
+    ok(L('jeans').y >= L('hoodie').y + H(L('hoodie')) - 0.001, 'Hose unter dem Oberteil');
+    const off = L('jacke').x + L('jacke').w / 2 - L('hoodie').x - L('hoodie').w / 2;
+    ok(off > 0.05 && off < 0.17 && L('jacke').y < L('hoodie').y, 'Jacke nur leicht nach rechts oben versetzt: ' + off);
+    ok(L('hoodie').w / L('jeans').w > W('fitWidth')(mine[1], 1.4) / W('fitWidth')(mine[2], 1.7) * 1.1, 'schmales Oberteil ist größer');
+    for (const it of mine.slice(4)) await W('addLayer')(it);
+    centered('mit Accessoires');
+    ok(L('guertel').x >= L('jeans').x + L('jeans').w - 0.001 && Math.abs(L('guertel').y - L('jeans').y) < 0.001, 'Gürtel rechts neben der Hose');
+    // von Hand verschobene Teile bleiben liegen
+    const cap = L('cap'); cap.manual = true; cap.x = 0.7; cap.y = 0.1;
+    await W('relayout')();
+    eq([cap.x, cap.y], [0.7, 0.1]);
+  } finally { setItems(saveItems); st.outfit = saveOutfit; }
+});
+
+test('Outfit bauen am Handy: Speichern oben neben dem Pfeil, darunter Bild und Auswahl', async () => {
+  const d = frame.contentDocument, w = frame.contentWindow, css = (n) => w.getComputedStyle(n);
+  const guest = d.body.classList.contains('guest'), view = W('state').view;
+  d.body.classList.remove('guest');
+  try {
+    W('showView')('builder');
+    await new Promise((r) => setTimeout(r, 500));
+    const top = d.getElementById('saveOutfitTop'), back = d.getElementById('builderBack');
+    ok(css(top).display !== 'none' && css(d.getElementById('saveOutfit')).display === 'none', 'nur ein Speichern-Knopf');
+    const t = top.getBoundingClientRect(), b = back.getBoundingClientRect();
+    ok(Math.abs((t.top + t.bottom) / 2 - (b.top + b.bottom) / 2) < 2 && t.left > b.right, 'oben rechts neben dem Pfeil');
+    const y = (n) => d.querySelector(n).getBoundingClientRect().top;
+    const order = ['#builderBack', '#stage', '.picker', '#outfitName', '#swatches', '#outfitVis', '#newOutfit'].map(y);
+    ok(order.every((v, i) => !i || v > order[i - 1]), 'Reihenfolge: ' + order.map(Math.round).join(', '));
+  } finally { W('showView')(view); if (guest) d.body.classList.add('guest'); }
+});
+
+test('Outfit-Anordnung am Computer: Jacke rechts oben, Oberteil davor, Hose darunter, Schuhe links unten', async () => {
   const doc = frame.contentDocument;
   const mk = async (name, cat, asp) => { const c = doc.createElement('canvas'); c.width = 300; c.height = Math.round(300 * asp); c.getContext('2d').fillRect(0, 0, c.width, c.height); return { id: 't_' + name, name, category: cat, blob: await new Promise((r) => c.toBlob(r, 'image/png')), created: 1 }; };
   const st = W('state'), setItems = W('(v) => { items = v; }'), saveItems = W('items'), saveOutfit = st.outfit;
+  const wasPhone = W('phoneBuilder');
   try {
+    W('phoneBuilder = () => false');
     const mine = [await mk('brille', 'Schmuck', 0.33), await mk('beanie', 'Caps', 1), await mk('jacke', 'Jacken', 1), await mk('hoodie', 'Pullover', 1.22), await mk('jeans', 'Hosen', 1.8), await mk('tasche', 'Taschen', 0.82), await mk('schuhe', 'Schuhe', 0.38), await mk('guertel', 'Gürtel', 0.12)];
     setItems(mine);
     st.outfit = { id: null, name: '', bg: '#fff', layers: [] };
@@ -273,7 +324,7 @@ test('Outfit-Anordnung wie die Collage: Jacke rechts oben, Oberteil davor, Hose 
     ok(L('brille').x < 0.3 && L('beanie').x > L('brille').x && L('beanie').x < 0.35 && L('beanie').y < 0.1, 'Schmuck links oben, Cap etwas weiter innen');
     ok(Math.max(...['jacke', 'hoodie', 'jeans', 'schuhe'].map((n) => L(n).y + H(L(n)))) > 0.9, 'Collage füllt die Fläche bis fast nach unten');
     for (const l of st.outfit.layers) ok(l.x >= 0 && l.y >= 0 && l.x + l.w <= 1.0001 && l.y + H(l) <= 1.0001, 'bleibt in der Fläche: ' + l.itemId);
-  } finally { setItems(saveItems); st.outfit = saveOutfit; }
+  } finally { W('(f) => { phoneBuilder = f; }')(wasPhone); setItems(saveItems); st.outfit = saveOutfit; }
 });
 
 test('Oberteile: Jacke und Pullover mischbar, höchstens zwei, Pullover an der Shirt-Stelle', async () => {

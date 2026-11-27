@@ -343,7 +343,10 @@ try { var t = localStorage.getItem('jawnz-theme'); if (t === 'light' || t === 'd
 
   <!-- BUILDER -->
   <section id="view-builder" class="view">
-    <button class="btn builder-back back-btn" type="button" id="builderBack" aria-label="Zurück">Outfits</button>
+    <div class="builder-bar">
+      <button class="btn builder-back back-btn" type="button" id="builderBack" aria-label="Zurück">Outfits</button>
+      <button class="btn primary builder-save" type="button" id="saveOutfitTop">Speichern</button>
+    </div>
     <div class="builder">
       <aside class="picker">
         <div class="filter-row"><div class="chips" id="pickerFilter"></div></div>

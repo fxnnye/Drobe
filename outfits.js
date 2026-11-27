@@ -87,10 +87,52 @@ async function addLayer(it) {
 // Ordnet die Teile wie eine Outfit-Collage an: links oben Schmuck und Tasche, die Cap etwas weiter innen, rechts oben die Jacke,
 // in der Mitte Shirt und Pullover (vor der Jacke), darunter die Hose, rechts daneben auf Bundhöhe der Gürtel, links unten die Schuhe.
 // Fehlt ein Teil, rücken die anderen nach; die ganze Collage wird bis zu 30 % größer, damit sie die Fläche füllt.
-// Von Hand verschobene Teile bleiben liegen.
+// Von Hand verschobene Teile bleiben liegen. Am Handy gilt arrangePhone.
+function phoneBuilder() { return matchMedia('(max-width: 700px)').matches; }
+
+// Am Handy: die Collage sitzt als Ganzes mittig, die Schuhe stehen neben der Hose (nicht auf dem Bein),
+// schmal fotografierte Oberteile werden etwas größer. Erst frei anordnen, dann zusammen einpassen.
+function arrangePhone(auto) {
+  const of = (cat) => auto.filter((l) => itemById(l.itemId).category === cat);
+  const hf = (l) => l.w * aspects.get(l.itemId) / STAGE_RATIO;
+  const put = (l, x, y) => { l.x = x; l.y = y; };
+  for (const l of auto) {
+    const it = itemById(l.itemId);
+    l.w = fitWidth(it, aspects.get(l.itemId)) * (it.scale || 1);
+    if (it.category === 'Shirts' || it.category === 'Pullover') l.w *= Math.max(1, Math.min(1.18, 0.5 / l.w, 0.34 / hf(l)));
+    if (it.category === 'Schuhe') l.w = Math.min(l.w, 0.32);
+  }
+  const jackets = of('Jacken'), tops = [...of('Shirts'), ...of('Pullover')], pants = of('Hosen');
+  let bottom = 0;
+  for (const l of jackets) { put(l, 0.5 + (tops.length ? 0.12 : 0) - l.w / 2, 0); bottom = Math.max(bottom, hf(l)); }
+  let topBottom = tops.length ? 0 : bottom;
+  tops.forEach((l, i) => { put(l, 0.5 - l.w / 2 + i * 0.04, (jackets.length ? 0.125 : 0) + i * 0.05); topBottom = Math.max(topBottom, l.y + hf(l)); });
+  bottom = Math.max(bottom, topBottom);
+  for (const l of pants) put(l, 0.5 - l.w / 2, topBottom);
+  const leg = pants[0];
+  for (const l of of('Gürtel')) put(l, leg ? leg.x + leg.w : 0.68, topBottom);
+  for (const l of of('Caps')) put(l, 0.29 - l.w / 2, 0.02);
+  let ly = 0.01;
+  for (const l of [...of('Schmuck'), ...of('Taschen')]) { put(l, 0.13 - l.w / 2, ly); ly = l.y + hf(l) + 0.025; }
+  for (const l of of('Schuhe')) {
+    if (leg) put(l, leg.x - l.w, leg.y + hf(leg) - hf(l));
+    else put(l, 0.5 - l.w / 2, bottom ? bottom + 0.02 : 0);
+  }
+  if (!auto.length) return;
+  const x0 = Math.min(...auto.map((l) => l.x)), x1 = Math.max(...auto.map((l) => l.x + l.w));
+  const y0 = Math.min(...auto.map((l) => l.y)), y1 = Math.max(...auto.map((l) => l.y + hf(l)));
+  const k = Math.min(1.3, 0.96 / (x1 - x0), 0.92 / (y1 - y0));
+  for (const l of auto) {
+    l.x = 0.5 + (l.x - (x0 + x1) / 2) * k;
+    l.y = 0.5 + (l.y - (y0 + y1) / 2) * k;
+    l.w *= k;
+  }
+}
+
 async function relayout() {
   const auto = state.outfit.layers.filter((l) => !l.manual && itemById(l.itemId));
   await Promise.all(auto.map((l) => aspectOf(itemById(l.itemId))));
+  if (phoneBuilder()) return arrangePhone(auto);
   const of = (cat) => auto.filter((l) => itemById(l.itemId).category === cat);
   const hf = (l) => l.w * aspects.get(l.itemId) / STAGE_RATIO; // Höhe als Anteil der Bühnenhöhe
   const put = (l, x, y) => { // x = linke Kante; bleibt innerhalb der Fläche
@@ -285,6 +327,7 @@ $('stage').addEventListener('pointerdown', (e) => {
 });
 
 $('builderBack').onclick = () => showView('outfits');
+$('saveOutfitTop').onclick = () => $('saveOutfit').click(); // am Handy steht „Speichern“ oben neben dem Pfeil
 $('outfitPng').onclick = () => {
   const o = { ...state.outfit, name: $('outfitName').value.trim() || state.outfit.name };
   if (!o.layers.some((l) => itemById(l.itemId))) return toast('Füge zuerst Teile hinzu');
