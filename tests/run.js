@@ -739,6 +739,17 @@ test('Handy: Fenster kommen von unten, Zurück ist ein Pfeil, Schließen ein ✕
   ok(d.getElementById('soClose').getAttribute('aria-label') === 'Schließen' && d.getElementById('builderBack').getAttribute('aria-label') === 'Zurück', 'Beschriftung fehlt');
 });
 
+test('Notizen stehen als eigener Abschnitt linksbündig, mit Zeilenumbrüchen', () => {
+  const w = frame.contentWindow, d = w.document, host = d.createElement('div');
+  host.append(W('noteBlock')('  Gekauft in Berlin\n\n\n\nNur kalt waschen  '));
+  d.body.append(host);
+  try {
+    const p = host.querySelector('.item-note p');
+    eq([host.querySelector('.item-note h3').textContent, p.textContent, p.hasAttribute('data-no-i18n')], ['Notizen', 'Gekauft in Berlin\n\nNur kalt waschen', true]);
+    eq([w.getComputedStyle(p).whiteSpace, ['left', 'start'].includes(w.getComputedStyle(p).textAlign)], ['pre-line', true]);
+  } finally { host.remove(); }
+});
+
 test('Teil bearbeiten: drei Reiter, nichts verschachtelt', () => {
   const w = frame.contentWindow, d = w.document, dlg = d.getElementById('itemDialog'), classes = dlg.className;
   const open = () => [...dlg.querySelectorAll('.it-panel')].filter((p) => !p.hidden).map((p) => p.dataset.panel);

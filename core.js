@@ -109,6 +109,14 @@ const state = {
   editingItem: null,
 };
 const itemById = (id) => items.find((i) => i.id === id);
+// Notizen als eigener Abschnitt: Überschrift, darunter der Text linksbündig mit seinen Zeilenumbrüchen
+function noteBlock(text) {
+  const box = document.createElement('div'); box.className = 'item-note';
+  const h = document.createElement('h3'); h.textContent = 'Notizen';
+  const p = document.createElement('p'); p.textContent = String(text).trim().replace(/\n{3,}/g, '\n\n'); p.setAttribute('data-no-i18n', '');
+  box.append(h, p);
+  return box;
+}
 
 /* ---------- Bild-Absicherung für die ganze App ----------
    Jedes <img> läuft hier durch: Ein Bild, das nicht lädt, wird nie als kaputt angezeigt (Klasse "img-wait" zeigt eine Fläche)

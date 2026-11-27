@@ -55,7 +55,7 @@ function buildItemView(it) {
   const h = document.createElement('h2'); h.className = 'item-name'; h.textContent = it.name || 'Teil'; if (it.name) h.setAttribute('data-no-i18n', ''); v.append(h);
   if (it.price != null) { const p = document.createElement('p'); p.className = 'item-price'; p.textContent = Number(it.price).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }); v.append(p); }
   const dl = document.createElement('dl'); dl.className = 'item-facts';
-  for (const [k, val] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : ''], ['Artikelnummer', it.sku], ['Sichtbarkeit', VIS.items[visOf(it)]], ['Notizen', it.note]]) {
+  for (const [k, val] of [['Marke', it.brand], ['Größe', it.size], ['Zustand', it.cond], ['Farbe', it.color], ['Kategorie', it.category], ['Seltenheit', it.rarity && it.rarity !== 'Alltag' ? it.rarity : ''], ['Artikelnummer', it.sku], ['Sichtbarkeit', VIS.items[visOf(it)]]]) {
     if (!val) continue;
     const row = document.createElement('div'); row.className = 'item-fact';
     const dt = document.createElement('dt'); dt.textContent = k;
@@ -63,6 +63,7 @@ function buildItemView(it) {
     row.append(dt, dd); dl.append(row);
   }
   v.append(dl);
+  if (it.note) v.append(noteBlock(it.note));
   // Verlauf: wer das Teil vor mir hatte (bei gekauften Teilen)
   if (Array.isArray(it.history) && it.history.length) {
     const box = document.createElement('div'); box.className = 'item-history';
