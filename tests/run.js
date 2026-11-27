@@ -324,6 +324,24 @@ test('Rumpf zählt, nicht die Ärmel: Hoodie wirkt so groß wie das T-Shirt', ()
   ok(Math.abs(h / t - 1) < 0.12, 'Rumpf Hoodie ' + h.toFixed(3) + ' / T-Shirt ' + t.toFixed(3));
 });
 
+test('Dunkles Design: Teile stehen auf heller Fläche, Outfits behalten ihren Hintergrund', async () => {
+  const d = frame.contentDocument, w = frame.contentWindow, root = d.documentElement, theme = root.getAttribute('data-theme');
+  const box = d.createElement('div');
+  box.innerHTML = '<div class="grid"><div class="card" id="tCard"><div class="img"><img alt=""></div></div><div class="card add-card" id="tAdd"><div class="img"></div></div></div><div class="grid outfits"><div class="card" id="tOutfit"><div class="img"><img alt=""></div></div></div><button class="pick" id="tPick"><img alt=""></button><span class="msg-thumb sm" id="tMsg"><img alt=""></span>';
+  d.body.appendChild(box);
+  box.querySelectorAll('*').forEach((n) => { n.style.transition = 'none'; });
+  const bg = (n) => w.getComputedStyle(d.querySelector(n)).backgroundColor, light = 'rgb(228, 228, 228)';
+  try {
+    root.setAttribute('data-theme', 'dark');
+    for (const n of ['#tCard .img', '#tPick', '#tMsg']) eq([n, bg(n)], [n, light]);
+    eq(w.getComputedStyle(d.querySelector('#tCard img')).mixBlendMode, 'multiply');
+    eq(bg('#tOutfit .img'), 'rgb(255, 255, 255)');
+    ok(bg('#tAdd .img') !== light, 'Kachel „Neu“ bleibt dunkel');
+    root.setAttribute('data-theme', 'light');
+    ok(bg('#tCard .img') !== light && bg('#tPick') !== light, 'hell unverändert');
+  } finally { box.remove(); if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); }
+});
+
 test('Outfit bauen am Handy: Speichern oben neben dem Pfeil, darunter Bild und Auswahl', async () => {
   const d = frame.contentDocument, w = frame.contentWindow, css = (n) => w.getComputedStyle(n);
   const guest = d.body.classList.contains('guest'), view = W('state').view;
@@ -763,7 +781,7 @@ test('Teile-Fotos: Weiß nimmt überall das Grau der Fläche an, beim Radieren n
     eq(w.getComputedStyle(d.getElementById('itemPreview')).mixBlendMode, 'normal');
     dlg.className = '';
     root.setAttribute('data-theme', 'dark');
-    eq(modes(), Array(5).fill('normal'));
+    eq(modes(), Array(5).fill('multiply')); // dunkel: Teile stehen auch auf heller Fläche
   } finally { if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); dlg.className = classes; host.remove(); }
 });
 test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knöpfe stehen unten fest', async () => {
