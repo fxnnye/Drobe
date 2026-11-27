@@ -3,14 +3,15 @@
 const dlg = $('itemDialog');
 $('itScale').oninput = (e) => { $('itScaleVal').textContent = e.target.value + ' %'; };
 
-function setItemEditOpen(open) {
-  $('itEdit').hidden = !open;
-  dlg.classList.toggle('editing', open); // am Computer bleibt die Vorschau beim Bearbeiten oben sichtbar
+// Reiter beim Bearbeiten: 'info' (Angaben), 'vis' (Sichtbarkeit und Preis), 'photo' (Foto bearbeiten)
+function setItemTab(tab) {
+  if (tab !== 'photo' && dlg.classList.contains('tooling')) stopDraw(); // Radierer und Einzeichnen gehören zum Foto
+  for (const p of dlg.querySelectorAll('.it-panel')) p.hidden = p.dataset.panel !== tab;
+  for (const b of $('itTabs').children) { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }
+  dlg.classList.toggle('editing', tab === 'photo'); // beim Foto bleibt die Vorschau groß (am Computer auch beim Scrollen oben)
   dlg.classList.remove('turning');
-  $('itEditToggle').setAttribute('aria-expanded', open);
-  $('itEditToggle').textContent = open ? 'Bearbeiten schließen' : 'Bearbeiten';
 }
-$('itEditToggle').onclick = () => setItemEditOpen($('itEdit').hidden);
+$('itTabs').addEventListener('click', (e) => { const b = e.target.closest('.it-tab'); if (b) { setItemTab(b.dataset.tab); dlg.scrollTop = 0; } });
 // Handy: Solange man an den Dreh-Reglern ist, bleibt das Foto oben stehen (außer es würde die Regler verdecken); die nächste Berührung woanders löst es wieder
 dlg.addEventListener('pointerdown', (e) => {
   const row = e.target.closest('.rotate'), box = dlg.querySelector('.up-preview');
@@ -78,7 +79,12 @@ function buildItemView(it) {
     box.append(ul); v.append(box);
   }
 }
-$('itEditStart').onclick = () => { setViewing(false); setItemEditOpen(false); $('itemName').focus({ preventScroll: true }); };
+$('itEditStart').onclick = () => {
+  setViewing(false);
+  setItemTab('info');
+  dlg.scrollTop = 0;
+  if (matchMedia('(pointer: fine)').matches) $('itemName').focus({ preventScroll: true }); // am Handy würde sofort die Tastatur alles verdecken
+};
 function openItemDialog(it) {
   state.editingItem = it;
   stopDraw();
@@ -90,7 +96,7 @@ function openItemDialog(it) {
   $('itScale').max = scaleMax(it.category);
   $('itScale').value = Math.round((it.scale || 1) * 100);
   $('itScaleVal').textContent = $('itScale').value + ' %';
-  setItemEditOpen(false); // Drehen und Größe sind erst nach „Bearbeiten“ sichtbar
+  setItemTab('info');
   $('itemPreview').src = urlFor(it);
   renderTools(itCur);
   $('itemName').value = it.name;
@@ -106,7 +112,7 @@ $('itemForm').addEventListener('submit', async (e) => {
   if (e.submitter && e.submitter.value === 'save') {
     const it = state.editingItem;
     const prevColor = it.color, prevAuto = !!it.hex; // hex gibt es nur bei automatisch erkannter Farbe
-    if (!readDetails('itd', 'items', it)) return e.preventDefault(); // Preis falsch: Dialog bleibt offen
+    if (!readDetails('itd', 'items', it)) { setItemTab('vis'); return e.preventDefault(); } // Preis falsch: Dialog bleibt offen und zeigt das Feld
     if (typeof Profile !== 'undefined') Profile.setPinned(it.id, visOf(it) !== 'private' && $('itdpin').checked);
     it.name = $('itemName').value.trim() || it.name;
     it.category = $('itemCategory').value;

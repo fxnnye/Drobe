@@ -1183,7 +1183,7 @@ html, body, input, textarea, select { touch-action: pan-x pan-y; }
 
 /* Teil-Dialog: erst die Ansicht wie bei anderen Nutzern, Felder erst nach „Bearbeiten“ */
 #itemDialog:not(.viewing) .item-view, #itemDialog:not(.viewing) #itViewRow { display: none; }
-#itemDialog.viewing #itemForm > label.field, #itemDialog.viewing #itemMore, #itemDialog.viewing #itEditToggle, #itemDialog.viewing #itEdit, #itemDialog.viewing #itEditRow { display: none; }
+#itemDialog.viewing #itTabs, #itemDialog.viewing .it-panel, #itemDialog.viewing #itEditRow { display: none; }
 #itemDialog .item-view { margin: 12px 0 8px; }
 #itSimilar, #itSimilarBox { display: none; } /* „Ähnliche Teile von anderen“ gibt es bei eigenen Teilen nicht mehr */
 #itViewRow .spacer { display: none; }
@@ -1582,3 +1582,20 @@ body:not(.guest) .web-lang { display: none; }
   #publicView .me-head > .btn { grid-area: 1 / 3 / 3 / 5; }
   #publicView .pub-tools { padding-left: 0; margin-top: 0; }
 }
+
+/* Teil bearbeiten: drei Reiter statt verschachtelter Aufklapper, Speichern immer unten erreichbar */
+.it-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: var(--gap); background: var(--gray); border-radius: var(--r-ctrl); }
+.it-tab { min-height: var(--h-sm); border: 0; border-radius: calc(var(--r-ctrl) - 4px); background: none; color: var(--text); font: inherit; font-size: 13px; font-weight: 700; padding: 0 4px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.it-tab.active { background: var(--bg); box-shadow: 0 1px 4px rgba(0, 0, 0, .14); }
+.it-panel[hidden] { display: none; }
+.it-head { font-size: 14px; margin: var(--s-4) 0 var(--s-2); }
+#itemDialog:not(.viewing):not(.editing) .up-preview { height: 150px; } /* bei Angaben und Sichtbarkeit kleines Foto, damit die Felder gleich sichtbar sind */
+#itemDialog.editing .up-preview { box-shadow: 0 -40px 0 var(--bg), 0 6px 0 var(--bg); } /* oben schaut beim Scrollen nichts am Foto vorbei */
+#itemDelete { margin-top: var(--s-3); }
+#itemMore .it-wide { grid-column: 1 / -1; }
+#itEditRow { position: sticky; bottom: 0; z-index: 4; margin: 0; padding: var(--s-3) 0 0; background: var(--bg); box-shadow: 0 40px 0 var(--bg); }
+#itEditRow .btn { flex: 1; }
+@media (max-width: 700px) {
+  #itemMore .more-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-3); align-items: end; }
+}
+

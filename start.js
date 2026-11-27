@@ -2,7 +2,7 @@
 /* ---------- Start ---------- */
 fillSelect($('uploadCategory'));
 fillSelect($('itemCategory'));
-buildDetails($('itemMore'), 'itd', 'items');
+buildDetails($('itemMore'), $('itemVis'), 'itd', 'items');
 ['upBrand', 'itdbrand'].forEach((id) => brandSuggest($(id)));
 [['upSize', 'uploadCategory'], ['itdsize', 'itemCategory']].forEach(([id, cat]) => sizeSuggest($(id), cat));
 

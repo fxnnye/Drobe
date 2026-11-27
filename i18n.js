@@ -66,6 +66,7 @@ const I18N = {
     'Sobald jemand etwas freigibt, erscheint es hier.': 'As soon as someone shares something, it shows up here.',
     'Fotos hierher ziehen oder auswählen. Am besten vor hellem, ruhigem Hintergrund fotografiert.': 'Drag photos here or choose them. Best taken against a light, calm background.',
     'Am besten vor hellem, ruhigem Hintergrund fotografiert.': 'Best taken against a light, calm background.', 'Backup-Datei auswählen': 'Choose backup file',
+    'Angaben': 'Details', 'Teil löschen': 'Delete item', 'Gerade drehen': 'Straighten',
     'Fotos von Teilen, die du kaufen willst. Du kannst Preis und einen Link zum Shop dazuschreiben.': 'Photos of items you want to buy. You can add a price and a link to the shop.',
     'Wähle ein Teil aus der Liste, um es hinzuzufügen.': 'Choose an item from the list to add it.',
     'Name des Outfits': 'Outfit name', 'Hintergrund': 'Background', 'Notizen': 'Notes', 'Details und Sichtbarkeit': 'Details and visibility',

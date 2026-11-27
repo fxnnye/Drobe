@@ -698,6 +698,22 @@ test('Fremde Teile sehen überall wie im Feed aus, Kauf-Knopf steht unter dem Pr
   } finally { w.location.hash = ''; await wait(); C.client = client; C.user = user; W('showView')(view); }
 });
 
+test('Teil bearbeiten: drei Reiter, nichts verschachtelt', () => {
+  const w = frame.contentWindow, d = w.document, dlg = d.getElementById('itemDialog'), classes = dlg.className;
+  const open = () => [...dlg.querySelectorAll('.it-panel')].filter((p) => !p.hidden).map((p) => p.dataset.panel);
+  const tab = (n) => dlg.querySelector('.it-tab[data-tab=' + n + ']').click();
+  try {
+    eq([dlg.querySelectorAll('details').length, d.getElementById('itEditToggle')], [0, null]);
+    for (const [n, field] of [['vis', 'itdprice'], ['photo', 'itRemove'], ['info', 'itdbrand']]) {
+      tab(n);
+      eq([open(), dlg.classList.contains('editing'), !!d.getElementById(field).closest('.it-panel:not([hidden])')], [[n], n === 'photo', true]);
+    }
+    for (const id of ['itemName', 'itemCategory', 'itdsize', 'itdcond', 'itdcolor', 'itemNote', 'itemDelete']) ok(d.getElementById(id).closest('[data-panel=info]'), id + ' fehlt bei den Angaben');
+    for (const id of ['itdvis', 'itdprice', 'itdpin']) ok(d.getElementById(id).closest('[data-panel=vis]'), id + ' fehlt bei der Sichtbarkeit');
+    eq([...d.getElementById('itEditRow').querySelectorAll('.btn')].map((b) => b.textContent.trim()), ['Abbrechen', 'Speichern']);
+  } finally { tab('info'); dlg.className = classes; }
+});
+
 test('Teil bearbeiten am Handy: Foto scrollt mit, steht nur beim Radieren und Drehen', () => {
   const w = frame.contentWindow, d = w.document, dlg = d.getElementById('itemDialog'), box = dlg.querySelector('.up-preview'), classes = dlg.className;
   const pos = (cls) => { dlg.className = cls; return w.getComputedStyle(box).position; };

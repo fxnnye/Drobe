@@ -32,25 +32,23 @@ function cleanDetails(src, kind) {
 const DETAIL_KEYS = [...Object.keys(DETAIL_TEXT), 'cond', 'rarity', 'color', 'hex', 'vis', 'price'];
 const setDetails = (rec, clean) => { for (const k of DETAIL_KEYS) delete rec[k]; Object.assign(rec, clean); };
 
-// Baut die ausklappbaren Detailfelder in einen Dialog (p = Präfix der Feld-IDs)
-function buildDetails(box, p, kind) {
-  const text = Object.entries(DETAIL_TEXT).map(([k, [label, max]]) =>
-    `<label class="field">${label}<input type="text" id="${p}${k}" maxlength="${max}"></label>`).join('');
+// Baut die Detailfelder in einen Dialog (p = Präfix der Feld-IDs): Angaben in box, Sichtbarkeit und Preis in visBox
+function buildDetails(box, visBox, p, kind) {
+  const text = (k, cls = '') => { const [label, max] = DETAIL_TEXT[k]; return `<label class="field${cls}">${label}<input type="text" id="${p}${k}" maxlength="${max}"></label>`; };
   const sel = (id, label, opts) => `<label class="field">${label}<select id="${p}${id}">${opts}</select></label>`;
   const visOpts = Object.entries(VIS[kind]).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
   const extra = kind === 'items'
     ? sel('cond', 'Zustand', '<option value="">–</option>' + CONDS.map((c) => `<option>${c}</option>`).join(''))
-      + sel('rarity', 'Seltenheit', '<option value="">–</option>' + RARITIES.map((c) => `<option>${c}</option>`).join(''))
       + sel('color', 'Farbe', '<option value="">–</option>' + COLORS.map((c) => `<option>${c}</option>`).join(''))
+      + sel('rarity', 'Seltenheit', '<option value="">–</option>' + RARITIES.map((c) => `<option>${c}</option>`).join(''))
     : '';
   const sale = kind === 'items'
     ? `<label class="field" id="${p}priceRow">Preis (€, optional)<input type="text" id="${p}price" inputmode="decimal" maxlength="9"></label>
         <label class="check" id="${p}pinRow" hidden><input type="checkbox" id="${p}pin"> Oben im Profil anpinnen (Showcase, max. 6)</label>`
     : '';
-  box.innerHTML = `<details class="more"><summary>Details und Sichtbarkeit</summary>
-    <div class="more-grid">${text}${extra}</div>
-    ${sel('vis', 'Sichtbarkeit', visOpts)}${sale}
-    <p class="muted small">Privat ist der Standard. Notizen und Shop-Links bleiben immer privat.</p></details>`;
+  box.innerHTML = `<div class="more-grid">${text('brand')}${text('size')}${extra}${text('sku', ' it-wide')}</div>`; // selten gebraucht: Artikelnummer zuletzt
+  visBox.innerHTML = `${sel('vis', 'Sichtbarkeit', visOpts)}${sale}
+    <p class="muted small">Privat ist der Standard. Notizen und Shop-Links bleiben immer privat.</p>`;
   $(p + 'vis').onchange = () => syncVisRows(p);
 }
 function syncVisRows(p) {
@@ -68,8 +66,6 @@ function fillDetails(p, rec) {
     $(p + 'pin').checked = typeof Profile !== 'undefined' && Profile.isPinned(rec.id);
   }
   syncVisRows(p);
-  const d = $(p + 'vis').closest('details');
-  d.open = visOf(rec) !== 'private' || Object.keys(DETAIL_TEXT).some((k) => rec[k]);
 }
 // Liest die Felder zurück in den Eintrag; false, wenn der Preis nicht stimmt
 function readDetails(p, kind, rec) {
