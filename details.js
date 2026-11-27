@@ -1,6 +1,6 @@
 // Details und Sichtbarkeit eines Teils; Prüfen und Kürzen der Angaben (Teil der App, Reihenfolge siehe index.html)
 /* ---------- Details und Sichtbarkeit ---------- */
-// Alles ist standardmäßig privat: fehlt `vis` an einem Eintrag, gilt er als privat (so auch bei allen alten Teilen).
+// Fehlt `vis` an einem Eintrag, gilt er als privat (so bei allen alten Teilen). Neu angelegte starten auf „Öffentlich“ (upload.js, outfits.js).
 const DETAIL_TEXT = { brand: ['Marke', 40], size: ['Größe', 20], sku: ['Artikelnummer (vom Etikett)', 40] };
 const CONDS = ['Neu / DS', 'Sehr gut', 'Gut', 'Getragen'];
 const RARITIES = ['Alltag', 'Rare', 'Grail'];

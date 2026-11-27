@@ -764,7 +764,14 @@ test('Notiz-Texte stimmen: bei öffentlichen Teilen für andere sichtbar', () =>
   const d = frame.contentWindow.document, all = d.body.textContent;
   ok(!/Notizen[^.]*bleiben( immer)? privat/.test(all), 'Es steht noch da, Notizen blieben privat');
   for (const id of ['upNote', 'itemNote']) ok(/sehen andere deine Notizen/.test(d.getElementById(id).closest('label').textContent), id + ' ohne Hinweis');
-  ok(/sehen andere auch deine Notizen/.test(d.querySelector('[data-legal-page=datenschutz]').textContent), 'Datenschutz ohne Hinweis');
+  ok(/auch deine Notizen/.test(d.querySelector('[data-legal-page=datenschutz]').textContent), 'Datenschutz ohne Hinweis');
+});
+
+test('Texte passen zur Voreinstellung: neue Teile und Outfits starten auf „Öffentlich“', () => {
+  const d = frame.contentWindow.document;
+  eq([d.getElementById('upVis').value, W('outfitVisOf')({}), W('outfitVisOf')({ id: 'x' })], ['public', 'public', 'private']);
+  ok(!/(zuerst|standardmäßig) privat|Privat ist der Standard/.test(d.body.textContent), 'Es steht noch da, alles sei zuerst privat');
+  for (const sel of ['#welcomeDialog', '[data-legal-page=datenschutz]']) ok(/auf „Öffentlich“ voreingestellt/.test(d.querySelector(sel).textContent), sel + ' nennt die Voreinstellung nicht');
 });
 
 test('Teil bearbeiten: drei Reiter, nichts verschachtelt', () => {

@@ -57,9 +57,7 @@ const I18N = {
     'Wir schicken dir eine Mail, mit der du die Adresse bestätigst. Erst danach kannst du dich anmelden. Der Benutzername ist später für andere sichtbar, die E-Mail-Adresse nicht.':
       'We will send you an email to confirm your address. You can only log in after that. Your username is visible to others later, your email address is not.',
     'Ich habe die': 'I have read the', 'und die': 'and the', 'gelesen und bin einverstanden.': 'and I agree.', 'Nutzung': 'Terms', 'AGB': 'Terms', 'Ich akzeptiere die': 'I accept the', ', bestätige, dass ich mindestens 18 Jahre alt bin, und habe die': ', confirm that I am at least 18 years old, and have read the', 'gelesen.': '.', 'Bitte akzeptiere die AGB, bestätige, dass du mindestens 18 Jahre alt bist, und die Datenschutzerklärung.': 'Please accept the terms, confirm that you are at least 18 years old, and the privacy policy.',
-    'Willkommen bei JAWNZ': 'Welcome to JAWNZ', 'Teile hinzufügen.': 'Add items.', 'Öffentlich stellen.': 'Make public.', 'Entdecken.': 'Discover.',
-    'Fotografiere Klamotten, JAWNZ schneidet sie frei. Alles ist zuerst privat.': 'Photograph your clothes, JAWNZ cuts them out. Everything is private at first.',
-    'Teile auf „Öffentlich“ oder „Verkauf“ erscheinen im Feed anderer.': 'Items set to “Public” or “For sale” appear in other people’s feeds.',
+    'Willkommen bei JAWNZ': 'Welcome to JAWNZ', 'Teile hinzufügen.': 'Add items.', 'Entdecken.': 'Discover.',
     'Folge Profilen, merke dir Teile und schreib Nachrichten, wenn dir etwas gefällt.': 'Follow profiles, save items and send messages when you like something.',
     'Los geht\'s': 'Let\'s go',
     // Profil, Schrank, Hochladen
@@ -75,7 +73,6 @@ const I18N = {
     'Teile ziehen zum Verschieben, Ecke unten rechts zum Skalieren.': 'Drag items to move them, bottom right corner to resize.',
     'Oben im Profil anpinnen (Showcase, max. 6)': 'Pin to the top of your profile (showcase, max. 6)',
     'Bei „Öffentlich“ und „Zum Verkauf“ sehen andere das Teil samt Notizen.': 'With “Public” and “For sale”, others see the item including its notes.',
-    'Öffentlich ist nur, was du auf „Öffentlich“ oder „Zum Verkauf“ stellst. Dann sehen andere auch die Notizen zum Teil.': 'Only what you set to “Public” or “For sale” is public. Others then also see the item’s notes.',
     'Notizen (optional)': 'Notes (optional)', 'Bei „Öffentlich“ und „Zum Verkauf“ sehen andere deine Notizen.': 'With “Public” and “For sale”, others see your notes.',
     'Drehen, wenn das Foto schief ist': 'Rotate if the photo is crooked',
     'Zeichne mit dem Finger grob um das Teil. Alles außerhalb wird entfernt. Zoomen: zwei Finger oder Mausrad.': 'Roughly draw around the item with your finger. Everything outside is removed. Zoom: two fingers or mouse wheel.',
@@ -173,6 +170,10 @@ const I18N = {
 };
 // Weitere Texte (Profil, Nachrichten, Schrank, Anmeldung, Hinzufügen)
 Object.assign(I18N.en, {
+    'Fotografiere Klamotten, JAWNZ schneidet sie frei.': 'Photograph your clothes, JAWNZ cuts them out.',
+    'Neue Teile sind auf „Öffentlich“ voreingestellt und erscheinen so im Feed anderer. Auf „Privat“ sehen andere sie nicht.': 'New items are preset to “Public” and then appear in other people’s feeds. Set them to “Private” and others won’t see them.',
+    'Andere sehen, was auf „Öffentlich“ oder „Zum Verkauf“ steht, bei solchen Teilen auch deine Notizen. Profiltext und Profilbild sind immer sichtbar.': 'Others see whatever is set to “Public” or “For sale”, including your notes on those items. Your profile text and picture are always visible.',
+    'Sichtbarkeit wählen.': 'Choose visibility.',
     'heute': 'today', 'gestern': 'yesterday', 'Noch keine Bewertungen': 'No reviews yet',
     'Folgen': 'Follow', 'Du folgst': 'Following', 'Sperren': 'Block', 'Entsperren': 'Unblock', 'Gesperrt': 'Blocked', 'Entsperrt': 'Unblocked', '♡ Merken': '♡ Save', '♥ Gemerkt': '♥ Saved',
     '♡ Outfit merken': '♡ Save outfit', 'Outfit nachbauen': 'Recreate outfit',

@@ -1685,3 +1685,5 @@ body:not(.guest) .web-lang { display: none; }
 .item-note p { margin: 0; font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
 .field > .field-hint { font-weight: 400; }
 
+/* Begrüßung und neues Passwort lassen sich nicht wegziehen: also auch kein Zieh-Griff */
+@media (max-width: 700px) { #welcomeDialog.bsheet::before, #resetDialog.bsheet::before { display: none; } }
